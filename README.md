@@ -18,7 +18,7 @@ conda activate rize-dml
 pip install -r requirements.txt
 ```
 
-## Export environment after changes
+### Export environment after changes
 
 ```shell
 pip freeze > requirements.txt
@@ -29,8 +29,8 @@ conda env export >> env.yml
 
 ## Project Structure
 
-/packages/dml: main package containing the code extending the Flower framework
-/packages/examples: examples on how to use code from other packages
-/packages/notebooks: keep track of your notebooks
-/env.yml: Conda environment config
-/requirements.txt: pip list of dependencies
+- /packages/dml: main package containing the code extending the Flower framework
+- /packages/examples: examples on how to use code from other packages
+- /packages/notebooks: keep track of your notebooks
+- /env.yml: Conda environment config
+- /requirements.txt: pip list of dependencies
