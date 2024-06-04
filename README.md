@@ -17,6 +17,9 @@ conda activate rize-dml
 ```
 pip install -r requirements.txt
 ```
+4. Select the `rize-dml` interpret for your IDE.
+
+**VSCode**: `ctrl+shift+p` search for `python: select interpreter` then select the `rize-dml` conda env.
 
 ### Export environment after changes
 
