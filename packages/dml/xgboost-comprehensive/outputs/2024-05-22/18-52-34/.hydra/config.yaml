@@ -1,0 +1,23 @@
+model:
+  _target_: model.Net
+  num_classes: ${num_classes}
+strategy:
+  _target_: flwr.server.strategy.FedAvg
+  fraction_fit: 1.0e-05
+  min_fit_clients: ${num_clients_per_round_fit}
+  fraction_evaluate: 1.0e-05
+  min_evaluate_clients: ${num_clients_per_round_eval}
+  min_available_clients: ${num_clients}
+  on_fit_config_fn:
+    _target_: server.get_on_fit_config
+    config: ${config_fit}
+num_rounds: 10
+num_clients: 100
+batch_size: 20
+num_classes: 10
+num_clients_per_round_fit: 10
+num_clients_per_round_eval: 25
+config_fit:
+  lr: 0.01
+  momentum: 0.9
+  local_epochs: 1
