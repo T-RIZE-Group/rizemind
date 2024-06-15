@@ -8,6 +8,7 @@ from flwr.server.client_proxy import ClientProxy
 from flwr.server.criterion import Criterion
 from utils import BST_PARAMS
 from sklearn.metrics import r2_score
+import pickle
 
 
 
@@ -80,6 +81,11 @@ def get_evaluate_fn(test_data):
             
             print('-------- r2 score of global model----')
             print(r2)
+            
+            model_filename = f"/home/iman/projects/kara/Projects/T-Rize/xgboost-comprehensive/global_model/global_model_round_{server_round}.pkl"
+            with open(model_filename, "wb") as file:
+                pickle.dump(bst, file)
+            log(INFO, f"Global model saved as {model_filename}")
 
             return 0, {"mse": auc, 'r2': r2}
 

@@ -84,6 +84,6 @@ def data_splitting_2(file_path, data_root_path, testsize):
     for city, df in city_datasets.items():
         print(f'City: {city}, Number of rows: {len(df)}')
 
-dataset = '/home/iman/projects/kara/Projects/T-Rise/archive/American_Housing_Data_20231209.csv'
-data_root_path = '/home/iman/projects/kara/Projects/T-Rise/xgboost-comprehensive/City_data'
+dataset = '/home/iman/projects/kara/Projects/T-Rize/archive/American_Housing_Data_20231209.csv'
+data_root_path = '/home/iman/projects/kara/Projects/T-Rize/xgboost-comprehensive/City_data'
 data_splitting_2( dataset, data_root_path, 0.2)

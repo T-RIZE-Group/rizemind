@@ -14,6 +14,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
 from sklearn.metrics import mean_squared_error
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 
 
@@ -30,60 +31,27 @@ class Net(nn.Module):
 
     
 
-    # def __init__(self, num_features: int) -> None:
-    #     super(Net, self).__init__()
-    #     self.conv1 = nn.Conv1d(1, 6, 5)  # Adjust kernel size as needed
-    #     self.pool = nn.MaxPool1d(2)
-    #     self.conv2 = nn.Conv1d(6, 16, 5)
-    #     self.fc1 = nn.Linear(16 * ((num_features - 4) // 4), 120)  # Adjust based on conv2 output size
-    #     self.fc2 = nn.Linear(120, 84)
-    #     self.fc3 = nn.Linear(84, 1)
-        
-    # def forward(self, x: torch.Tensor) -> torch.Tensor:
-    #     x = F.relu(self.conv1(x))
-    #     x = self.pool(x)
-    #     # Apply padding to maintain input size
-    #     x = F.pad(x, (2, 2))  # Padding of 2 on both sides
-    #     x = F.relu(self.conv2(x))
-    #     x = self.pool(x)
-    #     x = x.view(-1, self.num_flat_features(x))
-    #     x = F.relu(self.fc1(x))
-    #     x = F.relu(self.fc2(x))
-    #     return self.fc3(x)
-    
-    # def num_flat_features(self, x: torch.Tensor) -> int:
-    #     size = x.size()[1:]  # all dimensions except the batch dimension
-    #     num_features = 1
-    #     for s in size:
-    #         num_features *= s
-    #     return num_features
-
-    # def __init__(self, num_features: int) -> None:
-    #     super(Net, self).__init__()
-    #     self.fc1 = nn.Linear(num_features, 64)
-    #     self.fc2 = nn.Linear(64, 32)
-    #     self.fc3 = nn.Linear(32, 1)  # Changed output size to 1
-        
-    # def forward(self, x: torch.Tensor) -> torch.Tensor:
-    #     x = F.relu(self.fc1(x))
-    #     x = F.relu(self.fc2(x))
-    #     return self.fc3(x).squeeze()  # Flatten output to 1D
     
     def __init__(self, num_features: int) -> None:
         super(Net, self).__init__()
-        self.conv1 = nn.Conv1d(1, 16, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv1d(16, 32, kernel_size=3, padding=1)
-        self.conv3 = nn.Conv1d(32, 64, kernel_size=3, padding=1)
+        self.conv1 = nn.Conv1d(1, 64, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm1d(64)
+        self.conv2 = nn.Conv1d(64, 128, kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm1d(128)
+        self.conv3 = nn.Conv1d(128, 256, kernel_size=3, padding=1)
+        self.bn3 = nn.BatchNorm1d(256)
         self.pool = nn.MaxPool1d(2)
-        self.fc1 = nn.Linear(64 * (num_features // 2 // 2 // 2), 128)
-        self.fc2 = nn.Linear(128, 64)
-        self.fc3 = nn.Linear(64, 1)
+        self.dropout = nn.Dropout(p=0.5)
+        self.fc1 = nn.Linear(256 * (num_features // 8), 512)
+        self.fc2 = nn.Linear(512, 128)
+        self.fc3 = nn.Linear(128, 1)
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = self.pool(F.relu(self.conv3(x)))
-        x = x.view(x.size(0), -1)  # Flatten the tensor
+        x = self.pool(F.relu(self.bn1(self.conv1(x))))
+        x = self.pool(F.relu(self.bn2(self.conv2(x))))
+        x = self.pool(F.relu(self.bn3(self.conv3(x))))
+        x = x.view(x.size(0), -1)
+        x = self.dropout(x)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         return self.fc3(x)
@@ -129,8 +97,13 @@ def test(net, testloader):
             all_outputs.extend(outputs.cpu().numpy())
             
     avg_loss = loss / len(testloader.dataset)
-    avg_r2 = r2 / len(testloader.dataset)
+    # avg_r2 = r2 / len(testloader.dataset)
+    avg_r2 = r2
     mse = mean_squared_error(all_labels, all_outputs)/len(testloader.dataset)
+    print('test on the local dataset')
+    print('test dataset')
+    print(testloader.dataset)
+    print("avg_r2 = ", avg_r2)
     return mse, avg_r2
 
 # def train(net, trainloader, epochs):
@@ -163,11 +136,12 @@ def test(net, testloader):
 
 def load_data(partition_id):
     """Load partition data."""
-    housing_dataset = pd.read_csv(f'/home/iman/projects/kara/Projects/T-Rise/CNN/City_data/subset_{partition_id}.csv')
+    housing_dataset = pd.read_csv(f'/home/iman/projects/kara/Projects/T-Rize/archive/City_data/subset_{partition_id}.csv')
     
     print(f'client number {partition_id} holds the data of {housing_dataset["City"].iloc[0]}')
     print()
-    housing_dataset = housing_dataset.drop(columns=['Address', 'City', 'State', 'County', 'Zip Code'])
+    housing_dataset = housing_dataset.drop(columns=['Address', 'City', 'State', 'County', 'Zip Code', 'Latitude', 'Longitude'])
+    housing_dataset = housing_dataset.dropna()
     # Prepare features and target
     X = housing_dataset.drop(columns='Price').values
     y = housing_dataset['Price'].values
@@ -179,9 +153,33 @@ def load_data(partition_id):
     # Split the dataset
     X_train, X_test, y_train, y_test = train_test_split(X_reshaped, y, test_size=0.2, random_state=42)
 
+    # min_max_scaler = MinMaxScaler()
+    # X_train = min_max_scaler.fit_transform(X_train)
+    # X_test = min_max_scaler.transform(X_test)
     # Convert to PyTorch tensors
-    X_train = torch.tensor(X_train, dtype=torch.float32)
-    X_test = torch.tensor(X_test, dtype=torch.float32)
+    
+    num_samples_train, _, num_features_train = X_train.shape
+    num_samples_test, _, num_features_test = X_test.shape
+    X_train = X_train.reshape((num_samples_train, num_features_train))
+    X_test = X_test.reshape((num_samples_test, num_features_test))
+
+    # Normalize features
+    min_max_scaler = MinMaxScaler()
+    X_train_normalized = min_max_scaler.fit_transform(X_train)
+    X_test_normalized = min_max_scaler.transform(X_test)
+
+    # Reshape normalized features back to 3D arrays
+    X_train_normalized = X_train_normalized.reshape((num_samples_train, 1, num_features_train))
+    X_test_normalized = X_test_normalized.reshape((num_samples_test, 1, num_features_test))
+
+    
+    # X_train = torch.tensor(X_train, dtype=torch.float32)
+    # X_test = torch.tensor(X_test, dtype=torch.float32)
+    # y_train = torch.tensor(y_train, dtype=torch.float32).view(-1, 1)
+    # y_test = torch.tensor(y_test, dtype=torch.float32).view(-1, 1)
+    
+    X_train = torch.tensor(X_train_normalized, dtype=torch.float32)
+    X_test = torch.tensor(X_test_normalized, dtype=torch.float32)
     y_train = torch.tensor(y_train, dtype=torch.float32).view(-1, 1)
     y_test = torch.tensor(y_test, dtype=torch.float32).view(-1, 1)
 
@@ -202,7 +200,7 @@ def load_data(partition_id):
 parser = argparse.ArgumentParser(description="Flower")
 parser.add_argument(
     "--partition-id",
-    choices=[0, 1],
+    choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     default=0,
     type=int,
     help="Partition of the dataset divided into 2 iid partitions created artificially.",
@@ -212,7 +210,7 @@ partition_id = parser.parse_known_args()[0].partition_id
 # partition_id = 0
 
 # Load model and data (simple CNN, CIFAR-10)
-net = Net(9).to(DEVICE)
+net = Net(12).to(DEVICE)
 trainloader, testloader = load_data(partition_id=partition_id)
 
 # train

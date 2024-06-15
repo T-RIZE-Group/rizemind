@@ -40,12 +40,15 @@ train_method = args.train_method
 #     resplitter=resplit,
 # )
 
-housing_dataset = pd.read_csv(f'/home/iman/projects/kara/Projects/T-Rise/xgboost-comprehensive/City_data/subset_{args.partition_id}.csv')
+housing_dataset = pd.read_csv(f'/home/iman/projects/kara/Projects/T-Rize/archive/City_data/subset_{args.partition_id}.csv')
 
 print(f'client number {args.partition_id} holds the data of {housing_dataset["City"].iloc[0]}')
 print()
-housing_dataset = housing_dataset.drop(columns=['Address', 'City', 'State', 'County', 'Zip Code'])
+city  = housing_dataset['City'].unique()
+print(f'city for {args.partition_id} is {city}')
+housing_dataset = housing_dataset.drop(columns=['Address', 'City', 'State', 'County', 'Zip Code', 'Latitude', 'Longitude'])
 
+housing_dataset = housing_dataset.dropna()
 # unique_values = housing_dataset['ocean_proximity'].unique()
 # value_to_number = {value: idx for idx, value in enumerate(unique_values)}
 
@@ -76,6 +79,7 @@ log(INFO, partition.head())
 
 if args.centralised_eval:
     # Use centralised test set for evaluation
+    print('client side: centralised eval is activated')
     inputs = partition.drop(columns='Price')
     label = partition['Price']
     train_data = dict()
@@ -84,8 +88,12 @@ if args.centralised_eval:
     # train_data = partition
     # valid_data = fds.load_split("test")
     # valid_data.set_format("numpy")
-    global_test_data = pd.read_csv('/home/iman/projects/kara/Projects/T-Rise/xgboost-comprehensive/City_data/global_test_data.csv')
-    global_test_data = global_test_data.drop(columns=['Address', 'City', 'State', 'County', 'Zip Code'])
+    global_test_data = pd.read_csv('/home/iman/projects/kara/Projects/T-Rize/archive/City_data/global_test_data.csv')
+    print('city', city[0])
+    global_test_data = global_test_data[global_test_data["City"] == city[0]]
+    print(f'central test data of client number {args.partition_id} includes data of {global_test_data["City"].iloc[0]}')
+    global_test_data = global_test_data.drop(columns=['Address', 'City', 'State', 'County', 'Zip Code', 'Latitude', 'Longitude'])
+    global_test_data = global_test_data.dropna()
     valid_data = dict()
     valid_data['inputs'] = global_test_data.drop(columns='Price')
     valid_data['label'] = global_test_data['Price']

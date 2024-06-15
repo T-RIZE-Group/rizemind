@@ -7,6 +7,7 @@ from flwr_datasets import FederatedDataset
 from flwr.server.strategy import FedXgbBagging, FedXgbCyclic
 import pandas as pd
 from sklearn.model_selection import train_test_split
+import json
 # from dataPreparation import data_splitting
 
 
@@ -38,23 +39,31 @@ if centralised_eval:
     # fds = FederatedDataset(
     #     dataset="jxie/higgs", partitioners={"train": 20}, resplitter=resplit
     # )
-    
-    housing_dataset = pd.read_csv('/home/iman/projects/kara/Projects/T-Rise/xgboost-comprehensive/City_data/global_test_data.csv')
+    print('server side: centralised eval is activated')
+    # housing_dataset = pd.read_csv('/home/iman/projects/kara/Projects/T-Rize/archive/City_data/global_test_data.csv')
 
-    housing_dataset = housing_dataset.drop(columns=['Address', 'City', 'State', 'County', 'Zip Code'])
 
-    # X = housing_dataset.drop(columns='median_house_value')
-    # y = housing_dataset['median_house_value']
-    # X_train_global, X_test_global, y_train_global, y_test_global = train_test_split(X, y, test_size = 0.15,
-    #                                                                                 random_state = 42)
+    dataframes = []
+    for i in range(args.pool_size):
+        file_paths = f'/home/iman/projects/kara/Projects/T-Rize/archive/City_data/subset_{i}.csv'
+        df = pd.read_csv(file_paths)
+        sampled_data = df.sample(frac=0.3)
+        city = df['City'].iloc[0]
+        dataframes.append(sampled_data)
     
-    
+    dataset = pd.concat(dataframes, ignore_index=True)
+   
+    unique_cities = dataset['City'].unique()
+
+    print(f'central test dataset includes these cities: {unique_cities}')
+    dataset = dataset.drop(columns=['Address', 'City', 'State', 'County', 'Zip Code', 'Latitude', 'Longitude'])
+    dataset = dataset.dropna()
     log(INFO, "Loading centralised test set...")
     # test_set = fds.load_split("test")
     # test_set.set_format("numpy")
     test_set = dict()
-    test_set['inputs'] = housing_dataset.drop(columns=['Price'])
-    test_set['label'] = housing_dataset['Price']
+    test_set['inputs'] = dataset.drop(columns=['Price'])
+    test_set['label'] = dataset['Price']
     test_dmatrix = transform_dataset_to_dmatrix(test_set)
     
     # log(INFO, 'test set: ')
