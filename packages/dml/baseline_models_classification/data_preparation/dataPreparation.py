@@ -44,12 +44,15 @@ classes_to_keep = []
 unique_class_labels = df['price_label'].unique().tolist()
 for i in unique_class_labels:
     class_count = len(df[df['price_label'] == i])
+    
     if class_count >= 500:
         classes_to_keep.append(i)
 
 dataframes = []
 for i in classes_to_keep:
     data = df[df['price_label'] == i]
+    class_count = len(df[df['price_label'] == i])
+    print(f'number of samples in class {i}: {class_count}')
     dataframes.append(data)
 
 final_dataset = pd.concat(dataframes, ignore_index=True)
