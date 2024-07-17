@@ -11,5 +11,4 @@ def helloword(account, project):
 
 def test_increment(helloword, account):
     helloword.increment(sender=account)
-    print(helloword.getCounter(sender=account))
     assert helloword.getCounter() == 1

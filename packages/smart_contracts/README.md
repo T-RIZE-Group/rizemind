@@ -6,6 +6,7 @@ Refer to [ApeWorx.io](https://docs.apeworx.io/ape/latest/userguides/quickstart.h
 
 1. Install the framework CLI
 ```shell
+
 pipx install eth-ape
 ```
 
