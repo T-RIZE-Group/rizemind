@@ -16,7 +16,7 @@ def weighted_average(metrics):
 
 # Start Flower server
 fl.server.start_server(
-    server_address="0.0.0.0:8080",
+    server_address="127.0.0.1:8081",
     config=fl.server.ServerConfig(num_rounds=3),  
     strategy=fl.server.strategy.FedAvg ( 
         evaluate_metrics_aggregation_fn=weighted_average,

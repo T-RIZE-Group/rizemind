@@ -30,7 +30,7 @@ class CifarClient(fl.client.NumPyClient):
     
 #create an instance of our class CifarClient and add one line to actually run this client
 
-fl.client.start_client(server_address="127.0.0.1:8080", client=CifarClient().to_client())
+fl.client.start_client(server_address="127.0.0.1:8081", client=CifarClient().to_client())
 #start_numpy_client()
 #fl.client.start_client(server_address="[::]:8080", client=CifarClient().to_client())
 #fl.client.start_numpy_client("127.0.0.1:8081", client=CifarClient())
