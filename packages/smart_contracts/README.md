@@ -39,3 +39,17 @@ curl -L https://foundry.paradigm.xyz | bash
 ```shell
 foundryup
 ```
+
+## Make Smart Contracts available for DML Nodes
+
+1. Start the foundry network
+```
+ape console --network ethereum:local:foundry
+```
+2. Deploy the contracts
+ape run deploy MemberMgt --network ethereum:local:foundry --account TEST::0
+```
+3. Whitelist new addresses
+```
+ape run members add --network ethereum:local:foundry --account TEST::0 --member TEST::1 --contract <contract_address>
+```

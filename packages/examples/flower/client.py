@@ -760,7 +760,7 @@ class CifarClient(fl.client.NumPyClient):
         model.set_weights(parameters)
         model.fit(x_train, y_train, epochs=1, batch_size=32, steps_per_epoch=3)
         accuracy = model.evaluate(x_test, y_test)[1]  # Get accuracy from evaluation
-        return model.get_weights(), len(x_train), {"accuracy": float(accuracy)}
+        return model.get_weights(), len(x_train), {"accuracy": float(accuracy), signature: "0xclientsign"}
 
     def evaluate(self, parameters, config):
         model.set_weights(parameters)

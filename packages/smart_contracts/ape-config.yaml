@@ -2,3 +2,7 @@ name: smart_contracts
 plugins:
 - name: solidity
 - name: foundry
+
+test:
+  mnemonic: test test test test test test test test test test test junk
+  number_of_accounts: 10
