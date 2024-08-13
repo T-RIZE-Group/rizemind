@@ -47,6 +47,7 @@ foundryup
 ape console --network ethereum:local:foundry
 ```
 2. Deploy the contracts
+```
 ape run deploy MemberMgt --network ethereum:local:foundry --account TEST::0
 ```
 3. Whitelist new addresses
