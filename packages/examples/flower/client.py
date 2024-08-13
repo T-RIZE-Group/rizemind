@@ -8,356 +8,641 @@ import ipfshttpclient
 import pickle
 import time
 import csv
+from eth_account.messages import encode_defunct
 
 # Connect to Ethereum node
 import requests
 #w3 = Web3(Web3.HTTPProvider("http://127.0.0.1:7545"))
 
 # Smart contract address and ABI
-contract_address = '0x5FbDB2315678afecb367f032d93F642f64180aa3'
+contract_address = '0x0165878A594ca255338adfa4d48449f69242Eb8F'
 web3 = Web3(Web3.HTTPProvider("HTTP://127.0.0.1:7545"))
 MemberMgtAbi = json.loads(""" [
         
                 {
-               "inputs":[
-                  {
-                     "internalType":"address[]",
-                     "name":"initialMembers",
-                     "type":"address[]"
-                  },
-                  {
-                     "internalType":"uint256",
-                     "name":"initialThreshold",
-                     "type":"uint256"
-                  }
-               ],
-               "stateMutability":"nonpayable",
-               "type":"constructor"
+          "inputs": [
+            {
+              "internalType": "address[]",
+              "name": "initialMembers",
+              "type": "address[]"
             },
             {
-               "anonymous":false,
-               "inputs":[
-                  {
-                     "indexed":false,
-                     "internalType":"address",
-                     "name":"member",
-                     "type":"address"
-                  }
-               ],
-               "name":"MemberAdded",
-               "type":"event"
-            },
-            {
-               "anonymous":false,
-               "inputs":[
-                  {
-                     "indexed":false,
-                     "internalType":"address",
-                     "name":"member",
-                     "type":"address"
-                  }
-               ],
-               "name":"MemberRemoved",
-               "type":"event"
-            },
-            {
-               "anonymous":false,
-               "inputs":[
-                  {
-                     "indexed":false,
-                     "internalType":"uint256",
-                     "name":"proposalId",
-                     "type":"uint256"
-                  },
-                  {
-                     "indexed":false,
-                     "internalType":"address",
-                     "name":"proposer",
-                     "type":"address"
-                  },
-                  {
-                     "indexed":false,
-                     "internalType":"address",
-                     "name":"member",
-                     "type":"address"
-                  },
-                  {
-                     "indexed":false,
-                     "internalType":"bool",
-                     "name":"add",
-                     "type":"bool"
-                  }
-               ],
-               "name":"ProposalCreated",
-               "type":"event"
-            },
-            {
-               "anonymous":false,
-               "inputs":[
-                  {
-                     "indexed":false,
-                     "internalType":"uint256",
-                     "name":"proposalId",
-                     "type":"uint256"
-                  },
-                  {
-                     "indexed":false,
-                     "internalType":"address",
-                     "name":"signer",
-                     "type":"address"
-                  }
-               ],
-               "name":"ProposalSigned",
-               "type":"event"
-            },
-            {
-               "inputs":[
-                  {
-                     "internalType":"address",
-                     "name":"_address",
-                     "type":"address"
-                  }
-               ],
-               "name":"getMemberStatus",
-               "outputs":[
-                  {
-                     "internalType":"bool",
-                     "name":"member",
-                     "type":"bool"
-                  },
-                  {
-                     "internalType":"bool",
-                     "name":"whitelisted",
-                     "type":"bool"
-                  }
-               ],
-               "stateMutability":"view",
-               "type":"function"
-            },
-            {
-               "inputs":[
-                  
-               ],
-               "name":"getMembers",
-               "outputs":[
-                  {
-                     "internalType":"address[]",
-                     "name":"",
-                     "type":"address[]"
-                  }
-               ],
-               "stateMutability":"view",
-               "type":"function"
-            },
-            {
-               "inputs":[
-                  {
-                     "internalType":"address",
-                     "name":"",
-                     "type":"address"
-                  }
-               ],
-               "name":"isMember",
-               "outputs":[
-                  {
-                     "internalType":"bool",
-                     "name":"",
-                     "type":"bool"
-                  }
-               ],
-               "stateMutability":"view",
-               "type":"function"
-            },
-            {
-               "inputs":[
-                  {
-                     "internalType":"address",
-                     "name":"_address",
-                     "type":"address"
-                  }
-               ],
-               "name":"isWhitelisted",
-               "outputs":[
-                  {
-                     "internalType":"bool",
-                     "name":"",
-                     "type":"bool"
-                  }
-               ],
-               "stateMutability":"view",
-               "type":"function"
-            },
-            {
-               "inputs":[
-                  {
-                     "internalType":"uint256",
-                     "name":"",
-                     "type":"uint256"
-                  }
-               ],
-               "name":"members",
-               "outputs":[
-                  {
-                     "internalType":"address",
-                     "name":"",
-                     "type":"address"
-                  }
-               ],
-               "stateMutability":"view",
-               "type":"function"
-            },
-            {
-               "inputs":[
-                  
-               ],
-               "name":"proposalCount",
-               "outputs":[
-                  {
-                     "internalType":"uint256",
-                     "name":"",
-                     "type":"uint256"
-                  }
-               ],
-               "stateMutability":"view",
-               "type":"function"
-            },
-            {
-               "inputs":[
-                  {
-                     "internalType":"uint256",
-                     "name":"",
-                     "type":"uint256"
-                  }
-               ],
-               "name":"proposals",
-               "outputs":[
-                  {
-                     "internalType":"address",
-                     "name":"proposer",
-                     "type":"address"
-                  },
-                  {
-                     "internalType":"address",
-                     "name":"member",
-                     "type":"address"
-                  },
-                  {
-                     "internalType":"bool",
-                     "name":"add",
-                     "type":"bool"
-                  },
-                  {
-                     "internalType":"uint256",
-                     "name":"signatures",
-                     "type":"uint256"
-                  }
-               ],
-               "stateMutability":"view",
-               "type":"function"
-            },
-            {
-               "inputs":[
-                  {
-                     "internalType":"address",
-                     "name":"member",
-                     "type":"address"
-                  }
-               ],
-               "name":"proposeAddMember",
-               "outputs":[
-                  
-               ],
-               "stateMutability":"nonpayable",
-               "type":"function"
-            },
-            {
-               "inputs":[
-                  {
-                     "internalType":"address",
-                     "name":"member",
-                     "type":"address"
-                  }
-               ],
-               "name":"proposeRemoveMember",
-               "outputs":[
-                  
-               ],
-               "stateMutability":"nonpayable",
-               "type":"function"
-            },
-            {
-               "inputs":[
-                  {
-                     "internalType":"uint256",
-                     "name":"proposalId",
-                     "type":"uint256"
-                  }
-               ],
-               "name":"signProposal",
-               "outputs":[
-                  
-               ],
-               "stateMutability":"nonpayable",
-               "type":"function"
-            },
-            {
-               "inputs":[
-                  {
-                     "internalType":"uint256",
-                     "name":"",
-                     "type":"uint256"
-                  },
-                  {
-                     "internalType":"address",
-                     "name":"",
-                     "type":"address"
-                  }
-               ],
-               "name":"signatures",
-               "outputs":[
-                  {
-                     "internalType":"bool",
-                     "name":"",
-                     "type":"bool"
-                  }
-               ],
-               "stateMutability":"view",
-               "type":"function"
-            },
-            {
-               "inputs":[
-                  
-               ],
-               "name":"threshold",
-               "outputs":[
-                  {
-                     "internalType":"uint256",
-                     "name":"",
-                     "type":"uint256"
-                  }
-               ],
-               "stateMutability":"view",
-               "type":"function"
-            },
-            {
-               "inputs":[
-                  {
-                     "internalType":"address",
-                     "name":"",
-                     "type":"address"
-                  }
-               ],
-               "name":"whitelist",
-               "outputs":[
-                  {
-                     "internalType":"bool",
-                     "name":"",
-                     "type":"bool"
-                  }
-               ],
-               "stateMutability":"view",
-               "type":"function"
+              "internalType": "uint256",
+              "name": "initialThreshold",
+              "type": "uint256"
             }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "constructor"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "internalType": "address",
+              "name": "member",
+              "type": "address"
+            }
+          ],
+          "name": "MemberAdded",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "internalType": "address",
+              "name": "member",
+              "type": "address"
+            }
+          ],
+          "name": "MemberRemoved",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "owner",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "uint256",
+              "name": "round",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "string",
+              "name": "ipfsHash",
+              "type": "string"
+            }
+          ],
+          "name": "ModelAdded",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "internalType": "bytes32",
+              "name": "modelHash",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "internalType": "address",
+              "name": "signer",
+              "type": "address"
+            }
+          ],
+          "name": "ModelUpdateSubmitted",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "internalType": "bytes32",
+              "name": "modelHash",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "internalType": "address",
+              "name": "signer",
+              "type": "address"
+            }
+          ],
+          "name": "ModelUpdateVerified",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "newRound",
+              "type": "uint256"
+            }
+          ],
+          "name": "NewRoundStarted",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "proposalId",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "address",
+              "name": "proposer",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "address",
+              "name": "member",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "bool",
+              "name": "add",
+              "type": "bool"
+            }
+          ],
+          "name": "ProposalCreated",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "proposalId",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "address",
+              "name": "signer",
+              "type": "address"
+            }
+          ],
+          "name": "ProposalSigned",
+          "type": "event"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "string",
+              "name": "_ipfsHash",
+              "type": "string"
+            }
+          ],
+          "name": "addModel",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ],
+          "name": "clientHistory",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "owner",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "round",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            },
+            {
+              "internalType": "string",
+              "name": "ipfsHash",
+              "type": "string"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "string",
+              "name": "",
+              "type": "string"
+            }
+          ],
+          "name": "existIPFS",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "_address",
+              "type": "address"
+            }
+          ],
+          "name": "getMemberStatus",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "member",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "whitelisted",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "getMembers",
+          "outputs": [
+            {
+              "internalType": "address[]",
+              "name": "",
+              "type": "address[]"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "getModelCount",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "member",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "_round",
+              "type": "uint256"
+            }
+          ],
+          "name": "getModelIPFSHash",
+          "outputs": [
+            {
+              "internalType": "string",
+              "name": "",
+              "type": "string"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "name": "isMember",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "_address",
+              "type": "address"
+            }
+          ],
+          "name": "isWhitelisted",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ],
+          "name": "members",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "modelCount",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "name": "modelUpdates",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "modelHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "address",
+              "name": "signer",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "verified",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "proposalCount",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ],
+          "name": "proposals",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "proposer",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "member",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "add",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint256",
+              "name": "signatures",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "member",
+              "type": "address"
+            }
+          ],
+          "name": "proposeAddMember",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "member",
+              "type": "address"
+            }
+          ],
+          "name": "proposeRemoveMember",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "round",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "proposalId",
+              "type": "uint256"
+            }
+          ],
+          "name": "signProposal",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "name": "signatures",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "startNewRound",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes",
+              "name": "newModelData",
+              "type": "bytes"
+            },
+            {
+              "internalType": "bytes",
+              "name": "signature",
+              "type": "bytes"
+            }
+          ],
+          "name": "submitModelUpdate",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "name": "submittedModels",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "threshold",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "modelHash",
+              "type": "bytes32"
+            }
+          ],
+          "name": "verifyModelUpdate",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "name": "whitelist",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        }
       ]
     """)
 MemberMgt = web3.eth.contract(address=contract_address, abi=MemberMgtAbi)
@@ -474,7 +759,8 @@ class CifarClient(fl.client.NumPyClient):
     def fit(self, parameters, config):
         model.set_weights(parameters)
         model.fit(x_train, y_train, epochs=1, batch_size=32, steps_per_epoch=3)
-        return model.get_weights(), len(x_train), {}
+        accuracy = model.evaluate(x_test, y_test)[1]  # Get accuracy from evaluation
+        return model.get_weights(), len(x_train), {"accuracy": float(accuracy)}
 
     def evaluate(self, parameters, config):
         model.set_weights(parameters)
@@ -500,4 +786,3 @@ if __name__ == "__main__":
         writer.writerow(["Function", "GasEstimate", "ExecutionTime"])
     
     fl.client.start_client(server_address="127.0.0.1:8080", client=CifarClient().to_client())
-
