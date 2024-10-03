@@ -1,0 +1,4 @@
+[project]
+name = "rize_dml_auth"
+version = "0.1.0"
+dependencies = []

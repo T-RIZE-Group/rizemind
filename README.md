@@ -5,35 +5,27 @@
 1. Install Miniconda: https://docs.anaconda.com/free/miniconda/#quick-command-line-install
 
 ## Install instructions
-1. Create Conda virtual environment
-```shell
-conda env create -f env.yml
-```
-2. Activate the environment
-```shell
-conda activate rize-dml
-```
-3. Install pip dependencies
-```
-pip install -r requirements.txt
-```
-4. Select the `rize-dml` interpret for your IDE.
 
-**VSCode**: `ctrl+shift+p` search for `python: select interpreter` then select the `rize-dml` conda env.
-
-### Export environment after changes
-
+1. Activate the python venv environment
+**Linux/MacOS**:
 ```shell
-pip freeze > requirements.txt
+source .venv/bin/activate
 ```
-```shell
-conda env export >> env.yml
+**windows**:
+```bash
+.venv\Scripts\activate
 ```
+
+3. Install local packages
+```
+pip install -e .
+```
+4. Select the `.venv` interpreter for your IDE.
+
+**VSCode**: `ctrl+shift+p` search for `python: select interpreter` then select the `.venv` conda env.
 
 ## Project Structure
 
-- /packages/dml: main package containing the code extending the Flower framework
+- /packages/authentication: main package containing the code extending the Flower framework for authentication
 - /packages/examples: examples on how to use code from other packages
 - /packages/notebooks: keep track of your notebooks
-- /env.yml: Conda environment config
-- /requirements.txt: pip list of dependencies

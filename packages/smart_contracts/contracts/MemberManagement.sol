@@ -80,17 +80,20 @@ contract MemberManagement {
             add: true,
             signatures: 0
         });
+        signProposal(proposalCount);
         emit ProposalCreated(proposalCount, msg.sender, member, true);
         proposalCount++;
     }
 
     function proposeRemoveMember(address member) public onlyMember {
+        require(isMember[member], "not a member");
         proposals[proposalCount] = Proposal({
             proposer: msg.sender,
             member: member,
             add: false,
             signatures: 0
         });
+        signProposal(proposalCount);
         emit ProposalCreated(proposalCount, msg.sender, member, false);
         proposalCount++;
     }

@@ -4,10 +4,10 @@ Refer to [ApeWorx.io](https://docs.apeworx.io/ape/latest/userguides/quickstart.h
 
 ## Install
 
-1. Install the framework CLI
+1. Install the repo dependencies
 ```shell
 
-pipx install eth-ape
+pip install -e .
 ```
 
 2. Install Foundry
@@ -15,9 +15,10 @@ pipx install eth-ape
 curl -L https://foundry.paradigm.xyz | bash
 ```
 
-3. Install project plugins. (If `ape` is not found, just close and reopen the shell)
+## upgrading plugins
+Install project plugins. 
 ```shell
-ape plugins install .
+ape plugins install --upgrade .
 ```
 
 ## Compiling Contracts

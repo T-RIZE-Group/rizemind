@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rize-dml"
+version = "0.1.0"
+description = "Rizenet DML"
+requires-python = ">=3.8,<4.0"
+dynamic = ["dependencies"]
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+

@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rize-dml-contracts"
+version = "0.1.0"
+description = "Rizenet DML smart contracts"
+requires-python = ">=3.8,<4.0"
+dependencies=[
+  "eth-ape>=0.8.16",
+  "eth-ape[recommended-plugins]",
+  "ape-solidity>=0.8.4",
+  "ape-foundry>=0.8.4"
+]
+[tool.hatch.build.targets.wheel]
+packages = ["."]
