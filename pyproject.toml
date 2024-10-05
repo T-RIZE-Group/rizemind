@@ -1,13 +1,32 @@
 [build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core>=1.4.0"]
+build-backend = "poetry.core.masonry.api"
 
-[project]
-name = "rize-dml"
+[tool.poetry]
+name = "rize_dml"
 version = "0.1.0"
-description = "Rizenet DML"
-requires-python = ">=3.8,<4.0"
-dynamic = ["dependencies"]
-[tool.hatch.build.targets.wheel]
-packages = ["."]
+description = "RIZE DML: suite of Flower extensions for Decentralizing Machine Learning"
+license = "Apache-2.0"
+authors = ["T-RIZE Labs <michael.duchesne@t-rize.io>"]
+packages = [
+    { include = "rize_dml", from = "src/py" },
+]
 
+[tool.poetry.dependencies]
+python = "^3.12" 
+web3 = ">=7.0.0"
+numpy = "<2.0.0"
+eth-account = ">=0.13.4"
+
+[tool.poetry.dev-dependencies]
+pytest = ">=6.0"
+tensorflow = ">=2.0"
+torch = ">=1.9"
+
+
+[tool.pytest.ini_options]
+minversion = "6.2"
+testpaths = [
+    "src/py",
+]
+filterwarnings = "ignore::DeprecationWarning"

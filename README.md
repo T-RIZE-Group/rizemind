@@ -2,11 +2,15 @@
 
 ## Requirements
 
-1. Install Miniconda: https://docs.anaconda.com/free/miniconda/#quick-command-line-install
-
+1. Install Poetry:
 ## Install instructions
 
-1. Activate the python venv environment
+1. Create venv
+```shell 
+python -m venv .venv
+```
+
+2. Activate the python venv environment
 **Linux/MacOS**:
 ```shell
 source .venv/bin/activate
@@ -24,6 +28,10 @@ pip install -e .
 
 **VSCode**: `ctrl+shift+p` search for `python: select interpreter` then select the `.venv` conda env.
 
+## Running tests
+```shell
+pip install -e ".[dev]"
+```
 ## Project Structure
 
 - /packages/authentication: main package containing the code extending the Flower framework for authentication

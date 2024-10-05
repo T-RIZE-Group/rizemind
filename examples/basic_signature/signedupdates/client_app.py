@@ -1,10 +1,13 @@
-"""tfexample: A Flower / TensorFlow app."""
+"""signedupdates: A Flower / TensorFlow app."""
 
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
-from tfexample.task import load_data, load_model
-from rize_dml_auth.sign_update import test_function
-
+from .task import load_data, load_model
+from eth_account import Account
+from mnemonic import Mnemonic
+from rize_dml.authentication.signature import sign_tf_model
+import web3
+import tomli
 
 # Define Flower Client
 class FlowerClient(NumPyClient):
@@ -15,12 +18,14 @@ class FlowerClient(NumPyClient):
         epochs,
         batch_size,
         verbose,
+        account: Account
     ):
         self.model = load_model(learning_rate)
         self.x_train, self.y_train, self.x_test, self.y_test = data
         self.epochs = epochs
         self.batch_size = batch_size
         self.verbose = verbose
+        self.account = account
 
     def get_parameters(self, config):
         """Return the parameters of the model of this client."""
@@ -36,7 +41,20 @@ class FlowerClient(NumPyClient):
             batch_size=self.batch_size,
             verbose=self.verbose,
         )
-        return self.model.get_weights(), len(self.x_train), {}
+        signature = sign_tf_model(
+            self.account,
+            self.model,
+            1,
+            "0x000000",
+            "test_model",
+            0    
+        )
+        print(signature)
+        return self.model.get_weights(), len(self.x_train), {
+            "r": signature.r,
+            "s": signature.s,
+            "v": signature.v
+        }
 
     def evaluate(self, parameters, config):
         """Evaluate the model on the data this client has."""
@@ -59,9 +77,22 @@ def client_fn(context: Context):
     verbose = context.run_config.get("verbose")
     learning_rate = context.run_config["learning-rate"]
 
+    mnemo = Mnemonic("english")
+    with open("./pyproject.toml", "rb") as f:
+        toml_dict = tomli.load(f)
+        web3_config = toml_dict.get("tool", {}).get("web3", {})
+
+    mnemonic_phrase = web3_config.get("mnemonic")
+    if not mnemo.check(mnemonic_phrase):
+        raise ValueError("Invalid mnemonic phrase")
+
+    hd_path = f"m/44'/60'/{partition_id}'/0/0"
+    account = Account.from_mnemonic(mnemonic_phrase, account_path=hd_path)
+    print(f"{partition_id}: {account.address}")
+
     # Return Client instance
-    return FlowerClient(learning_rate, data, epochs, batch_size, verbose).to_client()
+    return FlowerClient(learning_rate, data, epochs, batch_size, verbose, account).to_client()
 
-
+Account.enable_unaudited_hdwallet_features()
 # Flower ClientApp
 app = ClientApp(client_fn=client_fn)

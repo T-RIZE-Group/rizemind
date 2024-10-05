@@ -11,21 +11,6 @@ Running this example in itself is quite easy. This example uses [Flower Datasets
 
 ## Set up the project
 
-### Clone the project
-
-Start by cloning the example project:
-
-```shell
-quickstart-tensorflow
-├── tfexample
-│   ├── __init__.py
-│   ├── client_app.py   # Defines your ClientApp
-│   ├── server_app.py   # Defines your ServerApp
-│   └── task.py         # Defines your model, training and data loading
-├── pyproject.toml      # Project metadata like dependencies and configs
-└── README.md
-```
-
 ### Install dependencies and project
 
 Install the dependencies defined in `pyproject.toml` as well as the `tfhexample` package.

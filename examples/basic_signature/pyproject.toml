@@ -13,10 +13,16 @@ dependencies = [
     "tensorflow-cpu>=2.9.1, != 2.11.1 ; platform_machine == \"x86_64\"",
     "tensorflow-macos>=2.9.1, != 2.11.1 ; sys_platform == \"darwin\" and platform_machine == \"arm64\"",
     "ray>=2.0.0",
-    "rize_dml_auth"
+    "web3>=7.0.0",
+    "eth-account>=0.13.4",
+    "mnemonic>=0.21"
 ]
+
+
 [tool.hatch.build.targets.wheel]
 packages = ["."]
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.flwr.app]
 publisher = "trizelabs"
@@ -38,3 +44,7 @@ default = "local-simulation"
 
 [tool.flwr.federations.local-simulation]
 options.num-supernodes = 10
+
+
+[tool.web3]
+mnemonic = "test test test test test test test test test test test junk"
