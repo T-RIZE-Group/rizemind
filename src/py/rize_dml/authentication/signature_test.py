@@ -5,7 +5,8 @@ from tensorflow import keras
 import torch
 from eth_account import Account
 from eth_account.datastructures import SignedMessage
-from .signature import hash_weights, hash_tf_model, hash_torch_model, sign_torch_model, prepare_eip712_message
+from .signature import hash_weights, hash_tf_model, hash_torch_model, sign_torch_model, prepare_eip712_message, sign_tf_model, recover_model_signer
+from keras import layers
 
 def test_hash_weights():
     # Create a mock weight array
@@ -19,7 +20,10 @@ def test_hash_weights():
 
 def test_hash_tf_model():
     # Create a simple TensorFlow model
-    model = keras.Sequential([keras.layers.Dense(5, input_shape=(10,))])
+    model = keras.Sequential([
+        keras.Input(shape=(10, 1)),
+        keras.layers.Dense(5)
+    ])
 
     # Get the weights directly from the model
     weights = np.concatenate([layer.flatten() for layer in model.get_weights()]).astype(np.float32)
@@ -67,3 +71,25 @@ def test_sign_torch_model(torch_model, eth_account):
     message = prepare_eip712_message(chain_id, contract_address, app_name, round_number, hash_torch_model(torch_model))
     address = Account.recover_message(message, [signed_message.v, signed_message.r, signed_message.s])
     assert address == eth_account.address, "recovered address doesn't match"
+
+def test_sign_tf_model(eth_account):
+    model = keras.Sequential(
+        [
+            keras.Input(shape=(32, 32, 3)),
+            layers.Conv2D(32, kernel_size=(3, 3), activation="relu"),
+            layers.MaxPooling2D(pool_size=(2, 2)),
+            layers.Conv2D(64, kernel_size=(3, 3), activation="relu"),
+            layers.MaxPooling2D(pool_size=(2, 2)),
+            layers.Flatten(),
+            layers.Dropout(0.5),
+            layers.Dense(10, activation="softmax"),
+        ]
+    )
+    model.compile()
+    chain_id = 1 
+    contract_address = "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC"  
+    app_name = "TestApp"
+    round_number = 1
+    signed_message = sign_tf_model(eth_account, model, chain_id, contract_address, app_name, round_number)
+    recovered_address = recover_model_signer(model.get_weights(), chain_id, contract_address, app_name, round_number, [signed_message.v, signed_message.r, signed_message.s])
+    assert recovered_address == eth_account.address, "recovered address doesn't match signer"
