@@ -3,6 +3,11 @@ plugins:
 - name: solidity
 - name: foundry
 
+dependencies:
+  - name: OpenZeppelin
+    github: OpenZeppelin/openzeppelin-contracts
+    version: 5.1.0
+
 test:
   mnemonic: test test test test test test test test test test test junk
   number_of_accounts: 10

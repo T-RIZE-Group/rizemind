@@ -4,6 +4,12 @@ Refer to [ApeWorx.io](https://docs.apeworx.io/ape/latest/userguides/quickstart.h
 
 ## Install
 
+0. Create and active a venv
+```shell
+python -m venv sc_env
+source sc_env/bin/activate
+```
+
 1. Install the repo dependencies
 ```shell
 

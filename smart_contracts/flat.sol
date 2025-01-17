@@ -1,9 +1,9 @@
+pragma solidity ^0.8.10;
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.28;
+
+// File: MemberManagement.sol
 
 contract MemberManagement {
-    string private _name;
-
     address[] public members;
     mapping(address => bool) public isMember;
     mapping(uint256 => Proposal) public proposals;
@@ -65,12 +65,7 @@ contract MemberManagement {
         _;
     }
 
-    constructor(
-        string memory name_,
-        address[] memory initialMembers, 
-        uint256 initialThreshold
-    ) {
-        _name = name_;
+    constructor(address[] memory initialMembers, uint256 initialThreshold) {
         for (uint256 i = 0; i < initialMembers.length; i++) {
             members.push(initialMembers[i]);
             isMember[initialMembers[i]] = true;
@@ -78,10 +73,6 @@ contract MemberManagement {
         }
         threshold = initialThreshold;
         round = 0; // Initialize round number
-    }
-
-    function name() public view returns(string memory) {
-        return _name;
     }
 
     function proposeAddMember(address member) public onlyMember {

@@ -2,10 +2,14 @@
 
 from typing import List, Tuple
 
+from eth_account import Account
 from flwr.common import Context, Metrics, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
+from rize_dml.contracts.deploy.model_registry_v1 import deploy_group
+from rize_dml.authentication.config import load_auth_config
 from .task import load_model
+from rize_dml.authentication.eth_account_strategy import EthAccountStrategy
 
 
 # Define metric aggregation function
@@ -26,7 +30,7 @@ def server_fn(context: Context):
     parameters = ndarrays_to_parameters(load_model().get_weights())
 
     # Define the strategy
-    strategy = strategy = FedAvg(
+    strategy = FedAvg(
         fraction_fit=context.run_config["fraction-fit"],
         fraction_evaluate=1.0,
         min_available_clients=2,
@@ -35,10 +39,21 @@ def server_fn(context: Context):
     )
     # Read from config
     num_rounds = context.run_config["num-server-rounds"]
+    auth_config = load_auth_config("./pyproject.toml")
+
+    account = auth_config.get_account(0)
+    members = []
+    for i in range(1,11):
+        trainer = auth_config.get_account(i)
+        members.append(trainer.address)
+    contract = deploy_group(account, auth_config.name, members)
+
     config = ServerConfig(num_rounds=num_rounds)
-
-    return ServerAppComponents(strategy=strategy, config=config)
-
+    authStrategy = EthAccountStrategy(
+        strategy,
+        contract
+    )
+    return ServerAppComponents(strategy=authStrategy, config=config)
 
 # Create ServerApp
 app = ServerApp(server_fn=server_fn)

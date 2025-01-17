@@ -223,13 +223,13 @@ def sign_parameters_model(account: Account, parameters: Parameters, chainid: int
     eip712_message = prepare_eip712_message(chainid, contract, name, round, parameters_hash)
     return account.sign_message(eip712_message)
 
-def recover_model_signer(model: list[np.ndarray], chainid: int, contract: str, name: str, round: int, signature: Tuple[VRS, VRS, VRS]):
+def recover_model_signer(model: Parameters, chainid: int, contract: str, name: str, round: int, signature: Tuple[VRS, VRS, VRS]):
    """
    Recover the address of the signed model.
 
    Returns:
     str: hex address of the signer.
    """
-   model_hash = hash_numpy_arrays(model)
+   model_hash = hash_parameters(model)
    message = prepare_eip712_message(chainid, contract, name, round, model_hash)
    return Account.recover_message(message, signature)

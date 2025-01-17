@@ -10,14 +10,23 @@ class SigningClient:
 
   client: Client
   account: Account
+  chainid: int
+  contract: str
+  name: str
 
   def __init__(
     self, 
     client: Client,
-    account: Account
+    account: Account,
+    chainid: int,
+    contract: str,
+    name: str
   ):
     self.client = client
     self.account = account
+    self.chainid = chainid
+    self.contract = contract
+    self.name = name
 
   def __getattr__(self, name):
     return getattr(self.client, name)
@@ -34,9 +43,9 @@ class SigningClient:
     signature = sign_parameters_model(
       self.account,
       res.parameters,
-      1,
-      "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
-      "test_model",
+      self.chainid,
+      self.contract,
+      self.name,
       0    
     )
     return {

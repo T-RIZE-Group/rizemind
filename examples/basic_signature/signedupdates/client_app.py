@@ -4,9 +4,8 @@ from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
 from .task import load_data, load_model
 from eth_account import Account
-from mnemonic import Mnemonic
 from rize_dml.authentication.eth_account_client import SigningClient
-import tomli
+from rize_dml.authentication.config import load_auth_config
 
 # Define Flower Client
 class FlowerClient(NumPyClient):
@@ -61,22 +60,18 @@ def client_fn(context: Context):
     verbose = context.run_config.get("verbose")
     learning_rate = context.run_config["learning-rate"]
 
-    mnemo = Mnemonic("english")
-    with open("./pyproject.toml", "rb") as f:
-        toml_dict = tomli.load(f)
-        web3_config = toml_dict.get("tool", {}).get("web3", {})
+    auth_config = load_auth_config("./pyproject.toml")
 
-    mnemonic_phrase = web3_config.get("mnemonic")
-    if not mnemo.check(mnemonic_phrase):
-        raise ValueError("Invalid mnemonic phrase")
-
-    hd_path = f"m/44'/60'/{partition_id}'/0/0"
-    account = Account.from_mnemonic(mnemonic_phrase, account_path=hd_path)
+    hd_path = f"m/44'/60'/{partition_id+1}'/0/0"
+    account = Account.from_mnemonic(auth_config.mnemonic, account_path=hd_path)
 
     # Return Client instance
     return SigningClient(
         FlowerClient(learning_rate, data, epochs, batch_size, verbose).to_client(),
-        account
+        account,
+        auth_config.chainid,
+        auth_config.contract,
+        auth_config.name
     )
 
 Account.enable_unaudited_hdwallet_features()
