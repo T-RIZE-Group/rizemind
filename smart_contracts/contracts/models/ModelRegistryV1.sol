@@ -1,25 +1,31 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
-import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import { EIP712Upgradeable } from "@ozupgradeable/contracts/utils/cryptography/EIP712Upgradeable.sol";
+import {Context} from "@openzeppelin/contracts/utils/Context.sol";
+import { ContextUpgradeable } from "@ozupgradeable/contracts/utils/ContextUpgradeable.sol";
 
 import { IModelRegistry, RoundSummary } from "./IModelRegistry.sol";
 import { FLAccessControl } from "../access_control/FLAccessControl.sol";
-import {SimpleContributionDistribution} from "../token/SimpleContributionDistributor.sol";
+import {SimpleContributionDistributor} from "../compensation/SimpleContributionDistributor.sol";
 
-contract ModelRegistryV1 is IModelRegistry, FLAccessControl, SimpleContributionDistribution, EIP712 {
+contract ModelRegistryV1 is IModelRegistry, FLAccessControl, SimpleContributionDistributor, EIP712Upgradeable {
 
   uint256 private _round = 0;
 
   event RoundFinished(uint256 indexed roundId, uint64 trainer, uint64 modelScore, uint128 totalContribution);
 
   error RoundMismatch(uint256 currentRound, uint256 givenRound);
-  constructor(
+
+  function initialize(    
     string memory name,
     string memory symbol,
+    address aggregator,
     address[] memory initialTrainers
-  ) EIP712(name, "1.0.0") FLAccessControl(initialTrainers) SimpleContributionDistribution(name, symbol, 1**20){
-
+  ) public initializer {
+    __EIP712_init(name, "1.0.0");
+    __SimpleContributionDistributor_init(name, symbol, 10**20);
+    __FLAccessControl_init(aggregator, initialTrainers);
   }
 
   function canTrain(address trainer, uint256 roundId) public returns (bool) {
@@ -41,8 +47,21 @@ contract ModelRegistryV1 is IModelRegistry, FLAccessControl, SimpleContributionD
 
   function distribute(    
     address[] calldata trainers, 
-    uint64[] calldata contributions) external onlyAggregator(msg.sender) {
+    uint64[] calldata contributions
+  ) external onlyAggregator(msg.sender) {
       _distribute(trainers, contributions);
-    }
+  }
+
+   function _msgSender() internal view virtual override(Context, ContextUpgradeable) returns (address) {
+    return ContextUpgradeable._msgSender();
+  }
+
+  function _msgData() internal view virtual override(Context, ContextUpgradeable) returns (bytes calldata) {
+    return ContextUpgradeable._msgData();
+  }
+
+  function _contextSuffixLength() internal view virtual override(Context, ContextUpgradeable) returns (uint256) {
+    return ContextUpgradeable._contextSuffixLength();
+  }
 
 }

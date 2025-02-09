@@ -21,6 +21,12 @@ pip install -e .
 curl -L https://foundry.paradigm.xyz | bash
 ```
 
+3. Install projects deps
+```shell
+ape plugins install
+ape pm install
+```
+
 ## upgrading plugins
 Install project plugins. 
 ```shell

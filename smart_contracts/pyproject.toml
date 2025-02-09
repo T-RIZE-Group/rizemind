@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Rizenet DML smart contracts"
 requires-python = ">=3.8,<4.0"
 dependencies=[
-  "eth-ape[recommended-plugins]>=0.8.16",
+  "eth-ape[recommended-plugins]>=0.8.25",
   "ape-solidity>=0.8.4",
   "ape-foundry>=0.8.4"
 ]
