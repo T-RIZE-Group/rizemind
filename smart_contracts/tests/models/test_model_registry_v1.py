@@ -24,9 +24,8 @@ def model_contract(project, aggregator, trainers):
 def model_factory(project, aggregator, model_contract):
     return aggregator.deploy(project.ModelRegistryFactory, model_contract)
 
-def test_factory_deploy(project, aggregator, model_factory, trainers):
+def test_factory_deploy(aggregator, model_factory, trainers):
     tx = model_factory.createModel("hello", "world", aggregator, trainers, sender=aggregator)
 
-    # This should work, but it doesnt :( https://github.com/ApeWorX/ape/pull/1392
-    # assert project.ModelRegistryFactory.ContractCreated() in tx.events, "ContractCreated not in events"
-    assert tx.events[-1].event_name == "ContractCreated"
+    assert model_factory.ContractCreated() in tx.events, "ContractCreated not in events"
+

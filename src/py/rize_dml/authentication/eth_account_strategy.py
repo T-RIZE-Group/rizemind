@@ -1,6 +1,6 @@
 from flwr.server.strategy import Strategy
 from flwr.common.typing import FitRes
-from rize_dml.contracts.deploy.model_registry_v1 import TrainerGroup
+from rize_dml.contracts.deploy.model_registry_v1_old import TrainerGroup
 from rize_dml.authentication.signature import recover_model_signer
 
 class EthAccountStrategy(Strategy):

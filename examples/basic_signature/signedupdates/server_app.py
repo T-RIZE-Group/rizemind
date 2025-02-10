@@ -6,7 +6,7 @@ from eth_account import Account
 from flwr.common import Context, Metrics, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
-from rize_dml.contracts.deploy.model_registry_v1 import deploy_group
+from rize_dml.contracts.deploy.model_registry_v1_old import deploy_group
 from rize_dml.authentication.config import load_auth_config
 from .task import load_model
 from rize_dml.authentication.eth_account_strategy import EthAccountStrategy
