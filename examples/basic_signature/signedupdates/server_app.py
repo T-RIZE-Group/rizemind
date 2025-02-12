@@ -6,8 +6,8 @@ from eth_account import Account
 from flwr.common import Context, Metrics, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
-from rize_dml.contracts.deploy.model_registry_v1_old import deploy_group
 from rize_dml.authentication.config import load_auth_config
+from rize_dml.contracts.deploy.model_v1 import deploy_new_model_v1
 from .task import load_model
 from rize_dml.authentication.eth_account_strategy import EthAccountStrategy
 
@@ -46,7 +46,7 @@ def server_fn(context: Context):
     for i in range(1,11):
         trainer = auth_config.get_account(i)
         members.append(trainer.address)
-    contract = deploy_group(account, auth_config.name, members)
+    contract = deploy_new_model_v1(account, auth_config.name, members)
 
     config = ServerConfig(num_rounds=num_rounds)
     authStrategy = EthAccountStrategy(

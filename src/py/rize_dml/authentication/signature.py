@@ -12,68 +12,6 @@ class Parameters:
     tensors: List[bytes]
     tensor_type: str
 
-def hash_weights(weights: np.ndarray) -> str:
-    """
-    Converts weights to float32 then bytes and hash them using Keccak-256.
-    
-    Args:
-        weights (np.ndarray): A NumPy array of flattened model weights.
-
-    Returns:
-        str: The Keccak-256 hash of the model weights as a hex string.
-    """
-    weights_bytes = weights.astype(np.float32).tobytes()
-    weights_hash = Web3.keccak(weights_bytes)
-
-    return weights_hash.hex()
-
-def hash_numpy_arrays(arrays: list[np.ndarray]) -> str:
-    """
-    Flatten the list of NumPy arrays and hash using Keccak-256.
-    
-    Args:
-        arrays: A list of NumPy arrays.
-
-    Returns:
-        str: The Keccak-256 hash of the flattened arrays.
-    """
-    # Flatten and concatenate all arrays into a single 1D array
-    weights = np.concatenate([arr.flatten() for arr in arrays])
-
-    return hash_weights(weights)
-
-def hash_tf_model(model) -> str:
-    """
-    Flatten the TensorFlow/Keras model weights and hash using keccak256.
-    
-    Args:
-        model: A TensorFlow/Keras model.
-
-    Returns:
-        str: The Keccak-256 hash of the model weights.
-    """
-    # Get the model weights as a single, flat NumPy array
-    weights = np.concatenate([layer.flatten() for layer in model.get_weights()])
-
-    return hash_weights(weights)
-
-def hash_torch_model(model) -> str:
-    """
-    Flatten the PyTorch model weights, convert to np.float32, and hash using keccak256..
-    
-    Args:
-        model: A PyTorch model.
-
-    Returns:
-        str: The Keccak-256 hash of the model weights.
-    """
-    # Get the model weights as a single, flat NumPy array
-    weights = np.concatenate([param.detach().numpy().flatten() for param in model.parameters()])
-
-    weights = weights.astype(np.float32)
-
-    return hash_weights(weights)
-
 
 def prepare_eip712_domain(chainid: int, contract: str, name: str):
   """
@@ -142,53 +80,6 @@ def prepare_eip712_message(chainid: int, contract: str, name: str, round: int, h
         full_message=eip712_message
     )
 
-def sign_tf_model(account: Account, model, chainid: int, contract: str, name: str, round: int):
-  """
-  Signs a TensorFlow model's weights using the EIP-712 standard.
-
-  Args:
-      account (Account): An Ethereum account object from which the message will be signed.
-      model: A TensorFlow model whose weights will be hashed.
-      chainid (int): The ID of the blockchain network (e.g., 1 for Ethereum mainnet, 3 for Ropsten).
-      contract (str): The address of the verifying contract in hexadecimal format.
-      name (str): The human-readable name of the domain (e.g., "MyApp").
-      round (int): The current round number of the model.
-
-  Returns:
-      dict: The signed message object containing the signature, message hash, and other metadata.
-
-  Example:
-      ```python
-      signed_message = sign_tf_model(account, model, 1, "0x1234...", "MyApp", 1)
-      ```
-  """
-  model_hash = hash_tf_model(model)
-  eip712_message = prepare_eip712_message(chainid, contract, name, round, model_hash)
-  return account.sign_message(eip712_message)
-
-def sign_torch_model(account: Account, model, chainid: int, contract: str, name: str, round: int):
-  """
-  Signs a PyTorch model's weights using the EIP-712 standard.
-
-  Args:
-    account (Account): An Ethereum account object from which the message will be signed.
-    model: A TensorFlow model whose weights will be hashed.
-    chainid (int): The ID of the blockchain network (e.g., 1 for Ethereum mainnet, 3 for Ropsten).
-    contract (str): The address of the verifying contract in hexadecimal format.
-    name (str): The human-readable name of the domain (e.g., "MyApp").
-    round (int): The current round number of the model.
-
-  Returns:
-    dict: SignedMessage from eth_account
-
-  Example:
-    ```python
-    signed_message = sign_tf_model(account, model, 1, "0x1234...", "MyApp", 1)
-    ```
-  """
-  model_hash = hash_torch_model(model)
-  eip712_message = prepare_eip712_message(chainid, contract, name, round, model_hash)
-  return account.sign_message(eip712_message)
 
 def hash_parameters(parameters: Parameters) -> bytes:
     """

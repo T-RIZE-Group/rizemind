@@ -9,3 +9,6 @@
 .python-version
 __pycache__
 sc_env
+
+#artifacts
+output/local
