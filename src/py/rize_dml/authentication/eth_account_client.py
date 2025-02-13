@@ -5,7 +5,6 @@ from eth_account import Account
 from eth_account.datastructures import SignedMessage
 from rize_dml.authentication.signature import sign_parameters_model
 
-
 class SigningClient:
 
   client: Client

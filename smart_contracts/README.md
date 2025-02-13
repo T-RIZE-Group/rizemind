@@ -61,9 +61,6 @@ ape console --network ethereum:local:foundry
 ```
 2. Deploy the contracts
 ```
-ape run deploy MemberMgt --network ethereum:local:foundry --account TEST::0
+ape run deploy model_factory --network ethereum:local:foundry --account TEST::0
 ```
-3. Whitelist new addresses
-```
-ape run members add --network ethereum:local:foundry --account TEST::0 --member TEST::1 --contract <contract_address>
-```
+
