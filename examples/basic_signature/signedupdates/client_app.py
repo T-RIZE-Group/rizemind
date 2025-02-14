@@ -7,6 +7,7 @@ from eth_account import Account
 from rize_dml.authentication.eth_account_client import SigningClient
 from rize_dml.authentication.config import load_auth_config
 
+
 # Define Flower Client
 class FlowerClient(NumPyClient):
     def __init__(
@@ -62,7 +63,7 @@ def client_fn(context: Context):
 
     auth_config = load_auth_config("./pyproject.toml")
 
-    hd_path = f"m/44'/60'/{partition_id+1}'/0/0"
+    hd_path = f"m/44'/60'/{partition_id + 1}'/0/0"
     account = Account.from_mnemonic(auth_config.mnemonic, account_path=hd_path)
 
     # Return Client instance
@@ -71,8 +72,9 @@ def client_fn(context: Context):
         account,
         auth_config.chainid,
         auth_config.contract,
-        auth_config.name
+        auth_config.name,
     )
+
 
 Account.enable_unaudited_hdwallet_features()
 # Flower ClientApp

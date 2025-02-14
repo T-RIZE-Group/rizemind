@@ -30,10 +30,8 @@ class FlowerClient(NumPyClient):
         set_parameters(self.model, parameters)
 
         trainer = pl.Trainer(
-            max_epochs=self.max_epochs, 
-            enable_progress_bar=False,
-            strategy=DPStrategy()
-            )
+            max_epochs=self.max_epochs, enable_progress_bar=False, strategy=DPStrategy()
+        )
         trainer.fit(self.model, self.train_loader, self.val_loader)
 
         return get_parameters(self.model), len(self.train_loader.dataset), {}

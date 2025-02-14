@@ -10,6 +10,7 @@ from keras import layers
 # Make TensorFlow log less verbose
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
+
 def load_model(learning_rate: float = 0.001):
     # Define a simple CNN for CIFAR-10 and set Adam optimizer
     model = keras.Sequential(
