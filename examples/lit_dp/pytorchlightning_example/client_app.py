@@ -6,15 +6,15 @@ from flwr.client import Client, ClientApp, NumPyClient
 from flwr.common import Context
 
 from pytorchlightning_example.dp_strategy import DPStrategy
-
-disable_progress_bar()
-
 from pytorchlightning_example.task import (
     LitAutoEncoder,
     get_parameters,
     load_data,
     set_parameters,
 )
+
+
+disable_progress_bar()
 
 
 class FlowerClient(NumPyClient):

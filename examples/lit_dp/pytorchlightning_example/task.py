@@ -65,7 +65,7 @@ class LitAutoEncoder(pl.LightningModule):
             self.log(f"{stage}_loss", loss, prog_bar=True)
 
     def on_train_epoch_end(self) -> None:
-        test = "tt"
+        _ = "tt"
         # Logging privacy spent: (epsilon, delta)
         # epsilon = self.privacy_engine.get_epsilon(self.delta)
         # self.log("epsilon", epsilon, on_epoch=True, prog_bar=True)

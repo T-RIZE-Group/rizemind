@@ -672,7 +672,7 @@ def get_from_ipfs(account):
     ipfs_client = ipfshttpclient.Client("/dns/ipfs.infura.io/tcp/5001/https")
     rounds = MemberMgt.functions.round().call()
     model_info = MemberMgt.functions.clientHistory(account, rounds).call()
-    file = ipfs_client.get(model_info[3])
+    _ = ipfs_client.get(model_info[3])
     return model_info[3]
 
 

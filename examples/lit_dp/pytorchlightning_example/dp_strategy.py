@@ -53,7 +53,7 @@ class DPStrategy(SingleDeviceStrategy):
         self.model, optimizer, dataloader = self.privacy_engine.make_private(
             module=self.model,
             optimizer=optimizer,
-            data_loader=dataloader,
+            data_loader=dataloader,  # noqa: F821
             noise_multiplier=self.noise_multiplier,
             max_grad_norm=max_grad_norm,
             poisson_sampling=self.poisson_sampling,

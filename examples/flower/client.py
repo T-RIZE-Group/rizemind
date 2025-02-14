@@ -680,7 +680,7 @@ def get_from_ipfs(account):
     ipfs_client = ipfshttpclient.Client("/dns/ipfs.infura.io/tcp/5001/https")
     rounds = MemberMgt.functions.round().call()
     model_info = MemberMgt.functions.clientHistory(account, rounds).call()
-    file = ipfs_client.get(model_info[3])
+    _ = ipfs_client.get(model_info[3])
     return model_info[3]
 
 
@@ -795,7 +795,7 @@ class CifarClient(fl.client.NumPyClient):
         return (
             model.get_weights(),
             len(x_train),
-            {"accuracy": float(accuracy), signature: "0xclientsign"},
+            {"accuracy": float(accuracy), "signature": "0xclientsign"},
         )
 
     def evaluate(self, parameters, config):
@@ -804,7 +804,7 @@ class CifarClient(fl.client.NumPyClient):
         return loss, len(x_test), {"accuracy": float(accuracy)}
 
     def submit_model_update(self, parameters):
-        model_hash = hash_model_update(parameters)
+        _ = hash_model_update(parameters)
         ipfs_hash = add_to_ipfs("model_weights.pkl", model)
         gas_estimate, execution_time, receipt = estimate_gas_and_time(
             MemberMgt.functions.addModel, ipfs_hash
