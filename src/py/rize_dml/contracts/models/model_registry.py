@@ -28,11 +28,11 @@ class ModelRegistry:
     def get_eip712_domain(self) -> EIP712Domain:
         resp = self.model.functions.eip712Domain().call()
         return EIP712Domain(
-            fields=resp.fields,
-            name=resp.name,
-            version=resp.version,
-            chainId=resp.chainId,
-            verifyingContract=resp.verifyingContract,
-            salt=resp.salt,
-            extensions=resp.extensions,
+            fields=resp[0],
+            name=resp[1],
+            version=resp[2],
+            chainId=resp[3],
+            verifyingContract=resp[4],
+            salt=resp[5],
+            extensions=resp[6],
         )
