@@ -45,6 +45,4 @@ options.num-supernodes = 10
 
 [tool.web3]
 mnemonic = "test test test test test test test test test test test junk"
-chainid = 1
-contract = "0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5"
 name = "test_model"
