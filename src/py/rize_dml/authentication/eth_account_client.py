@@ -22,7 +22,6 @@ class SigningClient:
     def fit(self, ins: FitIns):
         # Call the original fit method on the proxied Client
         results: FitRes = self.client.fit(ins)
-
         contract_address = str(ins.config["address"])
         round = ins.config["current_round"]
         round_in_int = ensure_int(round)
