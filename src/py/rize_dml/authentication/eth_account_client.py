@@ -10,12 +10,9 @@ from eth_account import Account
 
 class SigningClient:
     client: Client
-    model: ModelRegistryV1
     account: Account
 
     def __init__(self, client: Client, account: Account):
-        contract_address = str(FitIns.config["address"])
-        self.model = ModelRegistryV1.from_address(contract_address)
         self.client = client
         self.account = account
 
@@ -26,15 +23,18 @@ class SigningClient:
         # Call the original fit method on the proxied Client
         results: FitRes = self.client.fit(ins)
 
+        contract_address = str(ins.config["address"])
         round = ins.config["current_round"]
         round_in_int = ensure_int(round)
-        signature = self._sign(results, round_in_int)
+        signature = self._sign(res=results, round=round_in_int, contract_address=contract_address)
 
         results.metrics = results.metrics | signature
         return results
 
-    def _sign(self, res: FitRes, round: int) -> Dict[str, bytes]:
-        eip712_domain = self.model.get_eip712_domain()
+    def _sign(self, res: FitRes, round: int, contract_address: str) -> Dict[str, bytes]:
+        model = ModelRegistryV1.from_address(contract_address)
+        eip712_domain = model.get_eip712_domain()
+
         # Output Signer
         signature = sign_parameters_model(
             account=self.account,

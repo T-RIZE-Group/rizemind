@@ -69,9 +69,6 @@ def client_fn(context: Context):
     return SigningClient(
         FlowerClient(learning_rate, data, epochs, batch_size, verbose).to_client(),
         account,
-        auth_config.chainid,
-        auth_config.contract,
-        auth_config.name
     )
 
 Account.enable_unaudited_hdwallet_features()
