@@ -1,0 +1,14 @@
+data
+**/*.egg-info
+# Ignore virtual environment
+**/venv/
+**/.venv/
+# Ignore Python cache files
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/pytest_cache
+**/.pytest_cache
+
+poetry.lock
+*.pkl

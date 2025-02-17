@@ -1,4 +1,0 @@
-name: smart_contracts
-plugins:
-- name: solidity
-- name: foundry

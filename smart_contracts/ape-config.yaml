@@ -1,0 +1,21 @@
+name: smart_contracts
+plugins:
+- name: solidity
+- name: foundry
+
+dependencies:
+  - name: openzeppelin
+    github: OpenZeppelin/openzeppelin-contracts
+    version: 5.1.0
+  - name: ozupgradeable
+    github: OpenZeppelin/openzeppelin-contracts-upgradeable
+    version: 5.1.0
+    config_override:
+      solidity:
+        import_remapping:
+          - "@openzeppelin=contracts/.cache/openzeppelin-contracts/release-v5.1"
+
+
+test:
+  mnemonic: test test test test test test test test test test test junk
+  number_of_accounts: 10
