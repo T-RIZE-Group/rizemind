@@ -3,10 +3,19 @@ from rize_dml.contracts.deployed_contracts import load_contract_data
 from rize_dml.contracts.models.model_registry_v1 import ModelRegistryV1
 from web3 import Web3
 from eth_account import Account
+from pydantic import BaseModel, Field
 
+class ModelV1Config(BaseModel):
+    name: str = Field(..., description="The model name")
+    ticker: str | None = Field(None, description="The ticker symbol of the model")
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        if self.ticker is None:
+            self.ticker = self.name  # Default to name if ticker is not provided
 
 def deploy_new_model_v1(
-    deployer: Account, name: str, member_address: List[str]
+    deployer: Account, config: ModelV1Config, member_address: List[str]
 ) -> ModelRegistryV1:
     factory_meta = load_contract_data(
         "ModelRegistryFactory", "smart_contracts/output/local"
@@ -17,7 +26,7 @@ def deploy_new_model_v1(
     factory = w3.eth.contract(abi=factory_meta.abi, address=factory_meta.address)
 
     tx = factory.functions.createModel(
-        name, name, deployer.address, member_address
+        config.name, config.ticker, deployer.address, member_address
     ).build_transaction(
         {
             "from": deployer.address,

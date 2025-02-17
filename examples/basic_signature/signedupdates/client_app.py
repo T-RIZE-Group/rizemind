@@ -2,10 +2,11 @@
 
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
+from rize_dml.authentication.config import AccountConfig
+from rize_dml.configuration.toml_config import TomlConfig
 from .task import load_data, load_model
 from eth_account import Account
 from rize_dml.authentication.eth_account_client import SigningClient
-from rize_dml.authentication.config import load_auth_config
 
 
 # Define Flower Client
@@ -61,10 +62,9 @@ def client_fn(context: Context):
     verbose = context.run_config.get("verbose")
     learning_rate = context.run_config["learning-rate"]
 
-    auth_config = load_auth_config("./pyproject.toml")
-
-    hd_path = f"m/44'/60'/{partition_id + 1}'/0/0"
-    account = Account.from_mnemonic(auth_config.mnemonic, account_path=hd_path)
+    auth_config = TomlConfig("./pyproject.toml")
+    account_config = AccountConfig(**auth_config.get("tool.eth.account"))
+    account = account_config.get_account(partition_id + 1)
 
     # Return Client instance
     return SigningClient(
