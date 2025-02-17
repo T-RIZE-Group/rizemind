@@ -27,6 +27,7 @@ class EthAccountStrategy(Strategy):
         # access to it
         for _, fit_ins in client_instructions:
             fit_ins.config["address"] = self.address
+            fit_ins.config["current_round"] = server_round
         return client_instructions
 
     def aggregate_fit(self, server_round, results, failures):
