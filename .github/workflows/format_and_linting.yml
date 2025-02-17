@@ -1,0 +1,21 @@
+name: Ruff Linter and Formatter
+run-name: Ruff is checking the linting and formatting
+on: pull_request
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Ruff lint check
+        uses: astral-sh/ruff-action@v3
+        with:
+          version: "latest"
+          args: "check"
+
+      - name: Run Ruff format check
+        uses: astral-sh/ruff-action@v3
+        with:
+          version: "latest"
+          args: "format --check"

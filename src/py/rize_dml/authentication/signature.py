@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import NamedTuple, Tuple
 from eth_typing import HexStr
 from web3 import Web3
 from eth_account.messages import encode_typed_data
@@ -12,6 +12,12 @@ class EIP712DomainAttrib(TypedDict):
     version: str
     chainId: int
     verifyingContract: str
+
+
+class SignedMessage(NamedTuple):
+    r: int
+    s: int
+    v: int
 
 
 def prepare_eip712_domain(
@@ -109,7 +115,7 @@ def sign_parameters_model(
     contract: str,
     name: str,
     round: int,
-):
+) -> SignedMessage:
     """
     Signs a model's parameters using the EIP-712 standard.
 

@@ -1,15 +1,15 @@
 import flwr as fl
 from web3 import Web3
-#import ipfshttpclient
+
+# import ipfshttpclient
 import json
 import pickle
 import ipfshttpclient
-import requests
 import csv
-import time 
+import time
 
-# Smart contract address and ABI  
-contract_address = '0x0165878A594ca255338adfa4d48449f69242Eb8F'
+# Smart contract address and ABI
+contract_address = "0x0165878A594ca255338adfa4d48449f69242Eb8F"
 web3 = Web3(Web3.HTTPProvider("HTTP://127.0.0.1:7545"))
 MemberMgtAbi = json.loads(""" [
     
@@ -641,99 +641,137 @@ MemberMgtAbi = json.loads(""" [
       ]
     """)
 MemberMgt = web3.eth.contract(address=contract_address, abi=MemberMgtAbi)
-#print(10**18)
+# print(10**18)
 
 # Select an account to use for transactions (you can change the index as needed)
 account_index = 0
 private_key = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
-#account = web3.eth.account.privateKeyToAccount(private_key)
+# account = web3.eth.account.privateKeyToAccount(private_key)
 account = web3.eth.account.from_key(private_key)
 web3.eth.defaultAccount = account.address
 
 # IPFS client setup
-#ipfs_client = ipfshttpclient.connect()
+# ipfs_client = ipfshttpclient.connect()
 
 
 def appendFile(fileName, msg):
     with open(fileName, "a") as f:
         f.write(msg + "\n")
 
+
 def add_to_ipfs(provider, model):
-    ipfs_client = ipfshttpclient.Client('/dns/ipfs.infura.io/tcp/5001/https')
+    ipfs_client = ipfshttpclient.Client("/dns/ipfs.infura.io/tcp/5001/https")
     with open(provider, "wb") as model_file:
         obj_out = {"model_provider": provider, "model": model}
         pickle.dump(obj_out, model_file)
     ipfsFile = ipfs_client.add(provider)
-    return ipfsFile['Hash']
+    return ipfsFile["Hash"]
+
 
 def get_from_ipfs(account):
-    ipfs_client = ipfshttpclient.Client('/dns/ipfs.infura.io/tcp/5001/https')
+    ipfs_client = ipfshttpclient.Client("/dns/ipfs.infura.io/tcp/5001/https")
     rounds = MemberMgt.functions.round().call()
     model_info = MemberMgt.functions.clientHistory(account, rounds).call()
-    file = ipfs_client.get(model_info[3])
+    _ = ipfs_client.get(model_info[3])
     return model_info[3]
+
 
 def estimate_gas_and_time(function, *args):
     start_time = time.time()
-    gas_estimate = function.estimateGas({'from': account.address}, *args)
-    tx_hash = function.transact({'from': account.address}, *args)
+    gas_estimate = function.estimateGas({"from": account.address}, *args)
+    tx_hash = function.transact({"from": account.address}, *args)
     receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
     end_time = time.time()
     execution_time = end_time - start_time
     return gas_estimate, execution_time, receipt
+
 
 def log_to_csv(data, filename="blockchain_logs.csv"):
     with open(filename, "a", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(data)
 
+
 def start_new_round():
-    estimate = MemberMgt.functions.startNewRound().estimateGas({'from': web3.eth.defaultAccount})
+    estimate = MemberMgt.functions.startNewRound().estimateGas(
+        {"from": web3.eth.defaultAccount}
+    )
     print("startNewRound Function Gas cost", estimate)
     start_time = time.time()
-    tx_hash = MemberMgt.functions.startNewRound().transact({'from': web3.eth.defaultAccount})
+    tx_hash = MemberMgt.functions.startNewRound().transact(
+        {"from": web3.eth.defaultAccount}
+    )
     receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
     print("--- %s seconds for start new round ---" % (time.time() - start_time))
     return receipt
 
+
 def propose_add_member(member_address):
-    gas_estimate, execution_time, receipt = estimate_gas_and_time(MemberMgt.functions.proposeAddMember, member_address)
+    gas_estimate, execution_time, receipt = estimate_gas_and_time(
+        MemberMgt.functions.proposeAddMember, member_address
+    )
     log_to_csv(["propose_add_member", gas_estimate, execution_time])
     return receipt
 
+
 def propose_remove_member(member_address):
-    gas_estimate, execution_time, receipt = estimate_gas_and_time(MemberMgt.functions.proposeRemoveMember, member_address)
+    gas_estimate, execution_time, receipt = estimate_gas_and_time(
+        MemberMgt.functions.proposeRemoveMember, member_address
+    )
     log_to_csv(["propose_remove_member", gas_estimate, execution_time])
     return receipt
 
+
 def sign_proposal(proposal_id):
-    gas_estimate, execution_time, receipt = estimate_gas_and_time(MemberMgt.functions.signProposal, proposal_id)
+    gas_estimate, execution_time, receipt = estimate_gas_and_time(
+        MemberMgt.functions.signProposal, proposal_id
+    )
     log_to_csv(["sign_proposal", gas_estimate, execution_time])
     return receipt
+
 
 def is_whitelisted(address):
     return MemberMgt.functions.isWhitelisted(address).call()
 
+
 def submit_model_update(model_hash, signature):
-    gas_estimate, execution_time, receipt = estimate_gas_and_time(MemberMgt.functions.submitModelUpdate, model_hash, signature)
+    gas_estimate, execution_time, receipt = estimate_gas_and_time(
+        MemberMgt.functions.submitModelUpdate, model_hash, signature
+    )
     log_to_csv(["submit_model_update", gas_estimate, execution_time])
     return receipt
 
+
 def verify_model_update(model_hash):
-    gas_estimate, execution_time, receipt = estimate_gas_and_time(MemberMgt.functions.verifyModelUpdate, model_hash)
+    gas_estimate, execution_time, receipt = estimate_gas_and_time(
+        MemberMgt.functions.verifyModelUpdate, model_hash
+    )
     log_to_csv(["verify_model_update", gas_estimate, execution_time])
     return receipt
 
+
 def verify_signature(model_hash, signature, signer):
-    message_hash = Web3.solidityKeccak(['bytes32'], [model_hash])
-    message_hash_bytes = bytes.fromhex(message_hash.hex()[2:])  # Convert hex string to bytes (excluding "0x" prefix)
-    recovered_address = web3.eth.account.recover_message(message_hash_bytes, signature=signature)
+    message_hash = Web3.solidityKeccak(["bytes32"], [model_hash])
+    message_hash_bytes = bytes.fromhex(
+        message_hash.hex()[2:]
+    )  # Convert hex string to bytes (excluding "0x" prefix)
+    recovered_address = web3.eth.account.recover_message(
+        message_hash_bytes, signature=signature
+    )
     return recovered_address == signer
 
+
 def aggregate_updates(updates):
-    valid_updates = [update for update in updates if verify_signature(update['model_hash'], update['signature'], update['signer'])]
-    aggregated_update = sum([update['model_update'] for update in valid_updates]) / len(valid_updates)
+    valid_updates = [
+        update
+        for update in updates
+        if verify_signature(update["model_hash"], update["signature"], update["signer"])
+    ]
+    aggregated_update = sum([update["model_update"] for update in valid_updates]) / len(
+        valid_updates
+    )
     return aggregated_update
+
 
 def weighted_average(metrics):
     accuracies = [num_examples * m.get("accuracy", 0.0) for num_examples, m in metrics]
@@ -742,6 +780,7 @@ def weighted_average(metrics):
         return {"accuracy": sum(accuracies) / examples}
     else:
         return {"accuracy": 0.0}  # Handle the case where no examples were processed
+
 
 """ def fit_metrics_aggregation_fn(metrics):
     accuracies = [num_examples * m.get("accuracy", 0.0) for num_examples, m in metrics]
@@ -757,7 +796,7 @@ fl.server.start_server(
     config=fl.server.ServerConfig(num_rounds=3),
     strategy=fl.server.strategy.FedAvg(
         evaluate_metrics_aggregation_fn=weighted_average,
-        fit_metrics_aggregation_fn=weighted_average  # vv
+        fit_metrics_aggregation_fn=weighted_average,  # vv
     ),
 )
 

@@ -18,9 +18,7 @@ logging.getLogger("pytorch_lightning").setLevel(logging.WARNING)
 
 
 class LitAutoEncoder(pl.LightningModule):
-    def __init__(self,
-        lr: float = 0.1
-    ) -> None:
+    def __init__(self, lr: float = 0.1) -> None:
         super().__init__()
         self.lr = lr
         self.encoder = nn.Sequential(
@@ -33,7 +31,6 @@ class LitAutoEncoder(pl.LightningModule):
             nn.ReLU(),
             nn.Linear(64, 28 * 28),
         )
-
 
     def forward(self, x) -> Any:
         embedding = self.encoder(x)
@@ -66,12 +63,12 @@ class LitAutoEncoder(pl.LightningModule):
         loss = F.mse_loss(x_hat, x)
         if stage:
             self.log(f"{stage}_loss", loss, prog_bar=True)
-    
+
     def on_train_epoch_end(self) -> None:
-        test= "tt"
+        _ = "tt"
         # Logging privacy spent: (epsilon, delta)
-        #epsilon = self.privacy_engine.get_epsilon(self.delta)
-        #self.log("epsilon", epsilon, on_epoch=True, prog_bar=True)
+        # epsilon = self.privacy_engine.get_epsilon(self.delta)
+        # self.log("epsilon", epsilon, on_epoch=True, prog_bar=True)
 
 
 def get_parameters(model):
