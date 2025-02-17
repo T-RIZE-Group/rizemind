@@ -1,3 +1,6 @@
+from typing import List
+from eth_pydantic_types import Address
+import numpy
 from rize_dml.contracts.access_control.FlAccessControl import FlAccessControl
 from rize_dml.contracts.deployed_contracts import load_contract_data
 from rize_dml.contracts.models.model_registry import ModelRegistry
@@ -9,6 +12,9 @@ class ModelRegistryV1(FlAccessControl, ModelRegistry):
     def __init__(self, model: Contract):
         FlAccessControl.__init__(self, model)
         ModelRegistry.__init__(self, model)
+
+    def distribute(self, addresses: List[Address], compensation: List[numpy.uint64]):
+        return self.model.functions.distribute(addresses, compensation).call()
 
     @staticmethod
     def from_address(address: str) -> "ModelRegistryV1":
