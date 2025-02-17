@@ -13,6 +13,7 @@ class EIP712DomainAttrib(TypedDict):
     chainId: int
     verifyingContract: str
 
+
 class SignedMessage(NamedTuple):
     r: int
     s: int
