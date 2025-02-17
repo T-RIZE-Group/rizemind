@@ -1,4 +1,4 @@
-import tomli    
+import tomli
 from mnemonic import Mnemonic
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
@@ -24,23 +24,18 @@ class AccountConfig(BaseModel):
 
 @DeprecationWarning
 class SimulationConfig:
-  mnemonic: str
-  chainid: int
-  contract: str
-  name: str
-
-  def __init__(self,
-    mnemonic: str,
-    chainid: int,
-    contract: str,
+    mnemonic: str
+    chainid: int
+    contract: str
     name: str
-  ):
-      self.mnemonic = mnemonic
-      self.chainid = chainid
-      self.contract = contract
-      self.name = name
 
-  def get_account(self, i: int) -> LocalAccount:
-    hd_path = f"m/44'/60'/{i}'/0/0"
-    Account.enable_unaudited_hdwallet_features()
-    return Account.from_mnemonic(self.mnemonic, account_path=hd_path)
+    def __init__(self, mnemonic: str, chainid: int, contract: str, name: str):
+        self.mnemonic = mnemonic
+        self.chainid = chainid
+        self.contract = contract
+        self.name = name
+
+    def get_account(self, i: int) -> LocalAccount:
+        hd_path = f"m/44'/60'/{i}'/0/0"
+        Account.enable_unaudited_hdwallet_features()
+        return Account.from_mnemonic(self.mnemonic, account_path=hd_path)

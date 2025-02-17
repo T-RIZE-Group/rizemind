@@ -2,7 +2,6 @@
 
 from typing import List, Tuple
 
-from eth_account import Account
 from flwr.common import Context, Metrics, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
@@ -44,17 +43,15 @@ def server_fn(context: Context):
 
     account = auth_config.get_account(0)
     members = []
-    for i in range(1,11):
+    for i in range(1, 11):
         trainer = auth_config.get_account(i)
         members.append(trainer.address)
     contract = deploy_new_model_v1(account, auth_config.name, members)
 
     config = ServerConfig(num_rounds=num_rounds)
-    authStrategy = EthAccountStrategy(
-        strategy,
-        contract
-    )
+    authStrategy = EthAccountStrategy(strategy, contract)
     return ServerAppComponents(strategy=authStrategy, config=config)
+
 
 # Create ServerApp
 app = ServerApp(server_fn=server_fn)

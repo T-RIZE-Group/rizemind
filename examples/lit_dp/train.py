@@ -1,19 +1,9 @@
-
-import os
-import warnings
-
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import Timer
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-import torchmetrics
-from opacus import PrivacyEngine
-from opacus.data_loader import DPDataLoader
-from opacus.lightning import DPLightningDataModule
 from pytorchlightning_example.dp_strategy import DPStrategy
 
 from pytorchlightning_example.task import LitAutoEncoder, load_data
+
 
 def main():
     """
@@ -27,12 +17,10 @@ def main():
         strategy=DPStrategy(),
         devices=1,
         accelerator="cpu",
-        callbacks=[Timer(duration="00:00:00:30")]
+        callbacks=[Timer(duration="00:00:00:30")],
     )
     trainer.fit(model, train, val)
     trainer.test(model, test)
-
-
 
 
 if __name__ == "__main__":
