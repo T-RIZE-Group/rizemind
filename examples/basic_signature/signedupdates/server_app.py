@@ -6,6 +6,9 @@ from flwr.common import Context, Metrics, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
 from rize_dml.authentication.config import load_auth_config
+from rize_dml.contracts.compensation.simple_compensation_startegy import (
+    SimpleCompensationStrategy,
+)
 from rize_dml.contracts.deploy.model_v1 import deploy_new_model_v1
 from .task import load_model
 from rize_dml.authentication.eth_account_strategy import EthAccountStrategy
@@ -45,10 +48,10 @@ def server_fn(context: Context):
     for i in range(1, 11):
         trainer = auth_config.get_account(i)
         members.append(trainer.address)
-    contract = deploy_new_model_v1(account, auth_config.name, members)
 
-    config = ServerConfig(num_rounds=num_rounds)
-    authStrategy = EthAccountStrategy(strategy, contract)
+    contract = deploy_new_model_v1(account, auth_config.name, members)
+    config = ServerConfig(num_rounds=int(num_rounds))
+    authStrategy = SimpleCompensationStrategy(EthAccountStrategy(strategy, contract))
     return ServerAppComponents(strategy=authStrategy, config=config)
 
 
