@@ -1,4 +1,5 @@
 from flwr.server.strategy import Strategy
+from flwr.server.client_proxy import ClientProxy
 from flwr.common.typing import FitRes
 from rize_dml.authentication.signature import recover_model_signer
 from rize_dml.contracts.models.model_registry_v1 import ModelRegistryV1
@@ -9,7 +10,11 @@ class EthAccountStrategy(Strategy):
     model: ModelRegistryV1
     address: str
 
-    def __init__(self, strat: Strategy, model: ModelRegistryV1):
+    def __init__(
+        self,
+        strat: Strategy,
+        model: ModelRegistryV1,
+    ):
         super().__init__()
         self.strat = strat
         self.model = model
@@ -31,12 +36,11 @@ class EthAccountStrategy(Strategy):
         return client_instructions
 
     def aggregate_fit(self, server_round, results, failures):
-        whitelisted = []
+        whitelisted: list[tuple[ClientProxy, FitRes]] = []
         for client, res in results:
             signer = self._recover_signer(res, server_round)
             if self.model.can_train(signer, server_round):
                 whitelisted.append((client, res))
-
         return self.strat.aggregate_fit(server_round, whitelisted, failures)
 
     def _recover_signer(self, res: FitRes, server_round: int):
