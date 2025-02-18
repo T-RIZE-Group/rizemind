@@ -10,4 +10,4 @@ class Web3Config(BaseModel):
         return Web3(self.web3_provider())
 
     def web3_provider(self) -> HTTPProvider:
-        return Web3.HTTPProvider(self.url)
+        return Web3.HTTPProvider(str(self.url))
