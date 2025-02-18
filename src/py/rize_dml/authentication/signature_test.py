@@ -29,7 +29,12 @@ def test_sign_parameters_model(eth_account):
     assert isinstance(signed_message, SignedMessage), "should return a SignedMessage"
 
     message = prepare_eip712_message(
-        chain_id, "1.0.0", contract_address, app_name, round_number, hash_parameters(model)
+        chain_id,
+        "1.0.0",
+        contract_address,
+        app_name,
+        round_number,
+        hash_parameters(model),
     )
     address = Account.recover_message(
         message, [signed_message.v, signed_message.r, signed_message.s]

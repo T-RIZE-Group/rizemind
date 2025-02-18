@@ -8,7 +8,7 @@ class FlAccessControl:
         self.fl_contract = model
 
     def is_trainer(self, address: str) -> bool:
-      return self.fl_contract.functions.isTrainer(address).call()
-    
+        return self.fl_contract.functions.isTrainer(address).call()
+
     def is_aggregator(self, address: str) -> bool:
-      return self.fl_contract.functions.isAggregator(address).call()
+        return self.fl_contract.functions.isAggregator(address).call()

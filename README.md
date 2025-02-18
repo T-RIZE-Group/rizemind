@@ -50,4 +50,5 @@ Use Ruff to run and fix linting errors
 
 ```shell
 ruff check --fix
+ruff format
 ```

@@ -8,6 +8,7 @@ from rize_dml.contracts.models.model_registry_v1 import ModelRegistryV1
 from eth_account import Account
 from web3 import Web3
 
+
 class SigningClient:
     client: Client
     account: Account

@@ -72,7 +72,7 @@ def client_fn(context: Context):
     return SigningClient(
         FlowerClient(learning_rate, data, epochs, batch_size, verbose).to_client(),
         account,
-        web3_config.get_web3()
+        web3_config.get_web3(),
     )
 
 

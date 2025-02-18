@@ -7,6 +7,7 @@ from typing import List
 from eth_account import Account
 from pydantic import BaseModel, Field
 
+
 class ModelRegistryV1(FlAccessControl, ModelRegistry):
     def __init__(self, model: Contract):
         FlAccessControl.__init__(self, model)
@@ -17,6 +18,7 @@ class ModelRegistryV1(FlAccessControl, ModelRegistry):
         model = load_contract_data("ModelRegistryV1", "smart_contracts/output/local")
         checksum_address = Web3.to_checksum_address(address)
         return ModelRegistryV1(w3.eth.contract(address=checksum_address, abi=model.abi))
+
 
 class ModelV1Config(BaseModel):
     name: str = Field(..., description="The model name")
@@ -29,8 +31,8 @@ class ModelV1Config(BaseModel):
 
     def deploy(self, deployer: Account, member_address: List[str], w3: Web3):
         factory_meta = load_contract_data(
-        "ModelRegistryFactory", f"smart_contracts/output/{w3.eth.chain_id}"
-    )
+            "ModelRegistryFactory", f"smart_contracts/output/{w3.eth.chain_id}"
+        )
         factory = w3.eth.contract(abi=factory_meta.abi, address=factory_meta.address)
 
         tx = factory.functions.createModel(
@@ -51,7 +53,9 @@ class ModelV1Config(BaseModel):
         tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
         assert tx_receipt.status != 0, "Deployment transaction failed or reverted."
 
-        event_signature = w3.keccak(text="ContractCreated(address,address,address)").hex()
+        event_signature = w3.keccak(
+            text="ContractCreated(address,address,address)"
+        ).hex()
         event_filter = factory.events.ContractCreated.create_filter(
             from_block=tx_receipt.blockNumber,
             to_block=tx_receipt.blockNumber,
