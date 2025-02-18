@@ -23,13 +23,13 @@ def test_sign_parameters_model(eth_account):
     model = Parameters(tensors=[bytes(0x87231), bytes(0x5423)], tensor_type="float32")
 
     signed_message = sign_parameters_model(
-        eth_account, model, chain_id, contract_address, app_name, round_number
+        eth_account, "1.0.0", model, chain_id, contract_address, app_name, round_number
     )
     print(type(signed_message))
     assert isinstance(signed_message, SignedMessage), "should return a SignedMessage"
 
     message = prepare_eip712_message(
-        chain_id, contract_address, app_name, round_number, hash_parameters(model)
+        chain_id, "1.0.0", contract_address, app_name, round_number, hash_parameters(model)
     )
     address = Account.recover_message(
         message, [signed_message.v, signed_message.r, signed_message.s]

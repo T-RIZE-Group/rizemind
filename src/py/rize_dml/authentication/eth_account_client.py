@@ -6,14 +6,17 @@ from rize_dml.authentication.signature import (
 )
 from rize_dml.contracts.models.model_registry_v1 import ModelRegistryV1
 from eth_account import Account
+from web3 import Web3
 
 class SigningClient:
     client: Client
     account: Account
+    w3: Web3
 
-    def __init__(self, client: Client, account: Account):
+    def __init__(self, client: Client, account: Account, w3: Web3):
         self.client = client
         self.account = account
+        self.w3 = w3
 
     def __getattr__(self, name):
         return getattr(self.client, name)
@@ -32,7 +35,7 @@ class SigningClient:
         return results
 
     def _sign(self, res: FitRes, round: int, contract_address: str) -> Dict[str, bytes]:
-        model = ModelRegistryV1.from_address(contract_address)
+        model = ModelRegistryV1.from_address(contract_address, self.w3)
         eip712_domain = model.get_eip712_domain()
 
         # Output Signer

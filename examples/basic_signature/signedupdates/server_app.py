@@ -7,7 +7,8 @@ from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
 from rize_dml.authentication.config import AccountConfig
 from rize_dml.configuration.toml_config import TomlConfig
-from rize_dml.contracts.deploy.model_v1 import ModelV1Config, deploy_new_model_v1
+from rize_dml.contracts.models.model_registry_v1 import ModelV1Config
+from rize_dml.web3.config import Web3Config
 from .task import load_model
 from rize_dml.authentication.eth_account_strategy import EthAccountStrategy
 
@@ -42,6 +43,8 @@ def server_fn(context: Context):
     num_rounds = context.run_config["num-server-rounds"]
     config = TomlConfig("./pyproject.toml")
     auth_config = AccountConfig(**config.get("tool.eth.account"))
+    web3_config = Web3Config(**config.get("tool.web3"))
+    w3 = web3_config.get_web3()
     account = auth_config.get_account(0)
     members = []
     for i in range(1, 11):
@@ -49,7 +52,7 @@ def server_fn(context: Context):
         members.append(trainer.address)
 
     model_v1_config = ModelV1Config(**config.get("tool.web3.model_v1"))
-    contract = deploy_new_model_v1(account, model_v1_config, members)
+    contract = model_v1_config.deploy(account, members, w3)
 
     config = ServerConfig(num_rounds=num_rounds)
     authStrategy = EthAccountStrategy(strategy, contract)
