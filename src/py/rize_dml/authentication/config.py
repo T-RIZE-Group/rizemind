@@ -1,10 +1,8 @@
-import tomli
 from mnemonic import Mnemonic
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
 
 from pydantic import BaseModel, Field, field_validator
-from mnemonic import Mnemonic
 
 class AccountConfig(BaseModel):
     mnemonic: str = Field(..., description="A valid BIP-39 mnemonic phrase")

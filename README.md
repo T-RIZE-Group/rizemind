@@ -26,14 +26,28 @@ pip install -e .
 ```
 4. Select the `.venv` interpreter for your IDE.
 
+5. Install the linter
+```
+curl -LsSf https://astral.sh/ruff/install.sh | sh
+```
+
 **VSCode**: `ctrl+shift+p` search for `python: select interpreter` then select the `.venv` conda env.
 
 ## Running tests
+Automated tests are written using pytest.
+
+1. Install dev dependencies
 ```shell
 pip install -e ".[dev]"
 ```
-## Project Structure
+2. ```shell
+pytest
+```
 
-- /packages/authentication: main package containing the code extending the Flower framework for authentication
-- /packages/examples: examples on how to use code from other packages
-- /packages/notebooks: keep track of your notebooks
+## Run the linter
+
+Use Ruff to run and fix linting errors
+
+```shell
+ruff check --fix
+```
