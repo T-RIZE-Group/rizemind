@@ -1,7 +1,6 @@
 from typing import Any
 from eth_account import Account
 from eth_typing import Address
-from rize_dml.authentication.config import load_auth_config
 from rize_dml.contracts.access_control.FlAccessControl import FlAccessControl
 from rize_dml.contracts.deployed_contracts import load_contract_data
 from rize_dml.contracts.models.model_registry import ModelRegistry

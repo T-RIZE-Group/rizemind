@@ -33,7 +33,7 @@ class SigningClient:
         return results
 
     def _sign(self, res: FitRes, round: int, contract_address: str) -> Dict[str, bytes]:
-        model = ModelRegistryV1.from_address(contract_address, None) # type: ignore
+        model = ModelRegistryV1.from_address(contract_address, None)  # type: ignore
         eip712_domain = model.get_eip712_domain()
 
         # Output Signer
