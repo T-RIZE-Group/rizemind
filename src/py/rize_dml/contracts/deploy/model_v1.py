@@ -49,4 +49,6 @@ def deploy_new_model_v1(
 
     model = load_contract_data("ModelRegistryV1", "smart_contracts/output/local")
 
-    return ModelRegistryV1(w3.eth.contract(address=proxy_address, abi=model.abi))
+    return ModelRegistryV1(
+        w3.eth.contract(address=proxy_address, abi=model.abi), deployer
+    )
