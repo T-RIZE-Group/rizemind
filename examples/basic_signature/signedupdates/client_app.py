@@ -2,10 +2,12 @@
 
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
+from rize_dml.authentication.config import AccountConfig
+from rize_dml.configuration.toml_config import TomlConfig
+from rize_dml.web3.config import Web3Config
 from .task import load_data, load_model
 from eth_account import Account
 from rize_dml.authentication.eth_account_client import SigningClient
-from rize_dml.authentication.config import load_auth_config
 
 
 # Define Flower Client
@@ -51,8 +53,8 @@ def client_fn(context: Context):
     """Construct a Client that will be run in a ClientApp."""
 
     # Read the node_config to fetch data partition associated to this node
-    partition_id = context.node_config["partition-id"]
-    num_partitions = context.node_config["num-partitions"]
+    partition_id = int(context.node_config["partition-id"])
+    num_partitions = int(context.node_config["num-partitions"])
     data = load_data(partition_id, num_partitions)
 
     # Read run_config to fetch hyperparameters relevant to this run
@@ -61,15 +63,16 @@ def client_fn(context: Context):
     verbose = context.run_config.get("verbose")
     learning_rate = context.run_config["learning-rate"]
 
-    auth_config = load_auth_config("./pyproject.toml")
-
-    hd_path = f"m/44'/60'/{partition_id + 1}'/0/0"
-    account = Account.from_mnemonic(auth_config.mnemonic, account_path=hd_path)
+    config = TomlConfig("./pyproject.toml")
+    account_config = AccountConfig(**config.get("tool.eth.account"))
+    account = account_config.get_account(partition_id + 1)
+    web3_config = Web3Config(**config.get("tool.web3"))
 
     # Return Client instance
     return SigningClient(
         FlowerClient(learning_rate, data, epochs, batch_size, verbose).to_client(),
         account,
+        web3_config.get_web3(),
     )
 
 

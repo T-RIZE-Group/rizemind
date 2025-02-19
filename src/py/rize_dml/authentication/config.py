@@ -1,38 +1,20 @@
-import tomli
 from mnemonic import Mnemonic
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
 
-
-def load_auth_config(config_path):
-    mnemo = Mnemonic("english")
-    with open(config_path, "rb") as f:
-        toml_dict = tomli.load(f)
-        web3_config = toml_dict.get("tool", {}).get("web3", {})
-
-    mnemonic_phrase = web3_config.get("mnemonic")
-    if not mnemo.check(mnemonic_phrase):
-        raise ValueError("Invalid mnemonic phrase")
-
-    return SimulationConfig(
-        web3_config.get("mnemonic"),
-        web3_config.get("chainid"),
-        web3_config.get("contract"),
-        web3_config.get("name"),
-    )
+from pydantic import BaseModel, Field, field_validator
 
 
-class SimulationConfig:
-    mnemonic: str
-    chainid: int
-    contract: str
-    name: str
+class AccountConfig(BaseModel):
+    mnemonic: str = Field(..., description="A valid BIP-39 mnemonic phrase")
 
-    def __init__(self, mnemonic: str, chainid: int, contract: str, name: str):
-        self.mnemonic = mnemonic
-        self.chainid = chainid
-        self.contract = contract
-        self.name = name
+    @field_validator("mnemonic")
+    @classmethod
+    def validate_mnemonic(cls, value: str) -> str:
+        mnemo = Mnemonic("english")
+        if not mnemo.check(value):
+            raise ValueError("Invalid mnemonic phrase")
+        return value
 
     def get_account(self, i: int) -> LocalAccount:
         hd_path = f"m/44'/60'/{i}'/0/0"
