@@ -52,3 +52,8 @@ Use Ruff to run and fix linting errors
 ruff check --fix
 ruff format
 ```
+
+### For VSCode
+
+1. Install the [Ruff extension](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff)
+2. Go to settings (ctrl+,), search for 'ruff save' and enable formatting on save

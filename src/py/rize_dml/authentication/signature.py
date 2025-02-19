@@ -1,4 +1,4 @@
-from typing import NamedTuple, Tuple
+from typing import Tuple
 from eth_typing import HexStr
 from web3 import Web3
 from eth_account.messages import encode_typed_data

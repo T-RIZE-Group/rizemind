@@ -5,7 +5,6 @@ from rize_dml.authentication.signature import (
     sign_parameters_model,
 )
 from rize_dml.contracts.models.model_registry_v1 import ModelRegistryV1
-from eth_account import Account
 from eth_account.signers.base import BaseAccount
 from web3 import Web3
 
