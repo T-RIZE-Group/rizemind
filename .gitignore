@@ -12,3 +12,4 @@ data
 
 poetry.lock
 *.pkl
+**/build
