@@ -3,9 +3,10 @@ from flwr.common.typing import FitRes
 from rize_dml.authentication.signature import recover_model_signer
 from rize_dml.contracts.models.model_registry_v1 import ModelRegistryV1
 
+
 class CannotTrainException(BaseException):
     def __init__(self, address: str) -> None:
-        message = f'{address} cannot train'
+        message = f"{address} cannot train"
         super().__init__(message)
 
 
