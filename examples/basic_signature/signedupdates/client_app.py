@@ -53,8 +53,8 @@ def client_fn(context: Context):
     """Construct a Client that will be run in a ClientApp."""
 
     # Read the node_config to fetch data partition associated to this node
-    partition_id = context.node_config["partition-id"]
-    num_partitions = context.node_config["num-partitions"]
+    partition_id = int(context.node_config["partition-id"])
+    num_partitions = int(context.node_config["num-partitions"])
     data = load_data(partition_id, num_partitions)
 
     # Read run_config to fetch hyperparameters relevant to this run

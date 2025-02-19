@@ -5,6 +5,7 @@ from web3 import Web3
 from web3.contract import Contract
 from typing import List
 from eth_account import Account
+from eth_account.signers.base import BaseAccount
 from pydantic import BaseModel, Field
 
 
@@ -29,7 +30,7 @@ class ModelV1Config(BaseModel):
         if self.ticker is None:
             self.ticker = self.name  # Default to name if ticker is not provided
 
-    def deploy(self, deployer: Account, member_address: List[str], w3: Web3):
+    def deploy(self, deployer: BaseAccount, member_address: List[str], w3: Web3):
         factory_meta = load_contract_data(
             "ModelRegistryFactory", f"smart_contracts/output/{w3.eth.chain_id}"
         )
@@ -51,14 +52,14 @@ class ModelV1Config(BaseModel):
         tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
 
         tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
-        assert tx_receipt.status != 0, "Deployment transaction failed or reverted."
+        assert tx_receipt["status"] != 0, "Deployment transaction failed or reverted."
 
         event_signature = w3.keccak(
             text="ContractCreated(address,address,address)"
         ).hex()
         event_filter = factory.events.ContractCreated.create_filter(
-            from_block=tx_receipt.blockNumber,
-            to_block=tx_receipt.blockNumber,
+            from_block=tx_receipt["blockNumber"],
+            to_block=tx_receipt["blockNumber"],
             topics=[event_signature, Web3.to_hex(deployer.address.encode("utf-8"))],
         )
         logs = event_filter.get_all_entries()

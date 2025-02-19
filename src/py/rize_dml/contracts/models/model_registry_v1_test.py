@@ -6,7 +6,7 @@ from web3 import Web3
 mnemonic = "test test test test test test test test test test test junk"
 
 
-def test_deploy_new_model_v1_test():
+def test_model_v1_config_deploy():
     hd_path = "m/44'/60'/0'/0/0"
     Account.enable_unaudited_hdwallet_features()
     account = Account.from_mnemonic(mnemonic, account_path=hd_path)

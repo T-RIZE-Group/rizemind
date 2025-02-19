@@ -3,6 +3,8 @@ from eth_typing import HexStr
 from web3 import Web3
 from eth_account.messages import encode_typed_data
 from eth_account import Account
+from eth_account.signers.base import BaseAccount
+from eth_account.datastructures import SignedMessage
 from typing import TypedDict
 from flwr.common.typing import Parameters, Scalar
 
@@ -12,12 +14,6 @@ class EIP712DomainAttrib(TypedDict):
     version: str
     chainId: int
     verifyingContract: str
-
-
-class SignedMessage(NamedTuple):
-    r: int
-    s: int
-    v: int
 
 
 def prepare_eip712_domain(
@@ -108,7 +104,7 @@ def hash_parameters(parameters: Parameters) -> str:
 
 
 def sign_parameters_model(
-    account: Account,
+    account: BaseAccount,
     version: str,
     parameters: Parameters,
     chainid: int,
