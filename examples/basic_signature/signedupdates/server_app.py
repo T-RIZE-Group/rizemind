@@ -17,7 +17,7 @@ from rize_dml.authentication.eth_account_strategy import EthAccountStrategy
 # Define metric aggregation function
 def weighted_average(metrics: list[tuple[int, Metrics]]) -> Metrics:
     # Multiply accuracy of each client by number of examples used
-    accuracies = [num_examples * int(m["accuracy"]) for num_examples, m in metrics]
+    accuracies = [num_examples * float(m["accuracy"]) for num_examples, m in metrics]
     examples = [num_examples for num_examples, _ in metrics]
 
     # Aggregate and return custom metric (weighted average)
