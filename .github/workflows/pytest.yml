@@ -19,8 +19,11 @@ jobs:
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Install dependencies with Poetry
+      - name: Install main dependencies with Poetry
         run: poetry install --with test --without dev
+
+      - name: Install smart contracts depenencies with Poetry
+        run: poetry install smart_contracts/pyproject.toml
 
       - name: Run tests with pytest
         run: poetry run pytest
