@@ -36,7 +36,7 @@ class EthAccountStrategy(Strategy):
         # We need to add contract address and server round to FitIns so that clients have
         # access to it
         for _, fit_ins in client_instructions:
-            fit_ins.config["aggregator_address"] = self.address
+            fit_ins.config["contract_address"] = self.address
             fit_ins.config["current_round"] = server_round
         return client_instructions
 
