@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 =================
-DML documentation
+RIZEMIND Documentation
 =================
 
 Add your content using ``reStructuredText`` syntax. See the
@@ -14,7 +14,7 @@ documentation for details.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Sections
 
    quickstarts/index
    how-tos/index
