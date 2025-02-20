@@ -23,9 +23,11 @@ mnemonic = "^0.21"
 flwr = "^1.15.1"
 ray = "^2.42.0"
 
-[tool.poetry.dev-dependencies]
-pytest = ">=6.0"
+[tool.poetry.group.dev.dependencies]
 torch = ">=1.9"
+
+[tool.poetry.group.test.dependencies]
+pytest = ">=6.0"
 
 [tool.pytest.ini_options]
 minversion = "6.2"

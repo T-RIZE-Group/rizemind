@@ -20,7 +20,7 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Install dependencies with Poetry
-        run: poetry install
+        run: poetry install --with test --without dev
 
       - name: Run tests with pytest
         run: poetry run pytest
