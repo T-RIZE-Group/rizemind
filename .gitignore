@@ -12,3 +12,7 @@ data
 
 poetry.lock
 *.pkl
+
+*.log
+
+.vscode

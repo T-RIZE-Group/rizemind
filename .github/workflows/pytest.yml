@@ -1,0 +1,26 @@
+name: Pytest
+run-name: Pytest will run to check if all tests pass
+on: pull_request
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12.9"
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install main dependencies with Poetry
+        run: poetry install --with test --without dev
+
+      - name: Run tests with pytest
+        run: poetry run pytest

@@ -1,5 +1,5 @@
-from typing import List, NamedTuple
-from eth_typing import Address
+from typing import NamedTuple
+from eth_typing import HexAddress
 from web3.contract import Contract
 
 
@@ -10,7 +10,7 @@ class EIP712Domain(NamedTuple):
     chainId: int
     verifyingContract: str
     salt: bytes
-    extensions: List[int]
+    extensions: list[int]
 
 
 class ModelRegistry:
@@ -19,7 +19,7 @@ class ModelRegistry:
     def __init__(self, model: Contract):
         self.model = model
 
-    def can_train(self, trainer: Address, round_id: int) -> bool:
+    def can_train(self, trainer: HexAddress, round_id: int) -> bool:
         return self.model.functions.canTrain(trainer, round_id).call()
 
     def current_round(self) -> int:

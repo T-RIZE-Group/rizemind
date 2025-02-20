@@ -1,23 +1,46 @@
+from typing import Any, cast
+from eth_typing import Address
+from pydantic import BaseModel, Field
 from rize_dml.contracts.access_control.FlAccessControl import FlAccessControl
 from rize_dml.contracts.deployed_contracts import load_contract_data
 from rize_dml.contracts.models.model_registry import ModelRegistry
 from web3 import Web3
-from web3.contract import Contract
-from typing import List
 from eth_account.signers.base import BaseAccount
-from pydantic import BaseModel, Field
+from web3.contract import Contract
+from eth_account.types import TransactionDictType
 
 
 class ModelRegistryV1(FlAccessControl, ModelRegistry):
-    def __init__(self, model: Contract):
+    account: BaseAccount
+    w3: Web3
+
+    def __init__(self, model: Contract, account: BaseAccount, w3: Web3):
         FlAccessControl.__init__(self, model)
         ModelRegistry.__init__(self, model)
+        self.account = account
+        self.w3 = w3
+
+    def distribute(self, trainers: list[Address], contributions: list[Any]) -> bool:
+        tx = self.model.functions.distribute(trainers, contributions).build_transaction(
+            {
+                "from": self.account.address,
+                "nonce": self.w3.eth.get_transaction_count(self.account.address),
+                "gas": 2000000,
+                "gasPrice": self.w3.to_wei("20", "gwei"),
+            }
+        )
+        signed_tx = self.account.sign_transaction(cast(TransactionDictType, tx))
+        tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+        tx_receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
+        return tx_receipt["status"] == 0
 
     @staticmethod
-    def from_address(address: str, w3: Web3) -> "ModelRegistryV1":
+    def from_address(address: str, account: BaseAccount, w3: Web3) -> "ModelRegistryV1":
         model = load_contract_data("ModelRegistryV1", "smart_contracts/output/local")
         checksum_address = Web3.to_checksum_address(address)
-        return ModelRegistryV1(w3.eth.contract(address=checksum_address, abi=model.abi))
+        return ModelRegistryV1(
+            w3.eth.contract(address=checksum_address, abi=model.abi), account, w3
+        )
 
 
 class ModelV1Config(BaseModel):
@@ -29,11 +52,13 @@ class ModelV1Config(BaseModel):
         if self.ticker is None:
             self.ticker = self.name  # Default to name if ticker is not provided
 
-    def deploy(self, deployer: BaseAccount, member_address: List[str], w3: Web3):
+    def deploy(self, deployer: BaseAccount, member_address: list[str], w3: Web3):
         factory_meta = load_contract_data(
             "ModelRegistryFactory", f"smart_contracts/output/{w3.eth.chain_id}"
         )
-        factory = w3.eth.contract(abi=factory_meta.abi, address=factory_meta.address)
+        factory = w3.eth.contract(
+            abi=factory_meta.abi, address=cast(Address, factory_meta.address)
+        )
 
         tx = factory.functions.createModel(
             self.name, self.ticker, deployer.address, member_address
@@ -46,7 +71,7 @@ class ModelV1Config(BaseModel):
             }
         )
 
-        signed_tx = deployer.sign_transaction(tx)
+        signed_tx = deployer.sign_transaction(cast(TransactionDictType, tx))
 
         tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
 
@@ -70,4 +95,6 @@ class ModelV1Config(BaseModel):
 
         model = load_contract_data("ModelRegistryV1", "smart_contracts/output/local")
 
-        return ModelRegistryV1(w3.eth.contract(address=proxy_address, abi=model.abi))
+        return ModelRegistryV1(
+            w3.eth.contract(address=proxy_address, abi=model.abi), deployer, w3
+        )
