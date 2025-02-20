@@ -1,4 +1,4 @@
-from typing import List, NamedTuple
+from typing import NamedTuple
 from eth_typing import HexAddress
 from web3.contract import Contract
 
@@ -10,7 +10,7 @@ class EIP712Domain(NamedTuple):
     chainId: int
     verifyingContract: str
     salt: bytes
-    extensions: List[int]
+    extensions: list[int]
 
 
 class ModelRegistry:

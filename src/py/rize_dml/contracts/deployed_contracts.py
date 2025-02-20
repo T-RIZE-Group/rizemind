@@ -1,13 +1,12 @@
 from pydantic import BaseModel
 from eth_pydantic_types import Address
-from typing import List
 from pathlib import Path
 import json
 
 
 class DeployedContract(BaseModel):
     address: Address
-    abi: List[dict]
+    abi: list[dict]
 
 
 def load_contract_data(contract_name, output_folder="output") -> DeployedContract:

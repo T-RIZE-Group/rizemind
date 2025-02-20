@@ -1,6 +1,6 @@
 import tomli
 from pathlib import Path
-from typing import Any, List, Optional, Union
+from typing import Any, Optional, Union
 from functools import reduce
 
 
@@ -27,11 +27,11 @@ class TomlConfig:
         """Return the loaded TOML dictionary."""
         return self._data
 
-    def get(self, keys: Union[List[str], str], default: Optional[Any] = None) -> Any:
+    def get(self, keys: Union[list[str], str], default: Optional[Any] = None) -> Any:
         """
         Retrieve a nested value from the config safely.
 
-        :param keys: List of keys representing the path to the value.
+        :param keys: list of keys representing the path to the value.
         :param default: Default value to return if the key path does not exist.
         :return: The value at the given key path or the default value.
         """

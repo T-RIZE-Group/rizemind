@@ -8,9 +8,6 @@ from rize_dml.contracts.models.model_registry import ModelRegistry
 from web3 import Web3
 from eth_account.signers.base import BaseAccount
 from web3.contract import Contract
-from typing import List
-from eth_account.signers.base import BaseAccount
-from pydantic import BaseModel, Field
 
 
 class ModelRegistryV1(FlAccessControl, ModelRegistry):
