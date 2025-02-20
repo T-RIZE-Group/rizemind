@@ -1,11 +1,11 @@
+from eth_typing import HexAddress
 from pydantic import BaseModel
-from eth_pydantic_types import Address
 from pathlib import Path
 import json
 
 
 class DeployedContract(BaseModel):
-    address: Address
+    address: HexAddress
     abi: list[dict]
 
 
