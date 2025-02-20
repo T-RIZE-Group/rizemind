@@ -31,8 +31,11 @@ def server_fn(context: Context):
     parameters = ndarrays_to_parameters(load_model().get_weights())
     print(context.run_config)
     print(context.node_config)
+    print(context.run_config)
+    print(context.node_config)
     # Define the strategy
     strategy = FedAvg(
+        fraction_fit=float(context.run_config["fraction-fit"]),
         fraction_fit=float(context.run_config["fraction-fit"]),
         fraction_evaluate=1.0,
         min_available_clients=2,
@@ -40,6 +43,11 @@ def server_fn(context: Context):
         evaluate_metrics_aggregation_fn=weighted_average,
     )
     # Read from config
+    num_rounds = int(context.run_config["num-server-rounds"])
+    config = TomlConfig("./pyproject.toml")
+    auth_config = AccountConfig(**config.get("tool.eth.account"))
+    web3_config = Web3Config(**config.get("tool.web3"))
+    w3 = web3_config.get_web3()
     num_rounds = int(context.run_config["num-server-rounds"])
     config = TomlConfig("./pyproject.toml")
     auth_config = AccountConfig(**config.get("tool.eth.account"))
