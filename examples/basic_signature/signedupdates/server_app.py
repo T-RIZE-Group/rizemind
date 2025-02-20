@@ -5,10 +5,13 @@ from typing import List, Tuple
 from flwr.common import Context, Metrics, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
+from rize_dml.authentication.config import AccountConfig
 from rize_dml.contracts.compensation.simple_compensation_startegy import (
     SimpleCompensationStrategy,
 )
-from rize_dml.contracts.deploy.model_v1 import deploy_new_model_v1
+from rize_dml.web3.config import Web3Config
+from rize_dml.configuration.toml_config import TomlConfig
+from rize_dml.contracts.models.model_registry_v1 import ModelV1Config
 from .task import load_model
 from rize_dml.authentication.eth_account_strategy import EthAccountStrategy
 
@@ -31,11 +34,8 @@ def server_fn(context: Context):
     parameters = ndarrays_to_parameters(load_model().get_weights())
     print(context.run_config)
     print(context.node_config)
-    print(context.run_config)
-    print(context.node_config)
     # Define the strategy
     strategy = FedAvg(
-        fraction_fit=float(context.run_config["fraction-fit"]),
         fraction_fit=float(context.run_config["fraction-fit"]),
         fraction_evaluate=1.0,
         min_available_clients=2,
@@ -43,11 +43,6 @@ def server_fn(context: Context):
         evaluate_metrics_aggregation_fn=weighted_average,
     )
     # Read from config
-    num_rounds = int(context.run_config["num-server-rounds"])
-    config = TomlConfig("./pyproject.toml")
-    auth_config = AccountConfig(**config.get("tool.eth.account"))
-    web3_config = Web3Config(**config.get("tool.web3"))
-    w3 = web3_config.get_web3()
     num_rounds = int(context.run_config["num-server-rounds"])
     config = TomlConfig("./pyproject.toml")
     auth_config = AccountConfig(**config.get("tool.eth.account"))
