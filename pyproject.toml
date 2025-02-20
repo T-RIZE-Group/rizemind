@@ -3,13 +3,13 @@ requires = ["poetry-core>=1.4.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "rize_dml"
+name = "rizemind"
 version = "0.1.0"
 description = "RIZE DML: suite of Flower extensions for Decentralizing Machine Learning"
 license = "Apache-2.0"
 authors = ["T-RIZE Labs <michael.duchesne@t-rize.io>"]
 packages = [
-    { include = "rize_dml", from = "src/py" },
+    { include = "rizemind", from = "src/py" },
 ]
 
 [tool.poetry.dependencies]

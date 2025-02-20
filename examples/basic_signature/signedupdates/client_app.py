@@ -2,12 +2,12 @@
 
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
-from rize_dml.authentication.config import AccountConfig
-from rize_dml.configuration.toml_config import TomlConfig
-from rize_dml.web3.config import Web3Config
+from rizemind.authentication.config import AccountConfig
+from rizemind.configuration.toml_config import TomlConfig
+from rizemind.web3.config import Web3Config
 from .task import load_data, load_model
 from eth_account import Account
-from rize_dml.authentication.eth_account_client import SigningClient
+from rizemind.authentication.eth_account_client import SigningClient
 
 
 # Define Flower Client

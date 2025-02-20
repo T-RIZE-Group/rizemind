@@ -1,10 +1,10 @@
 from typing import Dict
 from flwr.client import Client
 from flwr.common import FitRes, FitIns, EvaluateIns
-from rize_dml.authentication.signature import (
+from rizemind.authentication.signature import (
     sign_parameters_model,
 )
-from rize_dml.contracts.models.model_registry_v1 import ModelRegistryV1
+from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
 from eth_account.signers.base import BaseAccount
 from web3 import Web3
 

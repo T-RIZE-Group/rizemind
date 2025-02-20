@@ -1,8 +1,8 @@
 from flwr.server.strategy import Strategy
 from flwr.server.client_proxy import ClientProxy
 from flwr.common.typing import FitRes
-from rize_dml.authentication.signature import recover_model_signer
-from rize_dml.contracts.models.model_registry_v1 import ModelRegistryV1
+from rizemind.authentication.signature import recover_model_signer
+from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
 
 
 class CannotTrainException(BaseException):

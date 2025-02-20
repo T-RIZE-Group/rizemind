@@ -1,9 +1,9 @@
 from typing import Any, cast
 from eth_typing import Address
 from pydantic import BaseModel, Field
-from rize_dml.contracts.access_control.FlAccessControl import FlAccessControl
-from rize_dml.contracts.deployed_contracts import load_contract_data
-from rize_dml.contracts.models.model_registry import ModelRegistry
+from rizemind.contracts.access_control.FlAccessControl import FlAccessControl
+from rizemind.contracts.deployed_contracts import load_contract_data
+from rizemind.contracts.models.model_registry import ModelRegistry
 from web3 import Web3
 from eth_account.signers.base import BaseAccount
 from web3.contract import Contract

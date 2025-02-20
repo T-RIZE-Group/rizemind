@@ -1,6 +1,6 @@
 from eth_account import Account
 
-from rize_dml.contracts.models.model_registry_v1 import ModelV1Config
+from rizemind.contracts.models.model_registry_v1 import ModelV1Config
 from web3 import Web3
 
 mnemonic = "test test test test test test test test test test test junk"

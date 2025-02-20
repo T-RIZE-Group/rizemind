@@ -4,11 +4,11 @@ from flwr.common import EvaluateIns, EvaluateRes, FitIns, Parameters
 from flwr.server.client_manager import ClientManager
 from flwr.server.strategy import Strategy
 
-from rize_dml.contracts.compensation.compensation_strategy import (
+from rizemind.contracts.compensation.compensation_strategy import (
     CompensationStrategy,
 )
 from flwr.server.client_proxy import ClientProxy
-from rize_dml.contracts.models.model_registry_v1 import ModelRegistryV1
+from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
 
 
 class SimpleCompensationStrategy(CompensationStrategy):

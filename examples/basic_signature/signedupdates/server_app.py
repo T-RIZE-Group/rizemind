@@ -3,15 +3,15 @@
 from flwr.common import Context, Metrics, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
-from rize_dml.authentication.config import AccountConfig
-from rize_dml.contracts.compensation.simple_compensation_startegy import (
+from rizemind.authentication.config import AccountConfig
+from rizemind.contracts.compensation.simple_compensation_startegy import (
     SimpleCompensationStrategy,
 )
-from rize_dml.web3.config import Web3Config
-from rize_dml.configuration.toml_config import TomlConfig
-from rize_dml.contracts.models.model_registry_v1 import ModelV1Config
+from rizemind.web3.config import Web3Config
+from rizemind.configuration.toml_config import TomlConfig
+from rizemind.contracts.models.model_registry_v1 import ModelV1Config
 from .task import load_model
-from rize_dml.authentication.eth_account_strategy import EthAccountStrategy
+from rizemind.authentication.eth_account_strategy import EthAccountStrategy
 
 
 # Define metric aggregation function
