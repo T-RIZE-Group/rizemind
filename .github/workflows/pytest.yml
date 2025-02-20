@@ -22,11 +22,5 @@ jobs:
       - name: Install main dependencies with Poetry
         run: poetry install --with test --without dev
 
-      - name: Install smart contracts depenencies with Poetry
-        run: |
-            cd smart_contracts
-            poetry install
-            cd ..
-
       - name: Run tests with pytest
         run: poetry run pytest
