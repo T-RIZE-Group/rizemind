@@ -51,7 +51,9 @@ def server_fn(context: Context):
 
     contract = deploy_new_model_v1(account, auth_config.name, members)
     config = ServerConfig(num_rounds=int(num_rounds))
-    authStrategy = SimpleCompensationStrategy(EthAccountStrategy(strategy, contract))
+    authStrategy = EthAccountStrategy(
+        SimpleCompensationStrategy(strategy, contract), contract
+    )
     return ServerAppComponents(strategy=authStrategy, config=config)
 
 
