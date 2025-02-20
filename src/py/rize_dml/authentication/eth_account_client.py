@@ -6,15 +6,18 @@ from rize_dml.authentication.signature import (
 )
 from rize_dml.contracts.models.model_registry_v1 import ModelRegistryV1
 from eth_account import Account
+from web3 import Web3
 
 
 class SigningClient:
     client: Client
     account: Account
+    w3: Web3
 
-    def __init__(self, client: Client, account: Account):
+    def __init__(self, client: Client, account: Account, w3: Web3):
         self.client = client
         self.account = account
+        self.w3 = w3
 
     def __getattr__(self, name):
         return getattr(self.client, name)
@@ -23,7 +26,7 @@ class SigningClient:
         # Call the original fit method on the proxied Client
         results: FitRes = self.client.fit(ins)
         contract_address = str(ins.config["aggregator_address"])
-        round = ins.config["current_round"]
+        round = ensure_int(ins.config["current_round"])
         round_in_int = ensure_int(round)
         signature = self._sign(
             res=results, round=round_in_int, contract_address=contract_address
@@ -33,7 +36,7 @@ class SigningClient:
         return results
 
     def _sign(self, res: FitRes, round: int, contract_address: str) -> Dict[str, bytes]:
-        model = ModelRegistryV1.from_address(contract_address, None)  # type: ignore
+        model = ModelRegistryV1.from_address(contract_address, account=None, w3=self.w3)  # type: ignore
         eip712_domain = model.get_eip712_domain()
 
         # Output Signer

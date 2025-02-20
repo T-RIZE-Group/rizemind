@@ -5,6 +5,11 @@ from rize_dml.authentication.signature import recover_model_signer
 from rize_dml.contracts.models.model_registry_v1 import ModelRegistryV1
 
 
+class CannotTrainException(BaseException):
+    def __init__(self, address: str) -> None:
+        message = f"{address} cannot train"
+        super().__init__(message)
+
 class EthAccountStrategy(Strategy):
     strat: Strategy
     model: ModelRegistryV1
@@ -27,7 +32,6 @@ class EthAccountStrategy(Strategy):
         client_instructions = self.strat.configure_fit(
             server_round, parameters, client_manager
         )
-
         # We need to add contract address and server round to FitIns so that clients have
         # access to it
         for _, fit_ins in client_instructions:
@@ -42,6 +46,8 @@ class EthAccountStrategy(Strategy):
             if self.model.can_train(signer, server_round):
                 res.metrics["trainer_address"] = signer
                 whitelisted.append((client, res))
+            else:
+                failures.append(CannotTrainException(signer))
         return self.strat.aggregate_fit(server_round, whitelisted, failures)
 
     def _recover_signer(self, res: FitRes, server_round: int):
