@@ -1,4 +1,4 @@
-from typing import NamedTuple, Tuple
+from typing import Tuple
 from eth_typing import HexAddress
 from eth_typing import HexStr
 from web3 import Web3

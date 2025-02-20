@@ -10,6 +10,7 @@ class CannotTrainException(BaseException):
         message = f"{address} cannot train"
         super().__init__(message)
 
+
 class EthAccountStrategy(Strategy):
     strat: Strategy
     model: ModelRegistryV1
