@@ -28,10 +28,10 @@ class EthAccountStrategy(Strategy):
             server_round, parameters, client_manager
         )
 
-        # We need to add contract address to FitIns so that clients have
+        # We need to add contract address and server round to FitIns so that clients have
         # access to it
         for _, fit_ins in client_instructions:
-            fit_ins.config["address"] = self.address
+            fit_ins.config["aggregator_address"] = self.address
             fit_ins.config["current_round"] = server_round
         return client_instructions
 
@@ -40,6 +40,7 @@ class EthAccountStrategy(Strategy):
         for client, res in results:
             signer = self._recover_signer(res, server_round)
             if self.model.can_train(signer, server_round):
+                res.metrics["trainer_address"] = signer
                 whitelisted.append((client, res))
         return self.strat.aggregate_fit(server_round, whitelisted, failures)
 
