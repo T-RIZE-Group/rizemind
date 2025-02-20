@@ -1,7 +1,5 @@
 from abc import abstractmethod
 from eth_typing import Address
-
-# from rize_dml.authentication.eth_account_strategy import EthAccountStrategy
 from flwr.server.strategy import Strategy
 from rize_dml.contracts.models.model_registry_v1 import ModelRegistryV1
 
