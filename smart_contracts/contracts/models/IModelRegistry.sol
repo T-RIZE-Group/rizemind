@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+import {IERC5267} from "@openzeppelin/contracts/interfaces/IERC5267.sol";
+
 struct RoundSummary {
     uint256 roundId;
     uint64 nTrainers;
@@ -5,8 +9,10 @@ struct RoundSummary {
     uint128 totalContributions;
 }
 
-interface IModelRegistry {
+interface IModelRegistry is IERC5267 {
     function canTrain(address trainer, uint256 roundId) external returns (bool);
+
     function curentRound() external view returns (uint256);
+
     function nextRound(RoundSummary calldata summary) external;
 }
