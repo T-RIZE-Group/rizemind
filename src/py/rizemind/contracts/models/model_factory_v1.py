@@ -4,6 +4,8 @@ from eth_account.signers.base import BaseAccount
 from rizemind.contracts.deployment import DeployedContract
 from rizemind.contracts.local_deployment import load_local_deployment
 from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
+from rizemind.contracts.abi.model_factory_v1 import model_factory_v1_abi
+from rizemind.web3.chains import RIZENET_TESTNET_CHAINID
 from web3 import Web3
 from eth_account.types import TransactionDictType
 
@@ -15,7 +17,14 @@ class ModelFactoryV1Config(BaseModel):
         None, description="path to local deployments"
     )
 
-    factory_deployments: dict[int, DeployedContract] = {}
+    factory_deployments: dict[int, DeployedContract] = {
+        RIZENET_TESTNET_CHAINID: DeployedContract(
+            address=Web3.to_checksum_address(
+                "0xB88D434B10f0bB783A826bC346396AbB19B6C6F7"
+            ),
+            abi=model_factory_v1_abi,
+        )
+    }
 
     def __init__(self, **data):
         super().__init__(**data)
@@ -50,8 +59,6 @@ class ModelFactoryV1:
             {
                 "from": deployer.address,
                 "nonce": w3.eth.get_transaction_count(deployer.address),
-                "gas": 2000000,
-                "gasPrice": w3.to_wei("20", "gwei"),
             }
         )
 

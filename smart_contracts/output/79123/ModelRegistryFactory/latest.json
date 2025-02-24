@@ -1,6 +1,6 @@
-import json
-
-abi_json = """[
+{
+    "address": "0xB88D434B10f0bB783A826bC346396AbB19B6C6F7",
+    "abi": [
         {
             "type": "constructor",
             "stateMutability": "nonpayable",
@@ -335,7 +335,7 @@ abi_json = """[
             ],
             "outputs": []
         }
-    ]
-"""
-
-model_factory_v1_abi = json.loads(abi_json)
+    ],
+    "name": "ModelRegistryFactory",
+    "version": "latest"
+}

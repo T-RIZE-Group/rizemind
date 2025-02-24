@@ -22,6 +22,7 @@ pydantic = "^2.10.6"
 mnemonic = "^0.21"
 flwr = "^1.15.1"
 ray = "^2.42.0"
+python-dotenv = "^1.0.1"
 
 [tool.poetry.group.dev.dependencies]
 torch = ">=1.9"

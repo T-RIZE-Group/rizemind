@@ -27,12 +27,7 @@ class ModelRegistryV1(FlAccessControl, ModelRegistry):
             raise Exception("no signer")
         address = ChecksumAddress(self.account.address)
         tx = self.model.functions.distribute(trainers, contributions).build_transaction(
-            {
-                "from": address,
-                "nonce": self.w3.eth.get_transaction_count(address),
-                "gas": 2000000,
-                "gasPrice": self.w3.to_wei("20", "gwei"),
-            }
+            {"from": address, "nonce": self.w3.eth.get_transaction_count(address)}
         )
         signed_tx = self.account.sign_transaction(cast(TransactionDictType, tx))
         tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
