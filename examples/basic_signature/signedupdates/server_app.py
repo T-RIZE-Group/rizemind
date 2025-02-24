@@ -9,7 +9,10 @@ from rizemind.contracts.compensation.simple_compensation_startegy import (
 )
 from rizemind.web3.config import Web3Config
 from rizemind.configuration.toml_config import TomlConfig
-from rizemind.contracts.models.model_registry_v1 import ModelV1Config
+from rizemind.contracts.models.model_factory_v1 import (
+    ModelFactoryV1Config,
+    ModelFactoryV1,
+)
 from .task import load_model
 from rizemind.authentication.eth_account_strategy import EthAccountStrategy
 
@@ -52,8 +55,8 @@ def server_fn(context: Context):
         trainer = auth_config.get_account(i)
         members.append(trainer.address)
 
-    model_v1_config = ModelV1Config(**config.get("tool.web3.model_v1"))
-    contract = model_v1_config.deploy(account, members, w3)
+    model_v1_config = ModelFactoryV1Config(**config.get("tool.web3.model_v1"))
+    contract = ModelFactoryV1(model_v1_config).deploy(account, members, w3)
     config = ServerConfig(num_rounds=int(num_rounds))
     authStrategy = EthAccountStrategy(
         SimpleCompensationStrategy(strategy, contract), contract

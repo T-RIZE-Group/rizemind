@@ -1,12 +1,7 @@
-from eth_typing import HexAddress
-from pydantic import BaseModel
 from pathlib import Path
 import json
 
-
-class DeployedContract(BaseModel):
-    address: HexAddress
-    abi: list[dict]
+from rizemind.contracts.deployment import DeployedContract
 
 
 def load_contract_data(contract_name, output_folder="output") -> DeployedContract:
