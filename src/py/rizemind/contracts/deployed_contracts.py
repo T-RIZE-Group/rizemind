@@ -16,7 +16,7 @@ def load_contract_data(contract_name, output_folder="output") -> DeployedContrac
     current_dir = Path(__file__).parent
 
     # Construct the path to the Solidity file
-    output_folder = current_dir / "../../../../smart_contracts/output/local"
+    output_folder = current_dir / "../../../../smart_contracts/output/31337"
     output_folder = output_folder.resolve()  # Resolve to an absolute path
 
     input_path = Path(output_folder) / f"{contract_name}.json"

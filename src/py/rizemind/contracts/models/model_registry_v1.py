@@ -36,7 +36,7 @@ class ModelRegistryV1(FlAccessControl, ModelRegistry):
 
     @staticmethod
     def from_address(address: str, account: BaseAccount, w3: Web3) -> "ModelRegistryV1":
-        model = load_contract_data("ModelRegistryV1", "smart_contracts/output/local")
+        model = load_contract_data("ModelRegistryV1", "smart_contracts/output/31337")
         checksum_address = Web3.to_checksum_address(address)
         return ModelRegistryV1(
             w3.eth.contract(address=checksum_address, abi=model.abi), account, w3
@@ -93,7 +93,7 @@ class ModelV1Config(BaseModel):
         event_args = contract_created["args"]
         proxy_address = event_args["proxyAddress"]
 
-        model = load_contract_data("ModelRegistryV1", "smart_contracts/output/local")
+        model = load_contract_data("ModelRegistryV1", "smart_contracts/output/31377")
 
         return ModelRegistryV1(
             w3.eth.contract(address=proxy_address, abi=model.abi), deployer, w3
