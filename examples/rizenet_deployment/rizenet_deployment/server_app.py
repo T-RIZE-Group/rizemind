@@ -1,6 +1,5 @@
 """signedupdates: A Flower / TensorFlow app."""
 
-import os
 from dotenv import load_dotenv
 
 from flwr.common import Context, Metrics, ndarrays_to_parameters

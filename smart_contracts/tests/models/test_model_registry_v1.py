@@ -42,9 +42,7 @@ def test_update_implementation(project, aggregator, model_factory, trainers):
     new_model.initialize("Test2", "tst", aggregator, trainers, sender=aggregator)
     model_factory.updateImplementation(new_model, sender=aggregator)
 
-    tx = model_factory.createModel(
-        "hello", "world", aggregator, trainers, sender=aggregator
-    )
+    model_factory.createModel("hello", "world", aggregator, trainers, sender=aggregator)
 
 
 def test_update_implementation_protected(model_factory, trainers):

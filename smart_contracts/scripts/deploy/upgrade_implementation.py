@@ -23,6 +23,6 @@ def cli(ecosystem, network, provider, account):
             output_folder=f"output/{provider.chain_id}",
             version=version["version"],
         )
-        tx = project.ModelRegistryFactory.deployments[-1].updateImplementation(
+        project.ModelRegistryFactory.deployments[-1].updateImplementation(
             model.address, sender=account
         )
