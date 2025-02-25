@@ -1,5 +1,5 @@
-from typing import Any, cast
-from eth_typing import Address, ChecksumAddress
+from typing import Any, Optional, cast
+from eth_typing import Address
 from rizemind.contracts.access_control.FlAccessControl import FlAccessControl
 from rizemind.contracts.models.erc5267 import ERC5267
 from rizemind.contracts.models.model_registry import ModelRegistry
@@ -11,21 +11,22 @@ from rizemind.contracts.abi.model_v1 import model_abi_v1_0_0
 
 
 class ModelRegistryV1(FlAccessControl, ModelRegistry):
-    account: BaseAccount
+    account: Optional[BaseAccount]
     w3: Web3
 
     abi_versions: dict[str, list[dict]] = {"1.0.0": model_abi_v1_0_0}
 
-    def __init__(self, model: Contract, account: BaseAccount, w3: Web3):
+    def __init__(self, model: Contract, account: Optional[BaseAccount], w3: Web3):
         FlAccessControl.__init__(self, model)
         ModelRegistry.__init__(self, model)
         self.account = account
         self.w3 = w3
 
     def distribute(self, trainers: list[Address], contributions: list[Any]) -> bool:
-        if self.account.address is None:
-            raise Exception("no signer")
-        address = ChecksumAddress(self.account.address)
+        if self.account is None:
+            raise Exception("No account connected")
+
+        address = self.account.address
         tx = self.model.functions.distribute(trainers, contributions).build_transaction(
             {"from": address, "nonce": self.w3.eth.get_transaction_count(address)}
         )
@@ -35,7 +36,9 @@ class ModelRegistryV1(FlAccessControl, ModelRegistry):
         return tx_receipt["status"] == 0
 
     @staticmethod
-    def from_address(address: str, account: BaseAccount, w3: Web3) -> "ModelRegistryV1":
+    def from_address(
+        address: str, w3: Web3, account: Optional[BaseAccount] = None
+    ) -> "ModelRegistryV1":
         erc5267 = ERC5267.from_address(address, w3)
         domain = erc5267.get_eip712_domain()
         model_abi = ModelRegistryV1.get_abi(domain.version)

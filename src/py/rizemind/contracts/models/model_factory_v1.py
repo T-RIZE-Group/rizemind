@@ -84,4 +84,4 @@ class ModelFactoryV1:
         event_args = contract_created["args"]
         proxy_address = event_args["proxyAddress"]
 
-        return ModelRegistryV1.from_address(proxy_address, deployer, w3)
+        return ModelRegistryV1.from_address(proxy_address, w3, deployer)
