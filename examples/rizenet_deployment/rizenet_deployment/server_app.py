@@ -1,5 +1,7 @@
 """signedupdates: A Flower / TensorFlow app."""
 
+from dotenv import load_dotenv
+
 from flwr.common import Context, Metrics, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
@@ -29,12 +31,8 @@ def weighted_average(metrics: list[tuple[int, Metrics]]) -> Metrics:
 
 def server_fn(context: Context):
     """Construct components that set the ServerApp behaviour."""
-
-    # Let's define the global model and pass it to the strategy
-    # Note this is optional.
     parameters = ndarrays_to_parameters(load_model().get_weights())
-    print(context.run_config)
-    print(context.node_config)
+
     # Define the strategy
     strategy = FedAvg(
         fraction_fit=float(context.run_config["fraction-fit"]),
@@ -45,6 +43,7 @@ def server_fn(context: Context):
     )
     # Read from config
     num_rounds = int(context.run_config["num-server-rounds"])
+    load_dotenv()
     config = TomlConfig("./pyproject.toml")
     auth_config = AccountConfig(**config.get("tool.eth.account"))
     web3_config = Web3Config(**config.get("tool.web3"))

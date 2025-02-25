@@ -2,7 +2,7 @@
 
 ## Requirements
 
-1. Install Poetry:
+1. [Install Poetry](https://python-poetry.org/docs/#installation)
 ## Install instructions
 
 1. Create venv
@@ -21,8 +21,9 @@ source .venv/bin/activate
 ```
 
 3. Install local packages
+
 ```
-pip install -e .
+poetry install --with test
 ```
 4. Select the `.venv` interpreter for your IDE.
 
