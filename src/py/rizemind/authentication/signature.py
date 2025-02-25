@@ -1,4 +1,5 @@
 from typing import Tuple
+from eth_typing import HexAddress
 from eth_typing import HexStr
 from web3 import Web3
 from eth_account.messages import encode_typed_data
@@ -141,7 +142,7 @@ def recover_model_signer(
     name: str,
     round: int,
     signature: Tuple[Scalar, Scalar, Scalar],
-):
+) -> HexAddress:
     """
     Recover the address of the signed model.
 

@@ -1,4 +1,6 @@
 data
+.env
+dist/
 **/*.egg-info
 # Ignore virtual environment
 **/venv/
@@ -13,3 +15,7 @@ data
 poetry.lock
 *.pkl
 **/build
+
+*.log
+
+.vscode

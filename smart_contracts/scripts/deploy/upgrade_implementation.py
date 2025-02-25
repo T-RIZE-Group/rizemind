@@ -23,8 +23,6 @@ def cli(ecosystem, network, provider, account):
             output_folder=f"output/{provider.chain_id}",
             version=version["version"],
         )
-        factory = project.ModelRegistryFactory.deploy(model.address, sender=account)
-        if network.name != "local":
-            project.deployments.track(factory)
-        logger.info(f"Factory deployed at {factory.address}")
-        save_contract_data(factory, output_folder=f"output/{provider.chain_id}")
+        project.ModelRegistryFactory.deployments[-1].updateImplementation(
+            model.address, sender=account
+        )

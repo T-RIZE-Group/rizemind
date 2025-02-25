@@ -1,7 +1,8 @@
 from flwr.server.strategy import Strategy
+from flwr.server.client_proxy import ClientProxy
 from flwr.common.typing import FitRes
-from rize_dml.authentication.signature import recover_model_signer
-from rize_dml.contracts.models.model_registry_v1 import ModelRegistryV1
+from rizemind.authentication.signature import recover_model_signer
+from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
 
 
 class CannotTrainException(BaseException):
@@ -15,7 +16,11 @@ class EthAccountStrategy(Strategy):
     model: ModelRegistryV1
     address: str
 
-    def __init__(self, strat: Strategy, model: ModelRegistryV1):
+    def __init__(
+        self,
+        strat: Strategy,
+        model: ModelRegistryV1,
+    ):
         super().__init__()
         self.strat = strat
         self.model = model
@@ -28,19 +33,19 @@ class EthAccountStrategy(Strategy):
         client_instructions = self.strat.configure_fit(
             server_round, parameters, client_manager
         )
-
-        # We need to add contract address to FitIns so that clients have
+        # We need to add contract address and server round to FitIns so that clients have
         # access to it
         for _, fit_ins in client_instructions:
-            fit_ins.config["address"] = self.address
+            fit_ins.config["contract_address"] = self.address
             fit_ins.config["current_round"] = server_round
         return client_instructions
 
     def aggregate_fit(self, server_round, results, failures):
-        whitelisted = []
+        whitelisted: list[tuple[ClientProxy, FitRes]] = []
         for client, res in results:
             signer = self._recover_signer(res, server_round)
             if self.model.can_train(signer, server_round):
+                res.metrics["trainer_address"] = signer
                 whitelisted.append((client, res))
             else:
                 failures.append(CannotTrainException(signer))

@@ -1,10 +1,10 @@
 from typing import Dict
 from flwr.client import Client
 from flwr.common import FitRes, FitIns, EvaluateIns
-from rize_dml.authentication.signature import (
+from rizemind.authentication.signature import (
     sign_parameters_model,
 )
-from rize_dml.contracts.models.model_registry_v1 import ModelRegistryV1
+from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
 from eth_account.signers.base import BaseAccount
 from web3 import Web3
 
@@ -25,7 +25,7 @@ class SigningClient:
     def fit(self, ins: FitIns):
         # Call the original fit method on the proxied Client
         results: FitRes = self.client.fit(ins)
-        contract_address = str(ins.config["address"])
+        contract_address = str(ins.config["contract_address"])
         round = ensure_int(ins.config["current_round"])
         signature = self._sign(
             res=results, round=round, contract_address=contract_address
@@ -35,7 +35,7 @@ class SigningClient:
         return results
 
     def _sign(self, res: FitRes, round: int, contract_address: str) -> Dict[str, bytes]:
-        model = ModelRegistryV1.from_address(contract_address, self.w3)
+        model = ModelRegistryV1.from_address(contract_address, account=None, w3=self.w3)  # type: ignore
         eip712_domain = model.get_eip712_domain()
 
         # Output Signer
