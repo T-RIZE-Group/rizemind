@@ -6,4 +6,4 @@ How-To
    :maxdepth: 2
    :caption: Contents:
 
-   web3_auth/index
+   web3-auth/index

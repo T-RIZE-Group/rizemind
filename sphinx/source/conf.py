@@ -13,7 +13,7 @@ author = "T-RIZE"
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = []
+extensions = ["sphinx.ext.autodoc"]
 
 templates_path = ["_templates"]
 exclude_patterns = ["reST.rst"]
@@ -24,3 +24,13 @@ exclude_patterns = ["reST.rst"]
 
 html_theme = "sphinx_book_theme"
 html_static_path = ["_static"]
+
+
+# -- options for Auto Doc ----------------------------------------------------
+autosummary_generate = False
+autodoc_default_options = {
+    "members": True,
+    "undoc-members": False,
+    "private-members": False,
+    "show-inheritance": False,
+}

@@ -63,4 +63,7 @@ ruff format
 
 Documentation is using Sphinx, format comment using reST.
 
-To run the documentation
+To run the documentation, `cd sphinx` and run 
+```shell
+sphinx-autobuild source build/html
+```
