@@ -8,6 +8,7 @@ from rizemind.web3.config import Web3Config
 from .task import load_data, load_model
 from eth_account import Account
 from rizemind.authentication.eth_account_client import SigningClient
+from dotenv import load_dotenv
 
 
 # Define Flower Client
@@ -63,9 +64,14 @@ def client_fn(context: Context):
     verbose = context.run_config.get("verbose")
     learning_rate = context.run_config["learning-rate"]
 
+    # Load the configuration
+    load_dotenv()
     config = TomlConfig("./pyproject.toml")
+    # Creates a AccountConfig using the config section
     account_config = AccountConfig(**config.get("tool.eth.account"))
+    # Derives and address of the mnemonic using HD path
     account = account_config.get_account(partition_id + 1)
+    # Loads the gateway information
     web3_config = Web3Config(**config.get("tool.web3"))
 
     # Return Client instance

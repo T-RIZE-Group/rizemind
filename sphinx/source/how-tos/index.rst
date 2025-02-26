@@ -7,3 +7,4 @@ How-To
    :caption: Contents:
 
    web3-auth/index
+   generate-store-mnemonic

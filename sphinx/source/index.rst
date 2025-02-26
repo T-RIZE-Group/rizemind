@@ -1,4 +1,4 @@
-.. DML documentation master file, created by
+.. rizemind documentation master file, created by
    sphinx-quickstart on Wed Feb 19 10:00:38 2025.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
@@ -23,7 +23,6 @@ RizeMind is maintained by `T-RIZE Group <https://t-rize.io>`_ and leverages the 
    :maxdepth: 2
    :caption: Sections
    
-   index
    install
    quickstarts/index
    how-tos/index
