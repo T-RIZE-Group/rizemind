@@ -33,6 +33,7 @@ class ShapelyValueStrategy(CompensationStrategy):
     def compute_contributions(
         self, coalition_and_scores: list[CoalitionScore]
     ) -> list[PlayerScore]:
+        # Create a bijective mapping between addresses and a bit_based representation
         coalition_and_scores.sort(key=lambda v: len(v[0]))
         list_of_addresses = coalition_and_scores[-1][0]
         address_map: bidict = bidict()
