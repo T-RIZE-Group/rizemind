@@ -107,35 +107,94 @@ def test_create_coalitions(mocked_shapely_value_strategy, fit_res, expected_coal
 def generate_compute_contribution_params():
     test_cases = [
         {
-            "cs": [(0b00, 90), (0b01, 92), (0b10, 93), (0b11, 90)],
-            "player_x_outcome": [(0b01, -0.5), (0b10, 0.5)],
+            "cs": [
+                ([], 90),
+                (["address_1"], 92),
+                (["address_2"], 93),
+                (["address_1", "address_2"], 90),
+            ],
+            "player_x_outcome": [("address_1", -0.5), ("address_2", 0.5)],
         },
         {
-            "cs": [(0b00, 0), (0b01, 0), (0b10, 0), (0b11, 1500)],
-            "player_x_outcome": [(0b01, 750), (0b10, 750)],
+            "cs": [
+                ([], 0),
+                (["address_1"], 0),
+                (["address_2"], 0),
+                (["address_1", "address_2"], 1500),
+            ],
+            "player_x_outcome": [("address_1", 750), ("address_2", 750)],
         },
         {
-            "cs": [(0b00, 0), (0b01, 1000), (0b10, 1000), (0b11, 2000)],
-            "player_x_outcome": [(0b01, 1000), (0b10, 1000)],
+            "cs": [
+                ([], 0),
+                (["address_1"], 1000),
+                (["address_2"], 1000),
+                (["address_1", "address_2"], 2000),
+            ],
+            "player_x_outcome": [("address_1", 1000), ("address_2", 1000)],
         },
         {
-            "cs": [(0b00, 0), (0b01, 0), (0b10, 0), (0b11, 100)],
-            "player_x_outcome": [(0b01, 50), (0b10, 50)],
+            "cs": [
+                ([], 0),
+                (["address_1"], 0),
+                (["address_2"], 0),
+                (["address_1", "address_2"], 100),
+            ],
+            "player_x_outcome": [("address_1", 50), ("address_2", 50)],
         },
         {
-            "cs": [(0b00, 0), (0b01, 100), (0b10, 0), (0b11, 100)],
-            "player_x_outcome": [(0b01, 100), (0b10, 0)],
+            "cs": [
+                ([], 0),
+                (["address_1"], 100),
+                (["address_2"], 0),
+                (["address_1", "address_2"], 100),
+            ],
+            "player_x_outcome": [("address_1", 100), ("address_2", 0)],
         },
         {
-            "cs": [(0b00, 0), (0b01, 1000000), (0b10, 200000), (0b11, 1400000)],
-            "player_x_outcome": [(0b01, 1100000), (0b10, 300000)],
+            "cs": [
+                ([], 0),
+                (["address_1"], 1000000),
+                (["address_2"], 200000),
+                (["address_1", "address_2"], 1400000),
+            ],
+            "player_x_outcome": [("address_1", 1100000), ("address_2", 300000)],
         },
         {
-            "cs": [(0b00, 0), (0b01, 1000000), (0b10, 500000), (0b11, 1250000)],
-            "player_x_outcome": [(0b01, 875000), (0b10, 375000)],
+            "cs": [
+                ([], 0),
+                (["address_1"], 1000000),
+                (["address_2"], 500000),
+                (["address_1", "address_2"], 1250000),
+            ],
+            "player_x_outcome": [("address_1", 875000), ("address_2", 375000)],
         },
         {
-            "cs": [(i, 0 if i == 0 else -100) for i in range(2**7)],
+            "cs": [
+                ([], 0),
+                (["address_1"], 3600000),
+                (["address_2"], 600000),
+                (["address_1", "address_2"], 3500000),
+            ],
+            "player_x_outcome": [("address_1", 3250000), ("address_2", 250000)],
+        },
+        {
+            "cs": [
+                ([], 0),
+                (["address_1"], 3600000),
+                (["address_2"], 600000),
+                (["address_1", "address_2"], 3500000),
+            ],
+            "player_x_outcome": [("address_1", 3250000), ("address_2", 250000)],
+        },
+        {
+            "cs": [
+                (
+                    [1 << i for i in range(7) if (coalition >> i) & 1],
+                    0 if coalition == 0 else -100,
+                )
+                for coalition in range(2**7)
+            ],
             "player_x_outcome": [
                 (0b0000001, -14.285714285714),
                 (0b0000010, -14.285714285714),
@@ -147,17 +206,9 @@ def generate_compute_contribution_params():
             ],
         },
         {
-            "cs": [(0b00, 0), (0b01, 3600000), (0b10, 600000), (0b11, 3500000)],
-            "player_x_outcome": [(0b01, 3250000), (0b10, 250000)],
-        },
-        {
-            "cs": [(0b00, 0), (0b01, 3600000), (0b10, 600000), (0b11, 3500000)],
-            "player_x_outcome": [(0b01, 3250000), (0b10, 250000)],
-        },
-        {
             "cs": [
                 (
-                    coalition,
+                    [1 << i for i in range(7) if (coalition >> i) & 1],
                     3000000
                     if coalition == 0b1111110
                     else 3500000
@@ -177,6 +228,7 @@ def generate_compute_contribution_params():
             ],
         },
     ]
+
     for case in test_cases:
         cs = case["cs"]
         for player, expected in case["player_x_outcome"]:
@@ -187,5 +239,9 @@ def generate_compute_contribution_params():
     "cs, player, expected", list(generate_compute_contribution_params())
 )
 def test_compute_contributions(mocked_shapely_value_strategy, cs, player, expected):
-    calculated = mocked_shapely_value_strategy.compute_contributions(player, cs)
-    assert isclose(calculated, expected)
+    # Call the function with the coalition and score list.
+    computed = mocked_shapely_value_strategy.compute_contributions(cs)
+    # Convert the result list to a dictionary for easier lookup.
+    computed_dict = {addr: value for addr, value in computed}
+    # Assert that the computed contribution for the given player is as expected.
+    assert isclose(computed_dict[player], expected)

@@ -5,15 +5,19 @@ from rizemind.contracts.compensation.compensation_strategy import CompensationSt
 from flwr.server.strategy import Strategy
 from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
 from flwr.common import FitRes
+from bidict import bidict
 
-# TODO: fix naming
-type CoalitionScore = list[tuple[int, float]]
+type CoalitionScore = tuple[list[str], float]
+type PlayerScore = tuple[str, float]
 
 
 class ShapelyValueStrategy(CompensationStrategy):
     strategy: Strategy
     model: ModelRegistryV1
-    coalitions_scores: CoalitionScore
+
+    @abstractmethod
+    def evaluate_coalitions(self):
+        "Evaluates coallitions"
 
     def create_coalitions(self, results: list[FitRes]):
         trainer_addresses: list[str] = [
@@ -26,37 +30,38 @@ class ShapelyValueStrategy(CompensationStrategy):
         ]
         return coalitions
 
-    @abstractmethod
-    def evaluate_coalitions(self):
-        "Evaluates coallitions"
+    def compute_contributions(
+        self, coalition_and_scores: list[CoalitionScore]
+    ) -> list[PlayerScore]:
+        coalition_and_scores.sort(key=lambda v: len(v[0]))
+        list_of_addresses = coalition_and_scores[-1][0]
+        address_map: bidict = bidict()
+        bit = 0b1
+        for address in list_of_addresses:
+            address_map[address] = bit
+            bit = bit << 1
 
-    # TODO: Improve this function to not take any players.
-    # TODO: Improve the variable namings
-    def compute_contributions(self, player, cs: CoalitionScore) -> float:
-        """
-        Calculate the Shapley value for a single player using the correct Shapley formula.
+        # Create coalition_set
+        coalition_set = dict()
+        for addresses, score in coalition_and_scores:
+            bit_value = sum([address_map[address] for address in addresses])
+            coalition_set[bit_value] = score
 
-        :param player_bit: The bit representation of the player.
-        :param outcomes: A list of tuples where each tuple consists of a coalition (bitmask) and its value.
-        :return: The Shapley value of the given player.
-        """
-        value_dict = dict(cs)
-        num_players = bin(max(value_dict.keys())).count(
-            "1"
-        )  # Count bits in the largest coalition
+        num_players = len(list_of_addresses)
 
-        shapley = 0
-
-        # Iterate over all possible coalitions excluding the player
-        for coalition, value in cs:
-            if coalition & player == 0:  # Player is not in the coalition
-                new_coalition = coalition | player  # Add player to the coalition
-                marginal_contribution = value_dict[new_coalition] - value
-                s = bin(coalition).count("1")  # Size of coalition
-                shapley += (
-                    factorial(s)
-                    * factorial(num_players - s - 1)
-                    * marginal_contribution
-                )
-
-        return shapley / factorial(num_players)
+        player_scores = dict()
+        for player in address_map.values():
+            shapley = 0
+            for coalition, value in coalition_set.items():
+                if coalition & player == 0:  # Player is not in the coalition
+                    new_coalition = coalition | player  # Add player to the coalition
+                    marginal_contribution = coalition_set[new_coalition] - value
+                    s = bin(coalition).count("1")  # Size of coalition
+                    shapley += (
+                        factorial(s)
+                        * factorial(num_players - s - 1)
+                        * marginal_contribution
+                    )
+            shapley = shapley / factorial(num_players)
+            player_scores[address_map.inverse[player]] = shapley
+        return list(player_scores.items())
