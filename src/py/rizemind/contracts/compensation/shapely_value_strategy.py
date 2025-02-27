@@ -1,4 +1,5 @@
 from abc import abstractmethod
+import itertools
 from math import factorial
 from rizemind.contracts.compensation.compensation_strategy import CompensationStrategy
 from flwr.server.strategy import Strategy
@@ -14,10 +15,16 @@ class ShapelyValueStrategy(CompensationStrategy):
     model: ModelRegistryV1
     coalitions_scores: CoalitionScore
 
-    # TODO: should not be abastract
-    # TODO: Use this method to create coalitions
-    def create_coalitions(self, res: list[FitRes]):
-        "Creates coallitions"
+    def create_coalitions(self, results: list[FitRes]):
+        trainer_addresses: list[str] = [
+            str(res.metrics["trainer_address"]) for res in results
+        ]
+        coalitions: list[list] = [
+            list(combination)
+            for r in range(len(trainer_addresses) + 1)
+            for combination in itertools.combinations(trainer_addresses, r)
+        ]
+        return coalitions
 
     @abstractmethod
     def evaluate_coalitions(self):
