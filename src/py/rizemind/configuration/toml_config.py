@@ -17,7 +17,40 @@ def replace_env_vars(obj: Union[dict[str, Any], str]) -> Union[dict[str, Any], s
 
 
 class TomlConfig:
+    """
+    A class to load and manage configuration from a TOML file.
+    It parses string in configurations to replaces them with env variables.
+
+    **Example Usage:**
+
+    .. code-block:: python
+
+        config = TomlConfig("config.toml")
+        database_host = config.get("database.host", "localhost")
+        api_key = config.get(["api", "key"], "default_key")
+
+    **Example TOML Configuration:**
+
+    .. code-block:: toml
+
+        [database]
+        host = "127.0.0.1"
+        port = 5432
+
+        [api]
+        key = "$ENV_API_KEY"
+
+    :param path: Path to the TOML configuration file.
+    :type path: str
+    """
+
     def __init__(self, path: str):
+        """
+        Initialize the TomlConfig instance.
+
+        :param path: Path to the TOML configuration file.
+        :type path: str
+        """
         self.path = Path(path)
         self._validate_path()
         self._data = self._load_toml()
@@ -36,7 +69,12 @@ class TomlConfig:
 
     @property
     def data(self) -> dict:
-        """Return the loaded TOML dictionary."""
+        """
+        Return the loaded TOML dictionary.
+
+        :return: The entire TOML configuration as a dictionary.
+        :rtype: dict
+        """
         return self._data
 
     def get(self, keys: Union[list[str], str], default: Optional[Any] = None) -> Any:

@@ -43,18 +43,30 @@ def server_fn(context: Context):
     )
     # Read from config
     num_rounds = int(context.run_config["num-server-rounds"])
+    #######
+    # Modifications to filter whitelisted trainers
+    #######
+    # load .env variables into os.environ
     load_dotenv()
+    # load config and parses env variables
     config = TomlConfig("./pyproject.toml")
+    # loads the account config
     auth_config = AccountConfig(**config.get("tool.eth.account"))
+    # loads the gateway config
     web3_config = Web3Config(**config.get("tool.web3"))
+    # gets web3 instance
     w3 = web3_config.get_web3()
+    # derives the account 0 which will be the aggregator
     account = auth_config.get_account(0)
     members = []
+    # derives the trainers account addresses.
     for i in range(1, 11):
         trainer = auth_config.get_account(i)
         members.append(trainer.address)
 
+    # loads the config for the model
     model_v1_config = ModelFactoryV1Config(**config.get("tool.web3.model_v1"))
+    # deploys the smart contract
     contract = ModelFactoryV1(model_v1_config).deploy(account, members, w3)
     config = ServerConfig(num_rounds=int(num_rounds))
     authStrategy = EthAccountStrategy(

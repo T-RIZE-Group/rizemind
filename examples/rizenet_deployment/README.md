@@ -4,19 +4,35 @@ dataset: [CIFAR-10]
 framework: [tensorflow]
 ---
 
-# Federated Learning with Tensorflow/Keras and Flower (Quickstart Example)
+# Federated Learning with Rizemind deployed on Rizenet
 
-This introductory example to Flower uses Tensorflow/Keras but deep knowledge of this frameworks is required to run the example. However, it will help you understand how to adapt Flower to your use case.
-Running this example in itself is quite easy. This example uses [Flower Datasets](https://flower.ai/docs/datasets/) to download, partition and preprocess the CIFAR-10 dataset.
+## Set up
 
-## Set up the project
 
-### Install dependencies and project
+1. Create a venv
+```shell
+python -m venv rizenet_deployment_venv
+```
 
-Install the dependencies defined in `pyproject.toml` as well as the `tfhexample` package.
+2. Activate the python venv environment
+**Linux/MacOS**:
+```shell
+source rizenet_deployment_venv/bin/activate
+```
+**windows**:
+```bash
+rizenet_deployment_venv\Scripts\activate
+```
+
+3. Install the dependencies defined in `pyproject.toml`.
 
 ```bash
 pip install -e .
+```
+
+4. Run the following script and follow the instructions to enable deployment on Rizenet.
+```shell
+python3 rizenet_deployment/generate_mnemonic.py
 ```
 
 ## Run the project
@@ -34,11 +50,3 @@ You can also override some of the settings for your `ClientApp` and `ServerApp` 
 ```bash
 flwr run . --run-config num-server-rounds=5,learning-rate=0.05
 ```
-
-> \[!TIP\]
-> For a more detailed walk-through check our [quickstart TensorFlow tutorial](https://flower.ai/docs/framework/tutorial-quickstart-tensorflow.html)
-
-### Run with the Deployment Engine
-
-> \[!NOTE\]
-> An update to this example will show how to run this Flower application with the Deployment Engine and TLS certificates, or with Docker.
