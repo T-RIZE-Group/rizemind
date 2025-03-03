@@ -4,8 +4,8 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "rizemind"
-version = "0.1.0"
-description = "RIZE DML: suite of Flower extensions for Decentralizing Machine Learning"
+version = "0.0.1"
+description = "RIZEMIND: building decentralized collective intelligence"
 license = "Apache-2.0"
 authors = ["T-RIZE Labs <michael.duchesne@t-rize.io>"]
 packages = [

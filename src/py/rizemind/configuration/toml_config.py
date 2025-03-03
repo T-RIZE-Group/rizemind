@@ -1,7 +1,19 @@
 import tomli
+import os
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, cast
 from functools import reduce
+
+
+def replace_env_vars(obj: Union[dict[str, Any], str]) -> Union[dict[str, Any], str]:
+    if isinstance(obj, str):
+        # Replace placeholders with environment variable values
+        return os.path.expandvars(obj)
+    elif isinstance(obj, dict):
+        return {key: replace_env_vars(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [replace_env_vars(item) for item in obj]
+    return obj
 
 
 class TomlConfig:
@@ -20,7 +32,7 @@ class TomlConfig:
     def _load_toml(self) -> dict:
         """Load and return the TOML file as a dictionary."""
         with self.path.open("rb") as f:
-            return tomli.load(f)
+            return cast(dict, replace_env_vars(tomli.load(f)))
 
     @property
     def data(self) -> dict:

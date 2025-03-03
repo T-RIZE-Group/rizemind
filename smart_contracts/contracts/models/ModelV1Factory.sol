@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 import {ModelRegistryV1} from "./ModelRegistryV1.sol";
 
-contract ModelRegistryFactory {
+contract ModelRegistryFactory is AccessControl {
     address private _logicContract;
 
     event ContractCreated(
@@ -17,6 +18,7 @@ contract ModelRegistryFactory {
 
     constructor(address logicContract) {
         _logicContract = logicContract;
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
     function createModel(
@@ -40,5 +42,12 @@ contract ModelRegistryFactory {
 
     function implementation() external returns (address) {
         return _logicContract;
+    }
+
+    function updateImplementation(
+        address implementation
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(implementation != address(0), "implementation cannot be null");
+        _logicContract = implementation;
     }
 }

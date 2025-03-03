@@ -1,4 +1,6 @@
 data
+.env
+dist/
 **/*.egg-info
 # Ignore virtual environment
 **/venv/

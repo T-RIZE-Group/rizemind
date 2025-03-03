@@ -2,6 +2,7 @@ name: smart_contracts
 plugins:
 - name: solidity
 - name: foundry
+- name: avalanche
 
 dependencies:
   - name: openzeppelin
@@ -19,3 +20,16 @@ dependencies:
 test:
   mnemonic: test test test test test test test test test test test junk
   number_of_accounts: 10
+
+networks:
+  custom:
+  - name: testnet
+    chain_id: 79123
+    ecosystem: rizenet
+    base_ecosystem_plugin: avalanche
+    default_provider: node
+
+node:
+  rizenet:
+    testnet:
+      uri: https://testnet.rizenet.io
