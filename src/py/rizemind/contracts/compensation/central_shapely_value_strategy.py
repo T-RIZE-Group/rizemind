@@ -24,9 +24,9 @@ class CentralShapelyValueStrategy(ShapelyValueStrategy):
         if len(results) == 0:
             aggregated_parameters = self.last_round_parameters
         else:
-            aggregated_parameters = self.strategy.aggregate_fit(
+            aggregated_parameters, _ = self.strategy.aggregate_fit(
                 server_round, results, []
-            )[0]
+            )
 
         if aggregated_parameters is None:
             raise ValueError("Aggregated Parameteres should not be None.")
@@ -49,7 +49,7 @@ class CentralShapelyValueStrategy(ShapelyValueStrategy):
             self.evaluate_coalition(server_round, coalition) for coalition in coalitions
         ]
 
-        # Do reward calculation -> compute_contributions
+        # Do reward calculation
         addresses = [
             [
                 cast(Address, result[1].metrics["trainer_address"])
@@ -75,7 +75,7 @@ class CentralShapelyValueStrategy(ShapelyValueStrategy):
         self.model.distribute(trainers, contributions)
 
         res = self.strategy.aggregate_fit(server_round, results, failures)
-        self.last_round_parameters = res[0]  # type: ignore | Update last_round_parameteres
+        self.last_round_parameters = cast(Parameters, res[0])
         return res
 
     def initialize_parameters(self, client_manager: ClientManager) -> Parameters | None:
