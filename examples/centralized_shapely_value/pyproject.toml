@@ -3,16 +3,15 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "signedupdates"
+name = "centralized_shapley_value"
 version = "1.0.0"
-description = "Federated Learning with signed updates"
+description = "Federated Learning with centralized shapely value"
 license = "Apache-2.0"
 dependencies = [
     "flwr[simulation]>=1.10.0",
     "flwr-datasets[vision]>=0.3.0",
     "tensorflow-cpu>=2.9.1, != 2.11.1 ; platform_machine == \"x86_64\"",
-    "tensorflow-macos>=2.9.1, != 2.11.1 ; sys_platform == \"darwin\" and platform_machine == \"arm64\"",
-    "ray>=2.0.0"
+    "ray>=2.0.0",
 ]
 
 
@@ -25,8 +24,8 @@ allow-direct-references = true
 publisher = "trizelabs"
 
 [tool.flwr.app.components]
-serverapp = "signedupdates.server_app:app"
-clientapp = "signedupdates.client_app:app"
+serverapp = "centralized_shapley_value.server_app:app"
+clientapp = "centralized_shapley_value.client_app:app"
 
 [tool.flwr.app.config]
 num-server-rounds = 3
