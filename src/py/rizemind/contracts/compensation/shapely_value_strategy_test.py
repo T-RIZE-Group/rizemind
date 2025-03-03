@@ -250,10 +250,6 @@ def generate_compute_contribution_params():
             "player_x_outcome": [("address_1", 3250000), ("address_2", 250000)],
         },
         {
-            # 7 people boil a goat in their mother's milk, independently and at the same time.
-            # According to the Kabbalah, this has terrible implications: -100 value is lost.
-            # Suppose that all the damage is done once the first deed is done.
-            # Taken from: https://shapleyvalue.com/?example=7
             "cs": [
                 (
                     # Checks if the i-th bit is set to 1 in the given coalition
@@ -274,7 +270,6 @@ def generate_compute_contribution_params():
             ],
         },
         {
-            # Please refer to: https://shapleyvalue.com/?example=10
             "cs": [
                 (
                     [1 << i for i in range(7) if (coalition >> i) & 1],
