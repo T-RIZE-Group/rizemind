@@ -4,13 +4,13 @@ from flwr.common import Context, Metrics, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
 from rizemind.authentication.config import AccountConfig
-from rizemind.contracts.compensation.simple_compensation_startegy import (
-    SimpleCompensationStrategy,
+from rizemind.contracts.compensation.central_shapely_value_strategy import (
+    CentralShapelyValueStrategy,
 )
 from rizemind.web3.config import Web3Config
 from rizemind.configuration.toml_config import TomlConfig
 from rizemind.contracts.models.model_registry_v1 import ModelV1Config
-from .task import load_model
+from .task import evaluate_fn, load_model
 from rizemind.authentication.eth_account_strategy import EthAccountStrategy
 
 
@@ -39,6 +39,7 @@ def server_fn(context: Context):
         min_available_clients=2,
         initial_parameters=parameters,
         evaluate_metrics_aggregation_fn=weighted_average,
+        evaluate_fn=evaluate_fn,
     )
     # Read from config
     num_rounds = int(context.run_config["num-server-rounds"])
@@ -56,7 +57,7 @@ def server_fn(context: Context):
     contract = model_v1_config.deploy(account, members, w3)
     config = ServerConfig(num_rounds=int(num_rounds))
     authStrategy = EthAccountStrategy(
-        SimpleCompensationStrategy(strategy, contract), contract
+        CentralShapelyValueStrategy(strategy, contract, parameters), contract
     )
     return ServerAppComponents(strategy=authStrategy, config=config)
 
