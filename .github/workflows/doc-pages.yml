@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow-dispatch:
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -54,16 +54,10 @@ jobs:
         run: poetry install --with dev --no-interaction --no-root
 
       #----------------------------------------------
-      # install the project (if needed)
-      #----------------------------------------------
-      - name: Install project
-        run: poetry install --with dev --no-interaction
-
-      #----------------------------------------------
       #          build Sphinx documentation
       #----------------------------------------------
       - name: Build Sphinx documentation
-        run: poetry run sphinx-build doc _build
+        run: poetry run sphinx-build sphinx/source build/html
 
       #----------------------------------------------
       #          Deploy to GitHub Pages
@@ -74,5 +68,5 @@ jobs:
         with:
           publish_branch: gh-pages
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: _build/
+          publish_dir: build/html
           force_orphan: true
