@@ -1,14 +1,16 @@
 from abc import abstractmethod
 import itertools
 from math import factorial
+from eth_typing import Address
 from rizemind.contracts.compensation.compensation_strategy import CompensationStrategy
 from flwr.server.strategy import Strategy
 from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
 from flwr.common import FitRes
 from bidict import bidict
+from flwr.server.client_proxy import ClientProxy
 
-type CoalitionScore = tuple[list[str], float]
-type PlayerScore = tuple[str, float]
+type CoalitionScore = tuple[list[Address], float]
+type PlayerScore = tuple[Address, float]
 
 
 class ShapelyValueStrategy(CompensationStrategy):
@@ -19,14 +21,13 @@ class ShapelyValueStrategy(CompensationStrategy):
     def evaluate_coalitions(self):
         "Evaluates coallitions"
 
-    def create_coalitions(self, results: list[FitRes]):
-        trainer_addresses: list[str] = [
-            str(res.metrics["trainer_address"]) for res in results
-        ]
-        coalitions: list[list] = [
+    def create_coalitions(
+        self, results: list[tuple[ClientProxy, FitRes]]
+    ) -> list[list[tuple[ClientProxy, FitRes]]]:
+        coalitions = [
             list(combination)
-            for r in range(len(trainer_addresses) + 1)
-            for combination in itertools.combinations(trainer_addresses, r)
+            for r in range(len(results) + 1)
+            for combination in itertools.combinations(results, r)
         ]
         return coalitions
 

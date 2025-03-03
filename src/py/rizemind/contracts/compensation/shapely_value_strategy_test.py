@@ -56,6 +56,25 @@ class DummyFitRes:
     def __init__(self, trainer_address: str):
         self.metrics = {"trainer_address": trainer_address}
 
+    def __eq__(self, other):
+        return isinstance(other, DummyFitRes) and self.metrics == other.metrics
+
+    def __repr__(self):
+        return f"DummyFitRes({self.metrics['trainer_address']})"
+
+
+class DummyClientProxy:
+    def __init__(self, identifier: str):
+        self.identifier = identifier
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, DummyClientProxy) and self.identifier == other.identifier
+        )
+
+    def __repr__(self):
+        return f"DummyClientProxy({self.identifier})"
+
 
 @pytest.fixture
 def mocked_shapely_value_strategy():
@@ -70,30 +89,75 @@ def mocked_shapely_value_strategy():
 # -------------------------------
 
 
+def sort_key(lst):
+    # Sort by the length of the coalition and then by each tuple's (client identifier, trainer_address)
+    return (len(lst), [(t[0].identifier, t[1].metrics["trainer_address"]) for t in lst])
+
+
 @pytest.mark.parametrize(
-    "fit_res, expected_coalitions",
+    "results, expected_coalitions",
     [
-        ([DummyFitRes("1")], [[], ["1"]]),
-        ([DummyFitRes("1"), DummyFitRes("2")], [[], ["1"], ["2"], ["1", "2"]]),
+        # Test case with one tuple.
         (
-            [DummyFitRes("1"), DummyFitRes("2"), DummyFitRes("3")],
+            [(DummyClientProxy("1"), DummyFitRes("1"))],
             [
                 [],
-                ["1"],
-                ["2"],
-                ["3"],
-                ["1", "2"],
-                ["1", "3"],
-                ["2", "3"],
-                ["1", "2", "3"],
+                [(DummyClientProxy("1"), DummyFitRes("1"))],
+            ],
+        ),
+        # Test case with two tuples.
+        (
+            [
+                (DummyClientProxy("1"), DummyFitRes("1")),
+                (DummyClientProxy("2"), DummyFitRes("2")),
+            ],
+            [
+                [],
+                [(DummyClientProxy("1"), DummyFitRes("1"))],
+                [(DummyClientProxy("2"), DummyFitRes("2"))],
+                [
+                    (DummyClientProxy("1"), DummyFitRes("1")),
+                    (DummyClientProxy("2"), DummyFitRes("2")),
+                ],
+            ],
+        ),
+        # Test case with three tuples.
+        (
+            [
+                (DummyClientProxy("1"), DummyFitRes("1")),
+                (DummyClientProxy("2"), DummyFitRes("2")),
+                (DummyClientProxy("3"), DummyFitRes("3")),
+            ],
+            [
+                [],
+                [(DummyClientProxy("1"), DummyFitRes("1"))],
+                [(DummyClientProxy("2"), DummyFitRes("2"))],
+                [(DummyClientProxy("3"), DummyFitRes("3"))],
+                [
+                    (DummyClientProxy("1"), DummyFitRes("1")),
+                    (DummyClientProxy("2"), DummyFitRes("2")),
+                ],
+                [
+                    (DummyClientProxy("1"), DummyFitRes("1")),
+                    (DummyClientProxy("3"), DummyFitRes("3")),
+                ],
+                [
+                    (DummyClientProxy("2"), DummyFitRes("2")),
+                    (DummyClientProxy("3"), DummyFitRes("3")),
+                ],
+                [
+                    (DummyClientProxy("1"), DummyFitRes("1")),
+                    (DummyClientProxy("2"), DummyFitRes("2")),
+                    (DummyClientProxy("3"), DummyFitRes("3")),
+                ],
             ],
         ),
     ],
 )
-def test_create_coalitions(mocked_shapely_value_strategy, fit_res, expected_coalitions):
-    res = mocked_shapely_value_strategy.create_coalitions(fit_res)
-    result_sorted = sorted(res, key=lambda lst: (len(lst), lst))
-    expected_sorted = sorted(expected_coalitions, key=lambda lst: (len(lst), lst))
+def test_create_coalitions(mocked_shapely_value_strategy, results, expected_coalitions):
+    res = mocked_shapely_value_strategy.create_coalitions(results)
+    result_sorted = sorted(res, key=sort_key)
+    expected_sorted = sorted(expected_coalitions, key=sort_key)
     assert result_sorted == expected_sorted, (
         f"Expected {expected_sorted}, got {result_sorted}"
     )
