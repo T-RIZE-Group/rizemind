@@ -1,5 +1,4 @@
 from math import isclose
-from eth_typing import Address
 from flwr.common import EvaluateIns, EvaluateRes, FitIns, FitRes, Parameters
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
@@ -10,9 +9,6 @@ from rizemind.contracts.compensation.shapely_value_strategy import ShapelyValueS
 class MockShapelyValueStrategy(ShapelyValueStrategy):
     def __init__(self, strategy, model):
         ShapelyValueStrategy.__init__(self, strategy, model)
-
-    def calculate(self, client_ids: list[Address]) -> tuple[list[Address], list[int]]:
-        return super().calculate(client_ids)
 
     def aggregate_fit(
         self,
@@ -48,8 +44,10 @@ class MockShapelyValueStrategy(ShapelyValueStrategy):
     ) -> tuple[float, dict[str, bool | bytes | float | int | str]] | None:
         return super().evaluate(server_round, parameters)
 
-    def evaluate_coalitions(self):
-        return None
+    def evaluate_coalition(
+        self, server_round: int, results: list[tuple[ClientProxy, FitRes]]
+    ) -> float:
+        return 0
 
 
 class DummyFitRes:
