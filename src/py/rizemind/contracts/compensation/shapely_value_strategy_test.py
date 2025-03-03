@@ -274,6 +274,7 @@ def generate_compute_contribution_params():
             ],
         },
         {
+            # Please refer to: https://shapleyvalue.com/?example=10
             "cs": [
                 (
                     [1 << i for i in range(7) if (coalition >> i) & 1],
