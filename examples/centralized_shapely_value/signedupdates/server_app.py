@@ -9,7 +9,10 @@ from rizemind.contracts.compensation.central_shapely_value_strategy import (
 )
 from rizemind.web3.config import Web3Config
 from rizemind.configuration.toml_config import TomlConfig
-from rizemind.contracts.models.model_registry_v1 import ModelV1Config
+from rizemind.contracts.models.model_factory_v1 import (
+    ModelFactoryV1Config,
+    ModelFactoryV1,
+)
 from .task import evaluate_fn, load_model
 from rizemind.authentication.eth_account_strategy import EthAccountStrategy
 
@@ -39,7 +42,7 @@ def server_fn(context: Context):
         min_available_clients=2,
         initial_parameters=parameters,
         evaluate_metrics_aggregation_fn=weighted_average,
-        evaluate_fn=evaluate_fn,
+        evaluate_fn=evaluate_fn,  # type:ignore
     )
     # Read from config
     num_rounds = int(context.run_config["num-server-rounds"])
@@ -53,8 +56,8 @@ def server_fn(context: Context):
         trainer = auth_config.get_account(i)
         members.append(trainer.address)
 
-    model_v1_config = ModelV1Config(**config.get("tool.web3.model_v1"))
-    contract = model_v1_config.deploy(account, members, w3)
+    model_v1_config = ModelFactoryV1Config(**config.get("tool.web3.model_v1"))
+    contract = ModelFactoryV1(model_v1_config).deploy(account, members, w3)
     config = ServerConfig(num_rounds=int(num_rounds))
     authStrategy = EthAccountStrategy(
         CentralShapelyValueStrategy(strategy, contract, parameters), contract

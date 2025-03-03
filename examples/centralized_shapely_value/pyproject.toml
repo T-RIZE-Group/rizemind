@@ -44,6 +44,7 @@ options.num-supernodes = 10
 
 [tool.web3.model_v1]
 name = "test_model"
+local_factory_deployment_path = "../../smart_contracts/output/31337/ModelRegistryFactory/latest.json"
 
 [tool.eth.account]
 mnemonic = "test test test test test test test test test test test junk"
