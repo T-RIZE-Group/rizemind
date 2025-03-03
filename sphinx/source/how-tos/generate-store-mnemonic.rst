@@ -2,21 +2,37 @@
 Generating and Storing a Mnemonic
 =========
 
-[add a mnemonic introduction]
+A mnemonic phrase, also known as a seed phrase, is a set of words used to recover a cryptocurrency wallet. It is crucial for securing access to blockchain-based accounts and should be handled with care.
 
 Generating a Mnemonic
 =====================
 
-[caution with leaking mnemonic]
+.. caution::
+   Never share your mnemonic with anyone. Anyone with access to your mnemonic can gain full control over your assets. 
+   Store it securely and avoid exposing it to untrusted software or online services.
 
-[Wallet based option with Metamask, ect]
+Wallet-Based Option
+-------------------
 
-Using a Python script:
+Most wallets, such as **MetaMask**, **Ledger Live**, and **Trezor Suite**, provide an option to generate a mnemonic phrase when setting up a new wallet. 
+
+To generate a mnemonic using MetaMask:
+
+1. Install the **MetaMask** browser extension or mobile app.
+
+2. Follow the setup process and **securely write down** the generated 12 or 24-word seed phrase.
+
+3. Store it in a safe place and never share it.
+
+Using a Python Script
+---------------------
+
+You can generate a mnemonic programmatically using **rizemind** and **eth_account**:
 
 .. code-block:: python
+
     from rizemind.authentication.config import AccountConfig
     from eth_account.hdaccount import generate_mnemonic
-
 
     def main():
         # Generate a new mnemonic phrase
@@ -31,35 +47,75 @@ Using a Python script:
         address = account.get_account(0).address
         print(f"Your aggregator address: {address}")
 
-
     if __name__ == "__main__":
         main()
 
-
-When you execute it, a new mnemonic will be randomly generated.
+When you execute this script, a new mnemonic will be randomly generated.
 
 Storing Your Mnemonic
 =====================
 
-[You can store the mnemonic in a .env file unchecked from your git repo]
-[store it in env variable]
+Since your mnemonic provides access to your account, it must be stored securely. Here are some recommended methods:
+
+1. **Environment Variables**  
+   Set an environment variable to store your mnemonic securely:
+
+   .. code:: shell
+
+       export MY_MNEMONIC="test test test test test test test test test test test junk"
+
+2. **.env File (Unchecked from Git)**  
+   Store your mnemonic in a `.env` file and **ensure it is excluded from version control (e.g., `.gitignore`)**:
+
+   **.env file:**
+
+   .. code:: text
+
+       MY_MNEMONIC="test test test test test test test test test test test junk"
+
+   Load it into your application using a library like `python-dotenv`:
+
+   .. code-block:: python
+
+       from dotenv import load_dotenv
+       import os
+
+       load_dotenv()
+       mnemonic = os.getenv("MY_MNEMONIC")
+
+       print(mnemonic)
+
+3. **Hardware Wallets or Secure Password Managers**  
+   Rizemind does not support those methods at the moment.
 
 Using Mnemonic with rizemind
 ============================
 
-The TomlConfig class will parse your config file to replace variables
-environment variables.
+The `TomlConfig` class from `rizemind` can parse a TOML config file and replace variables with environment variables.
 
-.. code:: shell
-    EXPORT MY_MNEMONIC="test test test test test test test test test test test junk"
+Example usage:
 
-.. code:: toml
-    [my-account]
-    mnemonic="$MY_MNEMONIC"
+1. **Set the mnemonic as an environment variable**:
 
-.. code:: python
-    from rizemind.configuration.toml_config import TomlConfig
+   .. code:: shell
 
-    config = TomlConfig('./myconfig.toml')
-    mnemonic = config.get("my-account.mnemonic")
-    print(mnemonic) # result: test test test test test test test test test test test junk
+       export MY_MNEMONIC="test test test test test test test test test test test junk"
+
+2. **Define a TOML configuration file (`myconfig.toml`)**:
+
+   .. code:: toml
+
+       [my-account]
+       mnemonic="$MY_MNEMONIC"
+
+3. **Load and retrieve the mnemonic in Python**:
+
+   .. code-block:: python
+
+       from dotenv import load_dotenv
+       from rizemind.configuration.toml_config import TomlConfig
+
+       load_dotenv()
+       config = TomlConfig('./myconfig.toml')
+       mnemonic = config.get("my-account.mnemonic")
+       print(mnemonic)  # result: test test test test test test test test test test test junk

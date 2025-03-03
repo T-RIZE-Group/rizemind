@@ -1,168 +1,197 @@
 =====
-How To Add Web3 Based Signature Authentication
+How To Add Web3-Based Signature Authentication
 =====
 
+This guide will walk you through implementing **Web3-based signature authentication** using `rizemind` with **Flower**, ensuring secure, blockchain-validated authentication for federated learning.
+
 **Requirements**
-- Follow the Generating and Storing Mnemonic tutorial as you will
-need a mnemonic.
-- Have a working Flower Project.
 
-We recommend you install python-dotenv to store a menmonic in a .env file.
+- Follow the :doc:`Generating and Storing a Mnemonic <../generate-store-mnemonic>` tutorial, as you will need a mnemonic.
 
-```pip install python-dotenv```
+- Have a working **Flower** project.
+
+We recommend installing `python-dotenv` to store your mnemonic in a `.env` file:
+
+.. code:: shell
+
+   pip install python-dotenv
 
 Modifying the Client
 ====================
 
-We will use the SigningClient class which seamlessly integrates with any
-existing FlowerClient. This class will pull the signing instructions from
-the blockchain. For this reason, we need to define the gateway to access the
-blockchain and the mnemonic to sign the updates.
+We will use the `SigningClient` class, which seamlessly integrates with any existing **FlowerClient**. This class pulls signing instructions from the blockchain. To achieve this, we must define:
+1. The **gateway URL** to access the blockchain.
+2. The **mnemonic** to sign updates.
 
-Add these fields to your `pyproject.toml`.
+### Adding Configuration
 
-.. code-block:: toml
-  [tool.eth.account]
-  mnemonic = "$RIZENET_MNEMONIC"
-
-  [tool.web3]
-  url = "https://testnet.rizenet.io"
-
-in a `.env` in the same folder than the `pyproject.toml`. You should store 
-secrets in this file, but do not commit it to git or you risk loosing any funds/model tokens,
-permissions to the models deployed with the mnemonic.
-
-.. code-block:: .env
-  RIZENET_MNEMONIC="put your mnemonic here"
-
-[reminder: the TomlConfig will parse values in the config to replace them with environment variable]
-
-
-Now we need to modify the 
-
-.. code-block:: python
-  from dotenv import load_dotenv
-
-  from rizemind.authentication.config import AccountConfig
-  from rizemind.configuration.toml_config import TomlConfig
-  from rizemind.web3.config import Web3Config
-  from .task import load_data, load_model
-  from rizemind.authentication.eth_account_client import SigningClient
-
-  def client_fn(context: Context):
-    """Construct a Client that will be run in a ClientApp."""
-
-    # Read the node_config to fetch data partition associated to this node
-    partition_id = int(context.node_config["partition-id"])
-    num_partitions = int(context.node_config["num-partitions"])
-    data = load_data(partition_id, num_partitions)
-
-    # Read run_config to fetch hyperparameters relevant to this run
-    epochs = context.run_config["local-epochs"]
-    batch_size = context.run_config["batch-size"]
-    verbose = context.run_config.get("verbose")
-    learning_rate = context.run_config["learning-rate"]
-    client = FlowerClient(learning_rate, data, epochs, batch_size, verbose).to_client()
-
-    ##########
-    # following is the modifications to support signing
-    ##########
-    # load values from the .env file in os.environ
-    load_dotenv()
-    # Load the configuration and parse env variables
-    config = TomlConfig("./pyproject.toml")
-    # Creates a AccountConfig using the config section
-    account_config = AccountConfig(**config.get("tool.eth.account"))
-    # Derives and address of the mnemonic using HD path
-    account = account_config.get_account(partition_id + 1)
-    # Loads the gateway information
-    web3_config = Web3Config(**config.get("tool.web3"))
-
-    # Return Client instance
-    return SigningClient(
-        client,
-        account,
-        web3_config.get_web3(),
-    )
-
-Modifying the Strategy
-=======================
-
-On the aggregator side, we will use the EthAccountStrategy which
-can integrate with any FlowerStrategy.
-
-Start by adding the following parameters to configure the model's
-smart contract.
+Add these fields to your `pyproject.toml`:
 
 .. code-block:: toml
-  [tool.web3.model_v1]
-  name = "test_model"
-  ticker = "tst"
 
+   [tool.eth.account]
+   mnemonic = "$RIZENET_MNEMONIC"
 
-Now we modify the `server_fn` to integrate the signature validation.
+   [tool.web3]
+   url = "https://testnet.rizenet.io"
+
+Next, create a `.env` file in the same directory as `pyproject.toml` to store your secrets securely (**never commit this file to Git**):
+
+.. code-block:: text
+
+   RIZENET_MNEMONIC="put your mnemonic here"
+
+.. note::
+   `TomlConfig` will automatically replace values in the config with environment variables.
+
+### Updating the Client
+
+Modify the client function to use `SigningClient`:
 
 .. code-block:: python
-  def server_fn(context: Context):
-    """Construct components that set the ServerApp behaviour."""
-    parameters = ndarrays_to_parameters(load_model().get_weights())
 
-    # Define the strategy
-    strategy = FedAvg(
-        fraction_fit=float(context.run_config["fraction-fit"]),
-        fraction_evaluate=1.0,
-        min_available_clients=2,
-        initial_parameters=parameters,
-        evaluate_metrics_aggregation_fn=weighted_average,
-    )
-    # Read from config
-    num_rounds = int(context.run_config["num-server-rounds"])
-    #######
-    # Modifications to filter whitelisted trainers
-    #######
-    # load .env variables into os.environ
-    load_dotenv()
-    # load config and parses env variables
-    config = TomlConfig("./pyproject.toml")
-    # loads the account config
-    auth_config = AccountConfig(**config.get("tool.eth.account"))
-    # loads the gateway config
-    web3_config = Web3Config(**config.get("tool.web3"))
-    # gets web3 instance
-    w3 = web3_config.get_web3()
-    # derives the account 0 which will be the aggregator
-    account = auth_config.get_account(0)
-    members = []
-    # derives the trainers account addresses. 
-    # In production, you would already have the addresses or add them post-deployment
-    for i in range(1, 11):
-        trainer = auth_config.get_account(i)
-        members.append(trainer.address)
+   from dotenv import load_dotenv
+   from rizemind.authentication.config import AccountConfig
+   from rizemind.configuration.toml_config import TomlConfig
+   from rizemind.web3.config import Web3Config
+   from rizemind.authentication.eth_account_client import SigningClient
+   from .task import load_data, load_model
 
-    # loads the config for the model
-    model_v1_config = ModelFactoryV1Config(**config.get("tool.web3.model_v1"))
-    # deploys the smart contract
-    contract = ModelFactoryV1(model_v1_config).deploy(account, members, w3)
-    config = ServerConfig(num_rounds=int(num_rounds))
-    authStrategy = EthAccountStrategy(
-        strategy, contract
-    )
-    return ServerAppComponents(strategy=authStrategy, config=config)
+   def client_fn(context: Context):
+       """Construct a Client that will be run in a ClientApp."""
 
+       # Read node_config to fetch partition details
+       partition_id = int(context.node_config["partition-id"])
+       num_partitions = int(context.node_config["num-partitions"])
+       data = load_data(partition_id, num_partitions)
 
-Run to test
+       # Read run_config to fetch hyperparameters
+       epochs = context.run_config["local-epochs"]
+       batch_size = context.run_config["batch-size"]
+       verbose = context.run_config.get("verbose")
+       learning_rate = context.run_config["learning-rate"]
+
+       client = FlowerClient(learning_rate, data, epochs, batch_size, verbose).to_client()
+
+       ##########
+       # Adding signing support
+       ##########
+
+       # Load values from .env into os.environ
+       load_dotenv()
+
+       # Load config and parse env variables
+       config = TomlConfig("./pyproject.toml")
+
+       # Create an AccountConfig from the TOML file
+       account_config = AccountConfig(**config.get("tool.eth.account"))
+
+       # Derive an address from the mnemonic using HD path
+       account = account_config.get_account(partition_id + 1)
+
+       # Load blockchain gateway configuration
+       web3_config = Web3Config(**config.get("tool.web3"))
+
+       # Return Client instance with signing capability
+       return SigningClient(
+           client,
+           account,
+           web3_config.get_web3(),
+       )
+
+Modifying the Aggregator
+========================
+
+On the **aggregator** side, we will use `EthAccountStrategy` to validate Web3-based signatures. This integrates seamlessly with any **FlowerStrategy**.
+
+Adding Smart Contract Configuration
+-----------------------------------
+
+Add the following parameters to configure the **model's smart contract** in `pyproject.toml`:
+
+.. code-block:: toml
+
+   [tool.web3.model_v1]
+   name = "test_model"
+   ticker = "tst"
+
+Updating the Server
+-------------------
+
+Modify `server_fn` to integrate signature validation:
+
+.. code-block:: python
+
+   def server_fn(context: Context):
+       """Construct components that set the ServerApp behaviour."""
+       parameters = ndarrays_to_parameters(load_model().get_weights())
+
+       # Define the strategy
+       strategy = FedAvg(
+           fraction_fit=float(context.run_config["fraction-fit"]),
+           fraction_evaluate=1.0,
+           min_available_clients=2,
+           initial_parameters=parameters,
+           evaluate_metrics_aggregation_fn=weighted_average,
+       )
+
+       # Read config values
+       num_rounds = int(context.run_config["num-server-rounds"])
+
+       #######
+       # Adding signature authentication
+       #######
+
+       # Load .env values into os.environ
+       load_dotenv()
+
+       # Load and parse config
+       config = TomlConfig("./pyproject.toml")
+
+       # Load account and blockchain configuration
+       auth_config = AccountConfig(**config.get("tool.eth.account"))
+       web3_config = Web3Config(**config.get("tool.web3"))
+       w3 = web3_config.get_web3()
+
+       # Derive the aggregator account (account 0)
+       account = auth_config.get_account(0)
+
+       # Generate trainer accounts
+       members = [auth_config.get_account(i).address for i in range(1, 11)]
+
+       # Load the model configuration
+       model_v1_config = ModelFactoryV1Config(**config.get("tool.web3.model_v1"))
+
+       # Deploy the smart contract
+       contract = ModelFactoryV1(model_v1_config).deploy(account, members, w3)
+
+       # Define server configuration
+       config = ServerConfig(num_rounds=int(num_rounds))
+
+       # Enable authentication strategy
+       auth_strategy = EthAccountStrategy(strategy, contract)
+
+       return ServerAppComponents(strategy=auth_strategy, config=config)
+
+Run to Test
 ===========
 
-Run your flower project with ``flwr run .``
+Run your Flower project with:
+
+.. code:: shell
+
+   flwr run .
 
 Debugging
 ---------
 
-**Account cannot deploy contracts**
+**Issue: Account cannot deploy contracts**
+   - Copy the **address in the error message**.
+   - Visit `rizenet.io/deployer <https://rizenet.io/deployer>`_ and follow the steps to **add the address to the whitelist**.
 
-In this case, copy the address in the error message and head to rizenet.io/deployer 
-and follow the steps to add the address to the whitelist.
+**Issue: Account does not have enough gas**
+   - Visit `rizenet.io/faucets <https://rizenet.io/faucets>`_ to get free **testnet gas**.
 
-**Account does not have enough gas**
+----
 
-You can get testnet gas for free at rizenet.io/faucets
+By following these steps, you have successfully added **Web3-based signature authentication** to your Flower project, ensuring secure client authentication and model integrity on the blockchain.
