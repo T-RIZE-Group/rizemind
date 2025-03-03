@@ -9,18 +9,28 @@ from flwr.server.client_proxy import ClientProxy
 
 
 class CentralShapelyValueStrategy(ShapelyValueStrategy):
-    def __init__(self, strategy: Strategy, model: ModelRegistryV1) -> None:
-        super().__init__(strategy, model)
+    last_round_parameters: Parameters
+
+    def __init__(
+        self, strategy: Strategy, model: ModelRegistryV1, initial_parameters: Parameters
+    ) -> None:
+        self.last_round_parameters = initial_parameters
+        ShapelyValueStrategy.__init__(self, strategy, model)
 
     def evaluate_coalition(
         self, server_round: int, results: list[tuple[ClientProxy, FitRes]]
     ):
-        aggregated_parameters = self.strategy.aggregate_fit(server_round, results, [])[
-            0
-        ]
+        # In case this is the base case ([]) we need to use the last round's parameteres
+        if len(results) == 0:
+            aggregated_parameters = self.last_round_parameters
+        else:
+            aggregated_parameters = self.strategy.aggregate_fit(
+                server_round, results, []
+            )[0]
+
         if aggregated_parameters is None:
             raise ValueError("Aggregated Parameteres should not be None.")
-        evaluted_result = super().evaluate(server_round, aggregated_parameters)
+        evaluted_result = self.strategy.evaluate(server_round, aggregated_parameters)
         if evaluted_result is None:
             raise ValueError("Aggregated evaluated result should not be None.")
         return evaluted_result[0]
@@ -31,6 +41,7 @@ class CentralShapelyValueStrategy(ShapelyValueStrategy):
         results: list[tuple[ClientProxy, FitRes]],
         failures: list[tuple[ClientProxy, FitRes] | BaseException],
     ) -> tuple[Parameters | None, dict[str, bool | bytes | float | int | str]]:
+        # Create Coalitions
         coalitions = self.create_coalitions(results)
 
         # Evaluate Coalitions
@@ -52,24 +63,35 @@ class CentralShapelyValueStrategy(ShapelyValueStrategy):
 
         trainers_and_contributions = self.compute_contributions(coalition_and_scores)
         trainers = [trainer for trainer, _ in trainers_and_contributions]
-        contributions = [contribution for _, contribution in trainers_and_contributions]
+        contributions = [
+            int(contribution * 100) for _, contribution in trainers_and_contributions
+        ]
+        min_contrib = min(contributions)
+        if min_contrib < 0:
+            min_contrib *= -1
+            contributions = [
+                contribution + min_contrib for contribution in contributions
+            ]
         self.model.distribute(trainers, contributions)
 
-        # What is the best way to aggregate
-        return self.strategy.aggregate_fit(server_round, results, failures)
+        res = self.strategy.aggregate_fit(server_round, results, failures)
+        self.last_round_parameters = res[0]  # type: ignore | Update last_round_parameteres
+        return res
 
     def initialize_parameters(self, client_manager: ClientManager) -> Parameters | None:
-        return super().initialize_parameters(client_manager)
+        return self.strategy.initialize_parameters(client_manager)
 
     def configure_fit(
         self, server_round: int, parameters: Parameters, client_manager: ClientManager
     ) -> list[tuple[ClientProxy, FitIns]]:
-        return super().configure_fit(server_round, parameters, client_manager)
+        return self.strategy.configure_fit(server_round, parameters, client_manager)
 
     def configure_evaluate(
         self, server_round: int, parameters: Parameters, client_manager: ClientManager
     ) -> list[tuple[ClientProxy, EvaluateIns]]:
-        return super().configure_evaluate(server_round, parameters, client_manager)
+        return self.strategy.configure_evaluate(
+            server_round, parameters, client_manager
+        )
 
     def aggregate_evaluate(
         self,
@@ -77,9 +99,9 @@ class CentralShapelyValueStrategy(ShapelyValueStrategy):
         results: list[tuple[ClientProxy, EvaluateRes]],
         failures: list[tuple[ClientProxy, EvaluateRes] | BaseException],
     ) -> tuple[float | None, dict[str, bool | bytes | float | int | str]]:
-        return super().aggregate_evaluate(server_round, results, failures)
+        return self.strategy.aggregate_evaluate(server_round, results, failures)
 
     def evaluate(
         self, server_round: int, parameters: Parameters
     ) -> tuple[float, dict[str, bool | bytes | float | int | str]] | None:
-        return super().evaluate(server_round, parameters)
+        return self.strategy.evaluate(server_round, parameters)

@@ -17,8 +17,14 @@ class ShapelyValueStrategy(CompensationStrategy):
     strategy: Strategy
     model: ModelRegistryV1
 
+    def __init__(self, strategy: Strategy, model: ModelRegistryV1) -> None:
+        self.strategy = strategy
+        self.model = model
+
     @abstractmethod
-    def evaluate_coalitions(self):
+    def evaluate_coalition(
+        self, server_round: int, results: list[tuple[ClientProxy, FitRes]]
+    ) -> float:
         "Evaluates coallitions"
 
     def create_coalitions(
