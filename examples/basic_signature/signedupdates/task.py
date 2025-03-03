@@ -56,3 +56,37 @@ def load_data(partition_id, num_partitions):
     x_test, y_test = partition["test"]["img"] / 255.0, partition["test"]["label"]
 
     return x_train, y_train, x_test, y_test
+
+
+def evaluate_fn(
+    server_round: int, parameters, config: dict
+) -> tuple[float, dict[str, float]]:
+    """
+    Evaluation function for Flower federated learning.
+
+    Parameters:
+        server_round (int): The current round of federated learning.
+        parameters (NDArrays): List of model weights as numpy arrays.
+        config (dict): A configuration dict which may contain keys such as "partition_id" and "num_partitions".
+
+    Returns:
+        A tuple containing:
+            - loss (float): The evaluation loss.
+            - metrics (dict): A dictionary containing evaluation metrics, e.g. accuracy.
+    """
+    # Create a new instance of the model and set its weights
+    model = load_model()
+    model.set_weights(parameters)
+
+    # Get partitioning parameters from config if available, else use defaults
+    partition_id = config.get("partition_id", 0)
+    num_partitions = config.get("num_partitions", 1)
+
+    # Load test data
+    _, _, x_test, y_test = load_data(partition_id, num_partitions)
+
+    # Evaluate the model on test data (using verbose=0 to suppress output)
+    loss, accuracy = model.evaluate(x_test, y_test, verbose="auto")
+
+    # Return the loss and a dictionary of metrics
+    return loss, {"accuracy": accuracy}
