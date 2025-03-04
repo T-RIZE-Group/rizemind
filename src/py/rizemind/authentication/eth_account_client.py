@@ -10,11 +10,51 @@ from web3 import Web3
 
 
 class SigningClient:
+    """
+    A proxy class that wraps a Flower Client to add signing functionality for trained parameters.
+
+    This class ensures authenticity by signing the trained model parameters before sending them
+    to the aggregator. It uses Ethereum-based signing via an `eth_account` account and signs
+    parameters using EIP-712 structured data.
+
+    :param client: The Flower `Client` instance to wrap.
+    :type client: Client
+    :param account: The Ethereum account used for signing.
+    :type account: BaseAccount
+    :param w3: The Web3 instance used for interacting with blockchain contracts.
+    :type w3: Web3
+
+    **Example Usage:**
+
+    .. code-block:: python
+
+        from flwr.client import NumPyClient
+        from web3 import Web3
+        from eth_account import Account
+        from rizemind.authentication.eth_account_signature import SigningClient
+
+        client = NumPyClient()
+        account = Account.create() # or load from mnemonic/private key
+        w3 = Web3()
+
+        signed_client = SigningClient(client, account, w3)
+    """
+
     client: Client
     account: BaseAccount
     w3: Web3
 
     def __init__(self, client: Client, account: BaseAccount, w3: Web3):
+        """
+        Initialize the SigningClient.
+
+        :param client: The Flower Client to wrap.
+        :type client: Client
+        :param account: Ethereum account used for signing model parameters.
+        :type account: BaseAccount
+        :param w3: Web3 instance used for interacting with Ethereum contracts.
+        :type w3: Web3
+        """
         self.client = client
         self.account = account
         self.w3 = w3
@@ -23,7 +63,14 @@ class SigningClient:
         return getattr(self.client, name)
 
     def fit(self, ins: FitIns):
-        # Call the original fit method on the proxied Client
+        """
+        Train the model using the wrapped client and sign the trained parameters.
+
+        :param ins: Instructions for fitting the model.
+        :type ins: FitIns
+        :return: The signed fit results.
+        :rtype: FitRes
+        """
         results: FitRes = self.client.fit(ins)
         contract_address = str(ins.config["contract_address"])
         round = ensure_int(ins.config["current_round"])

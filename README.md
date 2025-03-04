@@ -41,7 +41,8 @@ Automated tests are written using pytest.
 ```shell
 pip install -e ".[dev]"
 ```
-2. ```shell
+2. Run the test suite
+```shell
 pytest
 ```
 
@@ -58,3 +59,12 @@ ruff format
 
 1. Install the [Ruff extension](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff)
 2. Go to settings (ctrl+,), search for 'ruff save' and enable formatting on save
+
+## Documentation
+
+Documentation is using Sphinx, format comment using reST.
+
+To run the documentation, `cd sphinx` and run 
+```shell
+sphinx-autobuild source build/html
+```

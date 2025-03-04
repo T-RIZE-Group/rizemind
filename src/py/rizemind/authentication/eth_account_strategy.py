@@ -12,6 +12,28 @@ class CannotTrainException(BaseException):
 
 
 class EthAccountStrategy(Strategy):
+    """
+    A federated learning strategy that verifies model authenticity using Ethereum-based signatures.
+
+    This class wraps an existing Flower Strategy and ensures that only authorized clients
+    can contribute training updates. It does so by verifying cryptographic signatures against
+    a blockchain-based model registry. If a client is not authorized, it is added to the
+    failures list with a :class:`CannotTrainException`.
+
+    :param strat: The base Flower Strategy to wrap.
+    :type strat: Strategy
+    :param model: The blockchain-based model registry.
+    :type model: ModelRegistryV1
+
+    **Example Usage:**
+
+    .. code-block:: python
+
+        strategy = SomeBaseStrategy()
+        model_registry = ModelRegistryV1.from_address(address="0xMY_MODEL_ADDRESS")
+        eth_strategy = EthAccountStrategy(strategy, model_registry)
+    """
+
     strat: Strategy
     model: ModelRegistryV1
     address: str
