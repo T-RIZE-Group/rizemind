@@ -76,3 +76,18 @@ class ShapelyValueStrategy(CompensationStrategy):
             shapley = shapley / factorial(num_players)
             player_scores[address_map.inverse[player]] = shapley
         return list(player_scores.items())
+
+    # TODO: write test for distribute reward
+    def distribute_reward(self, coalition_and_scores: list[CoalitionScore]):
+        trainers_and_contributions = self.compute_contributions(coalition_and_scores)
+        trainers = [trainer for trainer, _ in trainers_and_contributions]
+        contributions = [
+            int(contribution * 100) for _, contribution in trainers_and_contributions
+        ]
+        min_contrib = min(contributions)
+        if min_contrib < 0:
+            min_contrib *= -1
+            contributions = [
+                contribution + min_contrib for contribution in contributions
+            ]
+        return trainers, contributions
