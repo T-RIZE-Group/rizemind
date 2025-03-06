@@ -59,7 +59,7 @@ def server_fn(context: Context):
     contract = ModelFactoryV1(model_v1_config).deploy(account, members, w3)
     config = ServerConfig(num_rounds=int(num_rounds))
     authStrategy = EthAccountStrategy(
-        DecentralShapelyValueStrategy(strategy, contract, parameters, 1.0, 3, 3),
+        DecentralShapelyValueStrategy(strategy, contract, parameters),
         contract,
     )
     return ServerAppComponents(strategy=authStrategy, config=config)
