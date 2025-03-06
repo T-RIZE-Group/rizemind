@@ -1,4 +1,3 @@
-from abc import abstractmethod
 import itertools
 from math import factorial
 from eth_typing import Address
@@ -20,12 +19,6 @@ class ShapelyValueStrategy(CompensationStrategy):
     def __init__(self, strategy: Strategy, model: ModelRegistryV1) -> None:
         self.strategy = strategy
         self.model = model
-
-    @abstractmethod
-    def evaluate_coalition(
-        self, server_round: int, results: list[tuple[ClientProxy, FitRes]]
-    ) -> float:
-        "Evaluates coallitions"
 
     def create_coalitions(
         self, results: list[tuple[ClientProxy, FitRes]]
