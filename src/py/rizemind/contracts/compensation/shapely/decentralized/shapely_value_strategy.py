@@ -4,7 +4,7 @@ from typing import cast
 import uuid
 from eth_typing import Address
 from flwr.server.strategy import Strategy
-from rizemind.contracts.compensation.shapely_value_strategy import (
+from rizemind.contracts.compensation.shapely.shapely_value_strategy import (
     CoalitionScore,
     ShapelyValueStrategy,
 )
@@ -254,7 +254,7 @@ class DecentralShapelyValueStrategy(ShapelyValueStrategy):
 
         log(
             level=INFO,
-            msg=f"The best accuracy for round {server_round - 1} is {top_accuracy}",
+            msg=f"The best accuracy for round {server_round} is {top_accuracy}",
         )
 
         # Sort coalitions by the number of trainers (clients) and distribute rewards accordingly.

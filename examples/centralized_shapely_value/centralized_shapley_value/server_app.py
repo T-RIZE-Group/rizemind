@@ -4,7 +4,7 @@ from flwr.common import Context, Metrics, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
 from rizemind.authentication.config import AccountConfig
-from rizemind.contracts.compensation.central_shapely_value_strategy import (
+from rizemind.contracts.compensation.shapely.centralized.shapely_value_strategy import (
     CentralShapelyValueStrategy,
 )
 from rizemind.web3.config import Web3Config

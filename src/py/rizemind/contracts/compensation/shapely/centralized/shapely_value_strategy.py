@@ -1,7 +1,7 @@
 from typing import cast
 from eth_typing import Address
 from flwr.server.strategy import Strategy
-from rizemind.contracts.compensation.shapely_value_strategy import ShapelyValueStrategy
+from rizemind.contracts.compensation.shapely.shapely_value_strategy import ShapelyValueStrategy
 from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
 from flwr.common.typing import EvaluateIns, EvaluateRes, FitIns, FitRes, Parameters
 from flwr.server.client_manager import ClientManager

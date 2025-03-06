@@ -4,7 +4,7 @@ from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
 from rizemind.authentication.config import AccountConfig
 from rizemind.configuration.toml_config import TomlConfig
-from rizemind.contracts.compensation.decentral_shapely_value_client import (
+from rizemind.contracts.compensation.shapely.decentralized.shapely_value_client import (
     DecentralShapelyValueClient,
 )
 from rizemind.web3.config import Web3Config

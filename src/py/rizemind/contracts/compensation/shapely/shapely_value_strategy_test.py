@@ -3,7 +3,7 @@ from flwr.common import EvaluateIns, EvaluateRes, FitIns, FitRes, Parameters
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 import pytest
-from rizemind.contracts.compensation.shapely_value_strategy import ShapelyValueStrategy
+from rizemind.contracts.compensation.shapely.shapely_value_strategy import ShapelyValueStrategy
 
 
 class MockShapelyValueStrategy(ShapelyValueStrategy):
