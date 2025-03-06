@@ -1,5 +1,4 @@
 from flwr.common.typing import Parameters
-import numpy as np
 
 
 def encode_parameters(parameters: Parameters) -> dict:
