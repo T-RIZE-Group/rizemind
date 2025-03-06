@@ -20,8 +20,6 @@ class DecentralShapelyValueClient(NumPyClient):
     ) -> tuple[NDArrays, int, dict[str, Scalar]]:
         return self.client.fit(parameters, config)
 
-    # TODO: we could use the id to get the parameters of the model in strategy
-    # instead of sending them all from here
     def evaluate(
         self, parameters: NDArrays, config: dict[str, Scalar]
     ) -> tuple[float, int, dict[str, Scalar]]:
