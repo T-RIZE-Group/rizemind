@@ -33,8 +33,6 @@ def server_fn(context: Context):
     # Let's define the global model and pass it to the strategy
     # Note this is optional.
     parameters = ndarrays_to_parameters(load_model().get_weights())
-    print(context.run_config)
-    print(context.node_config)
     # Define the strategy
     strategy = FedAvg(
         fraction_fit=float(context.run_config["fraction-fit"]),
