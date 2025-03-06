@@ -1,11 +1,9 @@
-import json
 from logging import INFO
 import random
 from typing import cast
 import uuid
 from eth_typing import Address
 from flwr.server.strategy import Strategy
-from rizemind.contracts.compensation.decentral_util import encode_parameters
 from rizemind.contracts.compensation.shapely_value_strategy import (
     CoalitionScore,
     ShapelyValueStrategy,
@@ -26,16 +24,12 @@ from flwr.common.parameter import ndarrays_to_parameters as flwr_ndarrays_to_par
 
 type ID = str
 
-
-# TODO: If we need fractional selection of clients for evaluation
-# we need to add that
-
-
 class DecentralShapelyValueStrategy(ShapelyValueStrategy):
     last_round_parameters: Parameters
     evaluation_results: list[EvaluateRes]
-    coalitions: list[tuple[ID, list[tuple[ClientProxy, FitRes]]]]
-    addresses: dict[ID, list[Address]]
+    id_to_coalitions: list[tuple[ID, list[tuple[ClientProxy, FitRes]]]]
+    id_to_addresses: dict[ID, list[Address]]
+    id_to_parameters: dict[ID, Parameters]
 
     def __init__(
         self,
@@ -45,6 +39,7 @@ class DecentralShapelyValueStrategy(ShapelyValueStrategy):
     ) -> None:
         ShapelyValueStrategy.__init__(self, strategy, model)
         self.last_round_parameters = initial_parameters
+        self.id_to_parameters: dict[ID, Parameters] = dict()
 
     def initialize_parameters(self, client_manager: ClientManager) -> Parameters | None:
         return self.strategy.initialize_parameters(client_manager)
@@ -69,8 +64,8 @@ class DecentralShapelyValueStrategy(ShapelyValueStrategy):
         because the best aggregation is determined based on the result of federated evaluation
         and the top model is selected at that stage
         """
-        self.addresses = dict()
-        self.coalitions = []
+        self.id_to_addresses = dict()
+        self.id_to_coalitions = []
         coalitions = self.create_coalitions(results)
         random.shuffle(
             coalitions
@@ -81,8 +76,8 @@ class DecentralShapelyValueStrategy(ShapelyValueStrategy):
             addresses: list[Address] = []
             for _, fit_res in coalition:
                 addresses.append(cast(Address, fit_res.metrics["trainer_address"]))
-            self.addresses[id] = addresses
-            self.coalitions.append((id, coalition))
+            self.id_to_addresses[id] = addresses
+            self.id_to_coalitions.append((id, coalition))
 
         return self.strategy.aggregate_fit(server_round, results, failures)
 
@@ -98,58 +93,22 @@ class DecentralShapelyValueStrategy(ShapelyValueStrategy):
                     evaluate_instructions is (parameters, config)
                     such that:
                                 config = {
-                                    evaluation_json = {
-                                        id: str = parameters: Parameters
-                                    }
+                                    id: str
                                 }
-        Please note that the dictionary must be dumped using json.dumps because
-        flwr only accepts a Scalar (bool | bytes | float | int | str)
+                    and parameters is the aggregated model parameters.
         """
         num_clients = client_manager.num_available()
         clients = client_manager.sample(
             num_clients=num_clients, min_num_clients=num_clients
         )
-
-        num_coalitions = len(self.coalitions)
-        i = 0
-        # TODO: beware! the number of coalitions cannot be smaller than the number of total clients
-        step = num_coalitions // num_clients
         configurations: list[tuple[ClientProxy, EvaluateIns]] = []
-        # print("number of clients", len(clients))
-        for client in clients:
-            evaluation_json = {}
-            # TODO: Improve this solution
-            # Make sure that the i+step in self.coalitions[i: i+step]
-            # is not gonna be bigger than self.coalition size
-            if i + step <= len(self.coalitions):
-                current_client_coalitions = self.coalitions[i : i + step]
-                # print("number of coalitions for client", len(current_client_coalitions))
-                for id, coalition in current_client_coalitions:
-                    aggregated_parameters = self.aggregate_parameteres(
-                        coalition, parameters
-                    )
-                    evaluation_json[id] = encode_parameters(aggregated_parameters)
-
-                config = {}
-                config["evaluation_json"] = json.dumps(evaluation_json)
-                evaluate_ins = EvaluateIns(parameters, config)
-                configurations.append((client, evaluate_ins))
-
-                i += step
-            else:
-                current_client_coalitions = self.coalitions[i:]
-                for id, coalition in current_client_coalitions:
-                    aggregated_parameters = self.aggregate_parameteres(
-                        coalition, parameters
-                    )
-                    evaluation_json[id] = encode_parameters(aggregated_parameters)
-
-                config = {}
-                config["evaluation_json"] = json.dumps(evaluation_json)
-                evaluate_ins = EvaluateIns(parameters, config)
-                configurations.append((client, evaluate_ins))
-                break
-
+        i = 0
+        for id, coalition in self.id_to_coalitions:
+            aggregated_parameters = self.aggregate_parameteres(coalition, parameters)
+            config = {"id": id}
+            self.id_to_parameters[id] = aggregated_parameters
+            evaluate_ins = EvaluateIns(aggregated_parameters, config)  # type: ignore
+            configurations.append((clients[i % num_clients], evaluate_ins))
         # Return client/config pairs
         return configurations
 
@@ -188,23 +147,22 @@ class DecentralShapelyValueStrategy(ShapelyValueStrategy):
         """
         coalition_and_scores: list[CoalitionScore] = []
         # Find best model accuracy
-        top_accuracy = -1
+        top_accuracy = -1.0
+        top_loss = 0.0
         print("number of recieved results", len(results))
         print("number of recieved failures", len(failures))
         with open("/home/mikaeil/log.txt", "w") as f:
             print(failures, file=f)
         for result in results:
-            evaluated_json_loaded: dict = json.loads(
-                cast(str, result[1].metrics["evaluated_json"])
-            )
-            for id, evaluted_result in evaluated_json_loaded.items():
-                address_list = self.addresses[id]
-                coalition_and_scores.append((address_list, evaluted_result["accuracy"]))
-                if top_accuracy < evaluted_result["accuracy"]:
-                    top_accuracy = evaluted_result["accuracy"]
-                    self.last_round_parameters = flwr_ndarrays_to_parameters(
-                        evaluted_result["parameters"]
-                    )
+            evaluated_result = result[1]
+            id = cast(str, evaluated_result.metrics["id"])
+            accuracy = cast(float, evaluated_result.metrics["accuracy"])
+            address_list = self.id_to_addresses[id]
+            coalition_and_scores.append((address_list, accuracy))
+            if top_accuracy < accuracy:
+                top_accuracy = accuracy
+                self.last_round_parameters = self.id_to_parameters[id]
+                top_loss = evaluated_result.loss
 
         log(
             level=INFO,
@@ -219,7 +177,7 @@ class DecentralShapelyValueStrategy(ShapelyValueStrategy):
         trainers, contributions = self.distribute_reward(coalition_and_scores)
         self.model.distribute(trainers, contributions)
 
-        return super().aggregate_evaluate(server_round, results, failures)
+        return top_loss, {}
 
     def evaluate(self, server_round: int, parameters: Parameters):
         return self.strategy.evaluate(server_round, parameters)
