@@ -3,14 +3,14 @@ from flwr.common import EvaluateIns, EvaluateRes, FitIns, FitRes, Parameters
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 import pytest
-from rizemind.contracts.compensation.shapely.shapely_value_strategy import (
-    ShapelyValueStrategy,
+from rizemind.contracts.compensation.shapley.shapley_value_strategy import (
+    ShapleyValueStrategy,
 )
 
 
-class MockShapelyValueStrategy(ShapelyValueStrategy):
+class MockShapleyValueStrategy(ShapleyValueStrategy):
     def __init__(self, strategy, model):
-        ShapelyValueStrategy.__init__(self, strategy, model)
+        ShapleyValueStrategy.__init__(self, strategy, model)
 
     def aggregate_fit(
         self,
@@ -77,8 +77,8 @@ class DummyClientProxy:
 
 
 @pytest.fixture
-def mocked_shapely_value_strategy():
-    return MockShapelyValueStrategy(
+def mocked_shapley_value_strategy():
+    return MockShapleyValueStrategy(
         "dummy_strategy",  # type: ignore
         "dummy_model",  # type: ignore
     )
@@ -154,8 +154,8 @@ def sort_key(lst):
         ),
     ],
 )
-def test_create_coalitions(mocked_shapely_value_strategy, results, expected_coalitions):
-    res = mocked_shapely_value_strategy.create_coalitions(results)
+def test_create_coalitions(mocked_shapley_value_strategy, results, expected_coalitions):
+    res = mocked_shapley_value_strategy.create_coalitions(results)
     result_sorted = sorted(res, key=sort_key)
     expected_sorted = sorted(expected_coalitions, key=sort_key)
     assert result_sorted == expected_sorted, (
@@ -304,9 +304,9 @@ def generate_compute_contribution_params():
 @pytest.mark.parametrize(
     "cs, player, expected", list(generate_compute_contribution_params())
 )
-def test_compute_contributions(mocked_shapely_value_strategy, cs, player, expected):
+def test_compute_contributions(mocked_shapley_value_strategy, cs, player, expected):
     # Call the function with the coalition and score list.
-    computed = mocked_shapely_value_strategy.compute_contributions(cs)
+    computed = mocked_shapley_value_strategy.compute_contributions(cs)
     # Convert the result list to a dictionary for easier lookup.
     computed_dict = {addr: value for addr, value in computed}
     # Assert that the computed contribution for the given player is as expected.

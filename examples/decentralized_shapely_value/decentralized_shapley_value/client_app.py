@@ -4,8 +4,8 @@ from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
 from rizemind.authentication.config import AccountConfig
 from rizemind.configuration.toml_config import TomlConfig
-from rizemind.contracts.compensation.shapely.decentralized.shapely_value_client import (
-    DecentralShapelyValueClient,
+from rizemind.contracts.compensation.shapley.decentralized.shapley_value_client import (
+    DecentralShapleyValueClient,
 )
 from rizemind.web3.config import Web3Config
 from .task import load_data, load_model
@@ -73,7 +73,7 @@ def client_fn(context: Context):
 
     # Return Client instance
     return SigningClient(
-        DecentralShapelyValueClient(
+        DecentralShapleyValueClient(
             FlowerClient(learning_rate, data, epochs, batch_size, verbose)
         ).to_client(),
         account,

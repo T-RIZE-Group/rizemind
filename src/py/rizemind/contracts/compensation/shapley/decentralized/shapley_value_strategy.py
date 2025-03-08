@@ -4,9 +4,9 @@ from typing import cast
 import uuid
 from eth_typing import Address
 from flwr.server.strategy import Strategy
-from rizemind.contracts.compensation.shapely.shapely_value_strategy import (
+from rizemind.contracts.compensation.shapley.shapley_value_strategy import (
     CoalitionScore,
-    ShapelyValueStrategy,
+    ShapleyValueStrategy,
 )
 from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
 from flwr.common.typing import (
@@ -22,13 +22,10 @@ from flwr.common.logger import log
 from flwr.server.strategy.aggregate import aggregate_inplace as flwr_aggregate_inplace
 from flwr.common.parameter import ndarrays_to_parameters as flwr_ndarrays_to_parameters
 
-# Type alias for coalition identifier
-type ID = str
 
-
-class DecentralShapelyValueStrategy(ShapelyValueStrategy):
+class DecentralShapleyValueStrategy(ShapleyValueStrategy):
     """
-    A federated learning strategy that extends the ShapelyValueStrategy to incorporate
+    A federated learning strategy that extends the ShapleyValueStrategy to incorporate
     decentralized coalition-based evaluation and reward distribution.
 
     This strategy creates coalitions from client fit results, aggregates model parameters
@@ -42,11 +39,11 @@ class DecentralShapelyValueStrategy(ShapelyValueStrategy):
     # List to store evaluation results from clients.
     evaluation_results: list[EvaluateRes]
     # Mapping of coalition IDs to coalitions, where each coalition is a list of (ClientProxy, FitRes) tuples.
-    id_to_coalitions: list[tuple[ID, list[tuple[ClientProxy, FitRes]]]]
+    id_to_coalitions: list[tuple[str, list[tuple[ClientProxy, FitRes]]]]
     # Mapping of coalition IDs to lists of client addresses participating in that coalition.
-    id_to_addresses: dict[ID, list[Address]]
+    id_to_addresses: dict[str, list[Address]]
     # Mapping of coalition IDs to their aggregated model parameters.
-    id_to_parameters: dict[ID, Parameters]
+    id_to_parameters: dict[str, Parameters]
 
     def __init__(
         self,
@@ -55,7 +52,7 @@ class DecentralShapelyValueStrategy(ShapelyValueStrategy):
         initial_parameters: Parameters,
     ) -> None:
         """
-        Initialize the DecentralShapelyValueStrategy.
+        Initialize the DecentralShapleyValueStrategy.
 
         :param strategy: The base federated learning strategy to extend.
         :type strategy: Strategy
@@ -64,8 +61,7 @@ class DecentralShapelyValueStrategy(ShapelyValueStrategy):
         :param initial_parameters: The initial model parameters for the federation.
         :type initial_parameters: Parameters
         """
-        ShapelyValueStrategy.__init__(self, strategy, model)
-        self.last_round_parameters = initial_parameters
+        ShapleyValueStrategy.__init__(self, strategy, model, initial_parameters)
         self.id_to_parameters: dict[ID, Parameters] = dict()
 
     def initialize_parameters(self, client_manager: ClientManager) -> Parameters | None:
@@ -167,7 +163,7 @@ class DecentralShapelyValueStrategy(ShapelyValueStrategy):
         configurations: list[tuple[ClientProxy, EvaluateIns]] = []
         i = 0
         for id, coalition in self.id_to_coalitions:
-            aggregated_parameters = self.aggregate_parameteres(coalition, parameters)
+            aggregated_parameters = self.aggregate_parameters(coalition, parameters)
             config = {"id": id}
             # Store the aggregated parameters for later use in evaluation.
             self.id_to_parameters[id] = aggregated_parameters
@@ -177,7 +173,7 @@ class DecentralShapelyValueStrategy(ShapelyValueStrategy):
             i += 1
         return configurations
 
-    def aggregate_parameteres(
+    def aggregate_parameters(
         self, coalition: list[tuple[ClientProxy, FitRes]], parameters: Parameters
     ) -> Parameters:
         """
@@ -259,8 +255,9 @@ class DecentralShapelyValueStrategy(ShapelyValueStrategy):
 
         # Sort coalitions by the number of trainers (clients) and distribute rewards accordingly.
         coalition_and_scores.sort(key=lambda v: len(v[0]))
-        trainers, contributions = self.distribute_reward(coalition_and_scores)
-        self.model.distribute(trainers, contributions)
+        player_scores = self.compute_contributions(coalition_and_scores)
+        players, contributions = self.normalize_contribution_scores(player_scores)
+        self.model.distribute(players, contributions)
 
         return top_loss, {}
 

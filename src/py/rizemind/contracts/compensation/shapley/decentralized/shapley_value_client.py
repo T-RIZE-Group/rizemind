@@ -2,7 +2,7 @@ from flwr.client import NumPyClient
 from flwr.common import NDArrays, Scalar
 
 
-class DecentralShapelyValueClient(NumPyClient):
+class DecentralShapleyValueClient(NumPyClient):
     client: NumPyClient
 
     def __init__(self, client: NumPyClient) -> None:

@@ -1,8 +1,8 @@
 from typing import cast
 from eth_typing import Address
 from flwr.server.strategy import Strategy
-from rizemind.contracts.compensation.shapely.shapely_value_strategy import (
-    ShapelyValueStrategy,
+from rizemind.contracts.compensation.shapley.shapley_value_strategy import (
+    ShapleyValueStrategy,
 )
 from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
 from flwr.common.typing import EvaluateIns, EvaluateRes, FitIns, FitRes, Parameters
@@ -10,32 +10,13 @@ from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 
 
-class CentralShapelyValueStrategy(ShapelyValueStrategy):
+class CentralShapleyValueStrategy(ShapleyValueStrategy):
     last_round_parameters: Parameters
 
     def __init__(
         self, strategy: Strategy, model: ModelRegistryV1, initial_parameters: Parameters
     ) -> None:
-        self.last_round_parameters = initial_parameters
-        ShapelyValueStrategy.__init__(self, strategy, model)
-
-    def evaluate_coalition(
-        self, server_round: int, results: list[tuple[ClientProxy, FitRes]]
-    ):
-        # In case this is the base case ([]) we need to use the last round's parameteres
-        if len(results) == 0:
-            aggregated_parameters = self.last_round_parameters
-        else:
-            aggregated_parameters, _ = self.strategy.aggregate_fit(
-                server_round, results, []
-            )
-
-        if aggregated_parameters is None:
-            raise ValueError("Aggregated Parameteres should not be None.")
-        evaluted_result = self.strategy.evaluate(server_round, aggregated_parameters)
-        if evaluted_result is None:
-            raise ValueError("Aggregated evaluated result should not be None.")
-        return evaluted_result[0]
+        ShapleyValueStrategy.__init__(self, strategy, model, initial_parameters)
 
     def aggregate_fit(
         self,
@@ -44,26 +25,22 @@ class CentralShapelyValueStrategy(ShapelyValueStrategy):
         failures: list[tuple[ClientProxy, FitRes] | BaseException],
     ) -> tuple[Parameters | None, dict[str, bool | bytes | float | int | str]]:
         # Create Coalitions
-        coalitions = self.create_coalitions(results)
+        coalitions = self.create_coalitions(server_round, results)
 
         # Evaluate Coalitions
-        evaluated_coalitions = [
-            self.evaluate_coalition(server_round, coalition) for coalition in coalitions
-        ]
+        evaluated_coalitions: list[tuple[list[Address], float]] = []
+        for coalition in coalitions:
+            evaluation = self.strategy.evaluate(server_round, coalition.parameters)
+            if evaluation is None:
+                ValueError(
+                    "Evaluation cannot be None. Coalition members:", coalition.members
+                )
+            evaluation = cast(tuple[float, dict], evaluation)
+            evaluated_coalitions.append((coalition.members, evaluation[0]))
 
         # Do reward calculation
-        addresses = [
-            [
-                cast(Address, result[1].metrics["trainer_address"])
-                for result in coalition
-            ]
-            for coalition in coalitions
-        ]
-        coalition_and_scores = [
-            (address, score) for address, score in zip(addresses, evaluated_coalitions)
-        ]
-
-        trainers, contributions = self.distribute_reward(coalition_and_scores)
+        player_scores = self.compute_contributions(evaluated_coalitions)
+        trainers, contributions = self.normalize_contribution_scores(player_scores)
         self.model.distribute(trainers, contributions)
 
         res = self.strategy.aggregate_fit(server_round, results, failures)

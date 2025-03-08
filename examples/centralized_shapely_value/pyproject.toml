@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "centralized_shapley_value"
 version = "1.0.0"
-description = "Federated Learning with centralized shapely value"
+description = "Federated Learning with centralized shapley value"
 license = "Apache-2.0"
 dependencies = [
     "flwr[simulation]>=1.10.0",
