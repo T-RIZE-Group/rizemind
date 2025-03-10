@@ -9,8 +9,8 @@ from rizemind.contracts.compensation.shapley.shapley_value_strategy import (
 
 
 class MockShapleyValueStrategy(ShapleyValueStrategy):
-    def __init__(self, strategy, model):
-        ShapleyValueStrategy.__init__(self, strategy, model)
+    def __init__(self, strategy, model, initial_parameters):
+        ShapleyValueStrategy.__init__(self, strategy, model, initial_parameters)
 
     def aggregate_fit(
         self,
@@ -76,11 +76,25 @@ class DummyClientProxy:
         return f"DummyClientProxy({self.identifier})"
 
 
+class DummyStrategy:
+    def __init__(self):
+        return
+
+    def aggregate_fit(
+        self,
+        server_round: int,
+        results: list[tuple[ClientProxy, FitRes]],
+        failures: list[tuple[ClientProxy, FitRes]],
+    ):
+        return Parameters([], ""), {}
+
+
 @pytest.fixture
 def mocked_shapley_value_strategy():
     return MockShapleyValueStrategy(
-        "dummy_strategy",  # type: ignore
+        DummyStrategy(),  # type: ignore
         "dummy_model",  # type: ignore
+        "dummy_parameters",  # type: ignore
     )
 
 
@@ -89,39 +103,36 @@ def mocked_shapley_value_strategy():
 # -------------------------------
 
 
-def sort_key(lst):
-    # Sort by the length of the coalition and then by each tuple's (client identifier, trainer_address)
-    return (len(lst), [(t[0].identifier, t[1].metrics["trainer_address"]) for t in lst])
+def sort_key(coalition):
+    key_tuples = [(member, member) for member in sorted(coalition.members)]
+    return (len(coalition.members), key_tuples)
 
 
 @pytest.mark.parametrize(
-    "results, expected_coalitions",
+    "results, expected_members_lists",
     [
-        # Test case with one tuple.
+        # Test case with one tuple:
         (
             [(DummyClientProxy("1"), DummyFitRes("1"))],
             [
-                [],
-                [(DummyClientProxy("1"), DummyFitRes("1"))],
+                [],  # empty coalition
+                ["1"],  # coalition with trainer "1"
             ],
         ),
-        # Test case with two tuples.
+        # Test case with two tuples:
         (
             [
                 (DummyClientProxy("1"), DummyFitRes("1")),
                 (DummyClientProxy("2"), DummyFitRes("2")),
             ],
             [
-                [],
-                [(DummyClientProxy("1"), DummyFitRes("1"))],
-                [(DummyClientProxy("2"), DummyFitRes("2"))],
-                [
-                    (DummyClientProxy("1"), DummyFitRes("1")),
-                    (DummyClientProxy("2"), DummyFitRes("2")),
-                ],
+                [],  # empty coalition
+                ["1"],  # single coalition for trainer "1"
+                ["2"],  # single coalition for trainer "2"
+                ["1", "2"],  # coalition with both trainers
             ],
         ),
-        # Test case with three tuples.
+        # Test case with three tuples:
         (
             [
                 (DummyClientProxy("1"), DummyFitRes("1")),
@@ -129,37 +140,27 @@ def sort_key(lst):
                 (DummyClientProxy("3"), DummyFitRes("3")),
             ],
             [
-                [],
-                [(DummyClientProxy("1"), DummyFitRes("1"))],
-                [(DummyClientProxy("2"), DummyFitRes("2"))],
-                [(DummyClientProxy("3"), DummyFitRes("3"))],
-                [
-                    (DummyClientProxy("1"), DummyFitRes("1")),
-                    (DummyClientProxy("2"), DummyFitRes("2")),
-                ],
-                [
-                    (DummyClientProxy("1"), DummyFitRes("1")),
-                    (DummyClientProxy("3"), DummyFitRes("3")),
-                ],
-                [
-                    (DummyClientProxy("2"), DummyFitRes("2")),
-                    (DummyClientProxy("3"), DummyFitRes("3")),
-                ],
-                [
-                    (DummyClientProxy("1"), DummyFitRes("1")),
-                    (DummyClientProxy("2"), DummyFitRes("2")),
-                    (DummyClientProxy("3"), DummyFitRes("3")),
-                ],
+                [],  # empty coalition
+                ["1"],
+                ["2"],
+                ["3"],
+                ["1", "2"],
+                ["1", "3"],
+                ["2", "3"],
+                ["1", "2", "3"],
             ],
         ),
     ],
 )
-def test_create_coalitions(mocked_shapley_value_strategy, results, expected_coalitions):
-    res = mocked_shapley_value_strategy.create_coalitions(results)
-    result_sorted = sorted(res, key=sort_key)
-    expected_sorted = sorted(expected_coalitions, key=sort_key)
-    assert result_sorted == expected_sorted, (
-        f"Expected {expected_sorted}, got {result_sorted}"
+def test_create_coalitions(
+    mocked_shapley_value_strategy, results, expected_members_lists
+):
+    res = mocked_shapley_value_strategy.create_coalitions(0, results)
+    # Extract and sort the members list from each Coalition.
+    result_members = sorted([sorted(coalition.members) for coalition in res])
+    expected_sorted = sorted([sorted(members) for members in expected_members_lists])
+    assert result_members == expected_sorted, (
+        f"Expected {expected_sorted}, got {result_members}"
     )
 
 

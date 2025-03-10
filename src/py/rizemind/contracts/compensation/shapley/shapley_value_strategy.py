@@ -43,6 +43,7 @@ class ShapleyValueStrategy(CompensationStrategy):
     def __init__(
         self, strategy: Strategy, model: ModelRegistryV1, initial_parameters: Parameters
     ) -> None:
+        super().__init__(strategy, model)
         self.last_round_parameters = initial_parameters
         self.strategy = strategy
         self.model = model
@@ -72,54 +73,6 @@ class ShapleyValueStrategy(CompensationStrategy):
             coalitions.append(Coalition(id, members, cast(Parameters, parameters), {}))
 
         return coalitions
-
-    """
-    Usage in decentralized:
-
-        self.id_to_addresses = dict()
-        self.id_to_coalitions = []
-        coalitions = self.create_coalitions(results)
-        random.shuffle(
-            coalitions
-        )  # Making sure the order of designated coalitions is different each round
-        for coalition in coalitions:
-            id = uuid.uuid4()
-            id = str(id)
-            addresses: list[Address] = []
-            for _, fit_res in coalition:
-                addresses.append(cast(Address, fit_res.metrics["trainer_address"]))
-            self.id_to_addresses[id] = addresses
-            self.id_to_coalitions.append((id, coalition))
-
-        return self.strategy.aggregate_fit(server_round, results, failures)
-
-    Usage in centralized:
-        coalitions = self.create_coalitions(results)
-
-        # Evaluate Coalitions
-        evaluated_coalitions = [
-            self.evaluate_coalition(server_round, coalition) for coalition in coalitions
-        ]
-
-        # Do reward calculation
-        addresses = [
-            [
-                cast(Address, result[1].metrics["trainer_address"])
-                for result in coalition
-            ]
-            for coalition in coalitions
-        ]
-        coalition_and_scores = [
-            (address, score) for address, score in zip(addresses, evaluated_coalitions)
-        ]
-        player_scores = self.compute_contributions(coalition_and_scores)
-        trainers, contributions = self.normalize_contribution_scores(player_scores)
-        self.model.distribute(trainers, contributions)
-
-        res = self.strategy.aggregate_fit(server_round, results, failures)
-        self.last_round_parameters = cast(Parameters, res[0])
-        return res
-    """
 
     def compute_contributions(
         self, coalition_and_scores: list[CoalitionScore]
