@@ -70,7 +70,9 @@ class ShapleyValueStrategy(CompensationStrategy):
                     server_round, results_coalition, []
                 )
 
-            coalitions.append(Coalition(id, members, cast(Parameters, parameters), {}))
+            if parameters is None:
+                raise Exception("Aggregated parameters is None")
+            coalitions.append(Coalition(id, members, parameters, {}))
 
         return coalitions
 
