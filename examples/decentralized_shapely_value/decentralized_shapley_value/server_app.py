@@ -11,7 +11,9 @@ from rizemind.contracts.models.model_factory_v1 import (
     ModelFactoryV1Config,
     ModelFactoryV1,
 )
-from py.rizemind.contracts.compensation.shapley.decentralized.shapley_value_strategy import DecentralShapleyValueStrategy
+from rizemind.contracts.compensation.shapley.decentralized.shapley_value_strategy import (
+    DecentralShapleyValueStrategy,
+)
 from .task import load_model
 from rizemind.authentication.eth_account_strategy import EthAccountStrategy
 

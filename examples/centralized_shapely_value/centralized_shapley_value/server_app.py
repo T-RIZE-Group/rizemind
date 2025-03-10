@@ -11,7 +11,7 @@ from rizemind.contracts.models.model_factory_v1 import (
     ModelFactoryV1,
 )
 
-from py.rizemind.contracts.compensation.shapley.centralized.shapley_value_strategy import (
+from rizemind.contracts.compensation.shapley.centralized.shapley_value_strategy import (
     CentralShapleyValueStrategy,
 )
 from .task import evaluate_fn, load_model
