@@ -4,14 +4,15 @@ from flwr.common import Context, Metrics, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
 from rizemind.authentication.config import AccountConfig
-from rizemind.contracts.compensation.shapley.centralized.shapley_value_strategy import (
-    CentralShapleyValueStrategy,
-)
 from rizemind.web3.config import Web3Config
 from rizemind.configuration.toml_config import TomlConfig
 from rizemind.contracts.models.model_factory_v1 import (
     ModelFactoryV1Config,
     ModelFactoryV1,
+)
+
+from py.rizemind.contracts.compensation.shapley.centralized.shapley_value_strategy import (
+    CentralShapleyValueStrategy,
 )
 from .task import evaluate_fn, load_model
 from rizemind.authentication.eth_account_strategy import EthAccountStrategy

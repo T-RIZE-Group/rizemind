@@ -1,10 +1,8 @@
 from logging import INFO, WARNING
-import random
 from typing import cast
-import uuid
-from eth_typing import Address
 from flwr.server.strategy import Strategy
 from rizemind.contracts.compensation.shapley.shapley_value_strategy import (
+    Coalition,
     CoalitionScore,
     ShapleyValueStrategy,
 )
@@ -15,12 +13,12 @@ from flwr.common.typing import (
     FitIns,
     FitRes,
     Parameters,
+    Scalar,
 )
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 from flwr.common.logger import log
-from flwr.server.strategy.aggregate import aggregate_inplace as flwr_aggregate_inplace
-from flwr.common.parameter import ndarrays_to_parameters as flwr_ndarrays_to_parameters
+import random
 
 
 class DecentralShapleyValueStrategy(ShapleyValueStrategy):
@@ -34,16 +32,10 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
     to clients according to their coalition contributions.
     """
 
-    # Last round's aggregated model parameters selected based on evaluation performance.
-    last_round_parameters: Parameters
     # List to store evaluation results from clients.
     evaluation_results: list[EvaluateRes]
     # Mapping of coalition IDs to coalitions, where each coalition is a list of (ClientProxy, FitRes) tuples.
-    id_to_coalitions: list[tuple[str, list[tuple[ClientProxy, FitRes]]]]
-    # Mapping of coalition IDs to lists of client addresses participating in that coalition.
-    id_to_addresses: dict[str, list[Address]]
-    # Mapping of coalition IDs to their aggregated model parameters.
-    id_to_parameters: dict[str, Parameters]
+    id_to_coalition: dict[str, Coalition]
 
     def __init__(
         self,
@@ -62,7 +54,6 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
         :type initial_parameters: Parameters
         """
         ShapleyValueStrategy.__init__(self, strategy, model, initial_parameters)
-        self.id_to_parameters: dict[ID, Parameters] = dict()
 
     def initialize_parameters(self, client_manager: ClientManager) -> Parameters | None:
         """
@@ -119,21 +110,16 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
         :return: A tuple containing the aggregated parameters (or None) and a dictionary of metrics.
         :rtype: tuple[Parameters | None, dict[str, bool | bytes | float | int | str]]
         """
-        self.id_to_addresses = dict()
-        self.id_to_coalitions = []
-        coalitions = self.create_coalitions(results)
-        random.shuffle(
-            coalitions
-        )  # Making sure the order of designated coalitions is different each round
-        for coalition in coalitions:
-            id = uuid.uuid4()
-            id = str(id)
-            addresses: list[Address] = []
-            for _, fit_res in coalition:
-                addresses.append(cast(Address, fit_res.metrics["trainer_address"]))
-            self.id_to_addresses[id] = addresses
-            self.id_to_coalitions.append((id, coalition))
 
+        coalitions = self.create_coalitions(server_round, results)
+        # Making sure the order of the coalitions is different each time
+        # to prevent giving the same client the same coalition each single time
+        random.shuffle(coalitions)
+        # The id_to_coalition must be reinstantiated each time
+        # to free up memory from previous round's coalitions
+        self.id_to_coalition = dict()
+        for coalition in coalitions:
+            self.id_to_coalition[coalition.id] = coalition
         return self.strategy.aggregate_fit(server_round, results, failures)
 
     def configure_evaluate(
@@ -162,37 +148,14 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
         )
         configurations: list[tuple[ClientProxy, EvaluateIns]] = []
         i = 0
-        for id, coalition in self.id_to_coalitions:
-            aggregated_parameters = self.aggregate_parameters(coalition, parameters)
-            config = {"id": id}
-            # Store the aggregated parameters for later use in evaluation.
-            self.id_to_parameters[id] = aggregated_parameters
-            evaluate_ins = EvaluateIns(aggregated_parameters, config)  # type: ignore
+
+        for id, coalition in self.id_to_coalition.items():
+            config: dict[str, Scalar] = {"id": id}
+            evaluate_ins = EvaluateIns(coalition.parameters, config)
             # Distribute evaluation instructions among clients using round-robin assignment.
             configurations.append((clients[i % num_clients], evaluate_ins))
             i += 1
         return configurations
-
-    def aggregate_parameters(
-        self, coalition: list[tuple[ClientProxy, FitRes]], parameters: Parameters
-    ) -> Parameters:
-        """
-        Aggregate model parameters for a given coalition.
-
-        If the coalition is empty, return the default provided parameters.
-        Otherwise, perform an in-place aggregation of client model updates using Flower's
-        aggregation utilities and convert the result back into the Parameters format.
-
-        :param coalition: The coalition of client fit results.
-        :type coalition: list[tuple[ClientProxy, FitRes]]
-        :param parameters: Default model parameters if the coalition is empty.
-        :type parameters: Parameters
-        :return: Aggregated model parameters for the coalition.
-        :rtype: Parameters
-        """
-        if len(coalition) == 0:
-            return parameters
-        return flwr_ndarrays_to_parameters(flwr_aggregate_inplace(coalition))
 
     def aggregate_evaluate(
         self,
@@ -231,7 +194,7 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
         if len(failures) > 0:
             log(
                 level=WARNING,
-                msg=f"There have been {len(failures)} on round {server_round}.",
+                msg=f"There have been {len(failures)} on aggregate_evalute in round {server_round}.",
             )
         coalition_and_scores: list[CoalitionScore] = []
         top_accuracy = -1.0
@@ -241,11 +204,12 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
             evaluated_result = result[1]
             id = cast(str, evaluated_result.metrics["id"])
             accuracy = cast(float, evaluated_result.metrics["accuracy"])
-            address_list = self.id_to_addresses[id]
-            coalition_and_scores.append((address_list, accuracy))
+            # address_list = self.id_to_addresses[id]
+            coalition: Coalition = self.id_to_coalition[id]
+            coalition_and_scores.append((coalition.members, accuracy))
             if top_accuracy < accuracy:
                 top_accuracy = accuracy
-                self.last_round_parameters = self.id_to_parameters[id]
+                self.last_round_parameters = coalition.parameters
                 top_loss = evaluated_result.loss
 
         log(

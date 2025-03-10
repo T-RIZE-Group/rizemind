@@ -37,6 +37,7 @@ class Coalition:
 class ShapleyValueStrategy(CompensationStrategy):
     strategy: Strategy
     model: ModelRegistryV1
+    # Last round's aggregated model parameters selected based on evaluation performance.
     last_round_parameters: Parameters
 
     def __init__(
