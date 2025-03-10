@@ -121,12 +121,7 @@ class ShapleyValueStrategy(CompensationStrategy):
     ):
         trainers = [trainer for trainer, _ in trainers_and_contributions]
         contributions = [
-            int(contribution * 100) for _, contribution in trainers_and_contributions
+            max(int(contribution * 100), 0)
+            for _, contribution in trainers_and_contributions
         ]
-        min_contrib = min(contributions)
-        if min_contrib < 0:
-            min_contrib *= -1
-            contributions = [
-                contribution + min_contrib for contribution in contributions
-            ]
         return trainers, contributions
