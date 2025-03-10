@@ -7,7 +7,7 @@ from rizemind.configuration.toml_config import TomlConfig
 
 from rizemind.web3.config import Web3Config
 
-from py.rizemind.contracts.compensation.shapley.decentralized.shapley_value_client import (
+from rizemind.contracts.compensation.shapley.decentralized.shapley_value_client import (
     DecentralShapleyValueClient,
 )
 from .task import load_data, load_model
