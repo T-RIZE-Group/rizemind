@@ -28,7 +28,7 @@ class CentralShapleyValueStrategy(ShapleyValueStrategy):
         results: list[tuple[ClientProxy, EvaluateRes]],
         failures: list[tuple[ClientProxy, EvaluateRes] | BaseException],
     ) -> tuple[float | None, dict[str, bool | bytes | float | int | str]]:
-        return self.strategy.aggregate_evaluate(server_round, results, failures)
+        return None, {}
 
     def evaluate(
         self, server_round: int, parameters: Parameters

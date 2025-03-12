@@ -1,5 +1,4 @@
 from logging import WARNING
-import logging
 from typing import cast
 from flwr.server.strategy import Strategy
 from rizemind.contracts.compensation.shapley.shapley_value_strategy import (
@@ -137,7 +136,7 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
         player_scores = self.normalize_contribution_scores(player_scores)
         self.model.distribute(player_scores)
 
-        return ShapleyValueStrategy.evaluate_coalitions(self)
+        return self.evaluate_coalitions()
 
     def evaluate(self, server_round: int, parameters: Parameters):
         """

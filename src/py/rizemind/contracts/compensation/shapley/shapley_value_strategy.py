@@ -1,5 +1,4 @@
 import itertools
-import logging
 from math import factorial
 from typing import Callable, Optional, cast
 import uuid
@@ -12,7 +11,6 @@ from flwr.common.typing import Parameters, Scalar, FitIns
 from bidict import bidict
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.client_manager import ClientManager
-from flwr.common.logger import log
 
 type CoalitionScore = tuple[list[Address], float]
 type PlayerScore = tuple[Address, float]
