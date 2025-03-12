@@ -1,37 +1,19 @@
 from math import isclose
-from flwr.common import EvaluateIns, EvaluateRes, FitIns, FitRes, Parameters
+import uuid
+from flwr.common import EvaluateIns, EvaluateRes, FitRes, Parameters
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 import pytest
 from rizemind.contracts.compensation.shapley.shapley_value_strategy import (
+    Coalition,
     ShapleyValueStrategy,
 )
 
 
 class MockShapleyValueStrategy(ShapleyValueStrategy):
-    def __init__(self, strategy, model, initial_parameters):
-        ShapleyValueStrategy.__init__(self, strategy, model, initial_parameters)
-
-    def aggregate_fit(
-        self,
-        server_round: int,
-        results: list[tuple[ClientProxy, FitRes]],
-        failures: list[tuple[ClientProxy, FitRes] | BaseException],
-    ) -> tuple[Parameters | None, dict[str, bool | bytes | float | int | str]]:
-        return super().aggregate_fit(server_round, results, failures)
-
-    def initialize_parameters(self, client_manager: ClientManager) -> Parameters | None:
-        return super().initialize_parameters(client_manager)
-
-    def configure_fit(
-        self, server_round: int, parameters: Parameters, client_manager: ClientManager
-    ) -> list[tuple[ClientProxy, FitIns]]:
-        return super().configure_fit(server_round, parameters, client_manager)
-
-    def configure_evaluate(
-        self, server_round: int, parameters: Parameters, client_manager: ClientManager
-    ) -> list[tuple[ClientProxy, EvaluateIns]]:
-        return super().configure_evaluate(server_round, parameters, client_manager)
+    def __init__(self, strategy, model):
+        ShapleyValueStrategy.__init__(self, strategy, model)
+        self.last_round_parameters = Parameters([], "")
 
     def aggregate_evaluate(
         self,
@@ -39,17 +21,17 @@ class MockShapleyValueStrategy(ShapleyValueStrategy):
         results: list[tuple[ClientProxy, EvaluateRes]],
         failures: list[tuple[ClientProxy, EvaluateRes] | BaseException],
     ) -> tuple[float | None, dict[str, bool | bytes | float | int | str]]:
-        return super().aggregate_evaluate(server_round, results, failures)
+        return None, {}
+
+    def configure_evaluate(
+        self, server_round: int, parameters: Parameters, client_manager: ClientManager
+    ) -> list[tuple[ClientProxy, EvaluateIns]]:
+        return []
 
     def evaluate(
         self, server_round: int, parameters: Parameters
     ) -> tuple[float, dict[str, bool | bytes | float | int | str]] | None:
-        return super().evaluate(server_round, parameters)
-
-    def evaluate_coalition(
-        self, server_round: int, results: list[tuple[ClientProxy, FitRes]]
-    ) -> float:
-        return 0
+        return None
 
 
 class DummyFitRes:
@@ -94,7 +76,6 @@ def mocked_shapley_value_strategy():
     return MockShapleyValueStrategy(
         DummyStrategy(),  # type: ignore
         "dummy_model",  # type: ignore
-        "dummy_parameters",  # type: ignore
     )
 
 
@@ -263,13 +244,13 @@ def generate_compute_contribution_params():
                 for coalition in range(2**7)
             ],
             "player_x_outcome": [
-                (0b0000001, -14.285714285714),
-                (0b0000010, -14.285714285714),
-                (0b0000100, -14.285714285714),
-                (0b0001000, -14.285714285714),
-                (0b0010000, -14.285714285714),
-                (0b0100000, -14.285714285714),
-                (0b1000000, -14.285714285714),
+                ("0b1", -14.285714285714),
+                ("0b10", -14.285714285714),
+                ("0b100", -14.285714285714),
+                ("0b1000", -14.285714285714),
+                ("0b10000", -14.285714285714),
+                ("0b100000", -14.285714285714),
+                ("0b1000000", -14.285714285714),
             ],
         },
         {
@@ -285,19 +266,29 @@ def generate_compute_contribution_params():
                 for coalition in range(2**7)
             ],
             "player_x_outcome": [
-                (0b0000001, 71428.571428571),
-                (0b0000010, 571428.57142857),
-                (0b0000100, 571428.57142857),
-                (0b0001000, 571428.57142857),
-                (0b0010000, 571428.57142857),
-                (0b0100000, 571428.57142857),
-                (0b1000000, 571428.57142857),
+                ("0b1", 71428.571428571),
+                ("0b10", 571428.57142857),
+                ("0b100", 571428.57142857),
+                ("0b1000", 571428.57142857),
+                ("0b10000", 571428.57142857),
+                ("0b100000", 571428.57142857),
+                ("0b1000000", 571428.57142857),
             ],
         },
     ]
 
     for case in test_cases:
-        cs = case["cs"]
+        cs: list[Coalition] = []
+        for addresses, score in case["cs"]:
+            addresses = [
+                bin(address) if isinstance(address, int) else address
+                for address in addresses
+            ]
+            id = uuid.uuid4()
+            id = str(id)
+            coalition = Coalition(id, addresses, Parameters([], ""), {})  # type: ignore
+            coalition.loss = score
+            cs.append(coalition)
         for player, expected in case["player_x_outcome"]:
             yield pytest.param(cs, player, expected)
 
