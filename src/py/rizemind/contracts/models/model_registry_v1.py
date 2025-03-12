@@ -1,4 +1,4 @@
-from typing import Any, Optional, cast
+from typing import Optional, cast
 from eth_typing import Address
 from rizemind.contracts.access_control.FlAccessControl import FlAccessControl
 from rizemind.contracts.models.erc5267 import ERC5267
@@ -8,6 +8,8 @@ from eth_account.signers.base import BaseAccount
 from web3.contract import Contract
 from eth_account.types import TransactionDictType
 from rizemind.contracts.abi.model_v1 import model_abi_v1_0_0
+
+CONTRIBUTION_DECIMALS = 6
 
 
 class ModelRegistryV1(FlAccessControl, ModelRegistry):
@@ -22,9 +24,15 @@ class ModelRegistryV1(FlAccessControl, ModelRegistry):
         self.account = account
         self.w3 = w3
 
-    def distribute(self, trainers: list[Address], contributions: list[Any]) -> bool:
+    def distribute(self, trainer_scores: list[tuple[Address, float]]) -> bool:
         if self.account is None:
             raise Exception("No account connected")
+
+        trainers = [trainer for trainer, _ in trainer_scores]
+        contributions = [
+            int(contribution * 10**CONTRIBUTION_DECIMALS)
+            for _, contribution in trainer_scores
+        ]
 
         address = self.account.address
         tx = self.model.functions.distribute(trainers, contributions).build_transaction(

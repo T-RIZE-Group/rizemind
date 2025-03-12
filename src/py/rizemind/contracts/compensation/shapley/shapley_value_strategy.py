@@ -1,0 +1,241 @@
+import itertools
+from math import factorial
+from typing import Callable, Optional, cast
+import uuid
+from eth_typing import Address
+from rizemind.contracts.compensation.compensation_strategy import CompensationStrategy
+from flwr.server.strategy import Strategy
+from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
+from flwr.common import FitRes
+from flwr.common.typing import Parameters, Scalar, FitIns
+from bidict import bidict
+from flwr.server.client_proxy import ClientProxy
+from flwr.server.client_manager import ClientManager
+
+type CoalitionScore = tuple[list[Address], float]
+type PlayerScore = tuple[Address, float]
+
+
+class Coalition:
+    id: str
+    members: list[Address]
+    parameters: Parameters
+    config: dict[str, Scalar]
+    loss: Optional[float]
+    metrics: Optional[dict[str, Scalar]]
+
+    def __init__(
+        self,
+        id: str,
+        members: list[Address],
+        parameters: Parameters,
+        config: dict[str, Scalar],
+    ) -> None:
+        self.id = id
+        self.members = members
+        self.parameters = parameters
+        self.config = config
+
+    def get_loss(self):
+        return self.loss or float("Inf")
+
+    def get_metric(self, name: str, default):
+        if self.metrics:
+            return self.metrics[name] or default
+        return default
+
+
+class ShapleyValueStrategy(CompensationStrategy):
+    strategy: Strategy
+    model: ModelRegistryV1
+    coalitions: dict[str, Coalition]
+    coalition_to_score_fn: Optional[Callable[[Coalition], float]] = None
+    last_round_parameters: Optional[Parameters]
+    aggregate_coalition_metrics: Optional[
+        Callable[[list[Coalition]], dict[str, Scalar]]
+    ] = None
+
+    def __init__(
+        self,
+        strategy: Strategy,
+        model: ModelRegistryV1,
+        coalition_to_score_fn: Optional[Callable[[Coalition], float]] = None,
+        aggregate_coalition_metrics_fn: Optional[
+            Callable[[list[Coalition]], dict[str, Scalar]]
+        ] = None,
+    ) -> None:
+        super().__init__(strategy, model)
+        self.strategy = strategy
+        self.model = model
+        self.coalition_to_score_fn = coalition_to_score_fn
+        self.coalitions = {}
+        self.aggregate_coalition_metrics = aggregate_coalition_metrics_fn
+
+    def initialize_parameters(self, client_manager: ClientManager) -> Parameters | None:
+        """
+        Delegate the initialization of model parameters to the underlying strategy.
+
+        :param client_manager: Manager handling available clients.
+        :type client_manager: ClientManager
+        :return: The initialized model parameters, or None if not applicable.
+        :rtype: Parameters | None
+        """
+        self.last_round_parameters = self.strategy.initialize_parameters(client_manager)
+        return self.last_round_parameters
+
+    def configure_fit(
+        self, server_round: int, parameters: Parameters, client_manager: ClientManager
+    ) -> list[tuple[ClientProxy, FitIns]]:
+        coalition = self.select_coalition()
+        parameters = parameters if coalition is None else coalition.parameters
+        self.last_round_parameters = parameters
+        return self.strategy.configure_fit(server_round, parameters, client_manager)
+
+    def select_coalition(self) -> Optional[Coalition]:
+        coalitions = self.get_coalitions()
+        if len(coalitions) == 0:
+            return None
+        # Find the coalition with the highest number of members
+        return max(coalitions, key=lambda coalition: len(coalition.members))
+
+    def aggregate_fit(
+        self,
+        server_round: int,
+        results: list[tuple[ClientProxy, FitRes]],
+        failures: list[tuple[ClientProxy, FitRes] | BaseException],
+    ) -> tuple[Parameters | None, dict[str, bool | bytes | float | int | str]]:
+        """
+        Aggregate client training (fit) results and form coalitions.
+
+        This method performs the following steps:
+          1. Creates coalitions from client fit results.
+          5. Delegates further parameter aggregation to the underlying strategy.
+
+        :param server_round: The current server round number.
+        :type server_round: int
+        :param results: List of tuples containing client proxies and their fit results.
+        :type results: list[tuple[ClientProxy, FitRes]]
+        :param failures: List of any failed client results.
+        :type failures: list[tuple[ClientProxy, FitRes] | BaseException]
+        :return: A tuple containing the aggregated parameters (or None) and a dictionary of metrics.
+        :rtype: tuple[Parameters | None, dict[str, bool | bytes | float | int | str]]
+        """
+
+        self.create_coalitions(server_round, results)
+
+        return self.strategy.aggregate_fit(server_round, results, failures)
+
+    def create_coalitions(
+        self, server_round: int, results: list[tuple[ClientProxy, FitRes]]
+    ) -> list[Coalition]:
+        results_coalitions = [
+            list(combination)
+            for r in range(len(results) + 1)
+            for combination in itertools.combinations(results, r)
+        ]
+        self.coalitions = {}
+        for results_coalition in results_coalitions:
+            id = uuid.uuid4()
+            id = str(id)
+            members: list[Address] = []
+            for _, fit_res in results_coalition:
+                members.append(cast(Address, fit_res.metrics["trainer_address"]))
+            if len(results_coalition) == 0:
+                parameters = self.last_round_parameters
+            else:
+                parameters, _ = self.strategy.aggregate_fit(
+                    server_round, results_coalition, []
+                )
+
+            if parameters is None:
+                raise Exception("Aggregated parameters is None")
+            self.coalitions[id] = Coalition(id, members, parameters, {})
+
+        return self.get_coalitions()
+
+    def get_coalitions(self) -> list[Coalition]:
+        return list(self.coalitions.values())
+
+    def get_coalition(self, id: str) -> Coalition:
+        if id in self.coalitions:
+            return self.coalitions[id]
+        raise Exception(f"Coalition {id} not found")
+
+    def compute_contributions(
+        self, coalitions: Optional[list[Coalition]]
+    ) -> list[PlayerScore]:
+        # Create a bijective mapping between addresses and a bit_based representation
+        # First the coalition_and_scores is sorted based on the length of list of addresses
+        # Then given that the largest list has all addresses, it will assign it to
+        # list_of_addresses
+        if coalitions is None:
+            coalitions = self.get_coalitions()
+
+        if len(coalitions) == 0:
+            return []
+
+        coalitions.sort(key=lambda coalition: len(coalition.members))
+        list_of_addresses = coalitions[-1].members
+        address_map: bidict = bidict()
+        bit = 0b1
+        for address in list_of_addresses:
+            address_map[address] = bit
+            bit = bit << 1
+
+        # Create coalition_set
+        coalition_set = dict()
+        for coalition in coalitions:
+            addresses, score = coalition.members, self.get_coalition_score(coalition)
+            bit_value = sum([address_map[address] for address in addresses])
+            coalition_set[bit_value] = score
+
+        num_players = len(list_of_addresses)
+
+        player_scores = dict()
+        for player in address_map.values():
+            shapley = 0
+            for coalition, value in coalition_set.items():
+                if coalition & player == 0:  # Player is not in the coalition
+                    new_coalition = coalition | player  # Add player to the coalition
+                    marginal_contribution = coalition_set[new_coalition] - value
+                    s = bin(coalition).count("1")  # Size of coalition
+                    shapley += (
+                        factorial(s)
+                        * factorial(num_players - s - 1)
+                        * marginal_contribution
+                    )
+            shapley = shapley / factorial(num_players)
+            player_scores[address_map.inverse[player]] = shapley
+        return list(player_scores.items())
+
+    def get_coalition_score(self, coalition: Coalition) -> float:
+        score = None
+        if self.coalition_to_score_fn is None:
+            score = coalition.loss
+        else:
+            score = self.coalition_to_score_fn(coalition)
+        if score is None:
+            raise Exception(f"Coalition {coalition.id} not evaluated")
+        return score
+
+    def normalize_contribution_scores(
+        self, trainers_and_contributions: list[PlayerScore]
+    ) -> list[PlayerScore]:
+        return [
+            (trainer, max(contribution, 0))
+            for trainer, contribution in trainers_and_contributions
+        ]
+
+    def evaluate_coalitions(self) -> tuple[float, dict[str, Scalar]]:
+        coalitions = self.get_coalitions()
+        if len(coalitions) == 0:
+            return float("inf"), {}
+
+        coalition_losses = [coalition.loss or float("inf") for coalition in coalitions]
+        metrics = (
+            {}
+            if self.aggregate_coalition_metrics is None
+            else self.aggregate_coalition_metrics(coalitions)
+        )
+
+        return min(coalition_losses), metrics

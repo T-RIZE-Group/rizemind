@@ -1,35 +1,19 @@
 from math import isclose
-from flwr.common import EvaluateIns, EvaluateRes, FitIns, FitRes, Parameters
+import uuid
+from flwr.common import EvaluateIns, EvaluateRes, FitRes, Parameters
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 import pytest
-from rizemind.contracts.compensation.shapely_value_strategy import ShapelyValueStrategy
+from rizemind.contracts.compensation.shapley.shapley_value_strategy import (
+    Coalition,
+    ShapleyValueStrategy,
+)
 
 
-class MockShapelyValueStrategy(ShapelyValueStrategy):
+class MockShapleyValueStrategy(ShapleyValueStrategy):
     def __init__(self, strategy, model):
-        ShapelyValueStrategy.__init__(self, strategy, model)
-
-    def aggregate_fit(
-        self,
-        server_round: int,
-        results: list[tuple[ClientProxy, FitRes]],
-        failures: list[tuple[ClientProxy, FitRes] | BaseException],
-    ) -> tuple[Parameters | None, dict[str, bool | bytes | float | int | str]]:
-        return super().aggregate_fit(server_round, results, failures)
-
-    def initialize_parameters(self, client_manager: ClientManager) -> Parameters | None:
-        return super().initialize_parameters(client_manager)
-
-    def configure_fit(
-        self, server_round: int, parameters: Parameters, client_manager: ClientManager
-    ) -> list[tuple[ClientProxy, FitIns]]:
-        return super().configure_fit(server_round, parameters, client_manager)
-
-    def configure_evaluate(
-        self, server_round: int, parameters: Parameters, client_manager: ClientManager
-    ) -> list[tuple[ClientProxy, EvaluateIns]]:
-        return super().configure_evaluate(server_round, parameters, client_manager)
+        ShapleyValueStrategy.__init__(self, strategy, model)
+        self.last_round_parameters = Parameters([], "")
 
     def aggregate_evaluate(
         self,
@@ -37,17 +21,17 @@ class MockShapelyValueStrategy(ShapelyValueStrategy):
         results: list[tuple[ClientProxy, EvaluateRes]],
         failures: list[tuple[ClientProxy, EvaluateRes] | BaseException],
     ) -> tuple[float | None, dict[str, bool | bytes | float | int | str]]:
-        return super().aggregate_evaluate(server_round, results, failures)
+        return None, {}
+
+    def configure_evaluate(
+        self, server_round: int, parameters: Parameters, client_manager: ClientManager
+    ) -> list[tuple[ClientProxy, EvaluateIns]]:
+        return []
 
     def evaluate(
         self, server_round: int, parameters: Parameters
     ) -> tuple[float, dict[str, bool | bytes | float | int | str]] | None:
-        return super().evaluate(server_round, parameters)
-
-    def evaluate_coalition(
-        self, server_round: int, results: list[tuple[ClientProxy, FitRes]]
-    ) -> float:
-        return 0
+        return None
 
 
 class DummyFitRes:
@@ -74,10 +58,23 @@ class DummyClientProxy:
         return f"DummyClientProxy({self.identifier})"
 
 
+class DummyStrategy:
+    def __init__(self):
+        return
+
+    def aggregate_fit(
+        self,
+        server_round: int,
+        results: list[tuple[ClientProxy, FitRes]],
+        failures: list[tuple[ClientProxy, FitRes]],
+    ):
+        return Parameters([], ""), {}
+
+
 @pytest.fixture
-def mocked_shapely_value_strategy():
-    return MockShapelyValueStrategy(
-        "dummy_strategy",  # type: ignore
+def mocked_shapley_value_strategy():
+    return MockShapleyValueStrategy(
+        DummyStrategy(),  # type: ignore
         "dummy_model",  # type: ignore
     )
 
@@ -87,39 +84,36 @@ def mocked_shapely_value_strategy():
 # -------------------------------
 
 
-def sort_key(lst):
-    # Sort by the length of the coalition and then by each tuple's (client identifier, trainer_address)
-    return (len(lst), [(t[0].identifier, t[1].metrics["trainer_address"]) for t in lst])
+def sort_key(coalition):
+    key_tuples = [(member, member) for member in sorted(coalition.members)]
+    return (len(coalition.members), key_tuples)
 
 
 @pytest.mark.parametrize(
-    "results, expected_coalitions",
+    "results, expected_members_lists",
     [
-        # Test case with one tuple.
+        # Test case with one tuple:
         (
             [(DummyClientProxy("1"), DummyFitRes("1"))],
             [
-                [],
-                [(DummyClientProxy("1"), DummyFitRes("1"))],
+                [],  # empty coalition
+                ["1"],  # coalition with trainer "1"
             ],
         ),
-        # Test case with two tuples.
+        # Test case with two tuples:
         (
             [
                 (DummyClientProxy("1"), DummyFitRes("1")),
                 (DummyClientProxy("2"), DummyFitRes("2")),
             ],
             [
-                [],
-                [(DummyClientProxy("1"), DummyFitRes("1"))],
-                [(DummyClientProxy("2"), DummyFitRes("2"))],
-                [
-                    (DummyClientProxy("1"), DummyFitRes("1")),
-                    (DummyClientProxy("2"), DummyFitRes("2")),
-                ],
+                [],  # empty coalition
+                ["1"],  # single coalition for trainer "1"
+                ["2"],  # single coalition for trainer "2"
+                ["1", "2"],  # coalition with both trainers
             ],
         ),
-        # Test case with three tuples.
+        # Test case with three tuples:
         (
             [
                 (DummyClientProxy("1"), DummyFitRes("1")),
@@ -127,37 +121,27 @@ def sort_key(lst):
                 (DummyClientProxy("3"), DummyFitRes("3")),
             ],
             [
-                [],
-                [(DummyClientProxy("1"), DummyFitRes("1"))],
-                [(DummyClientProxy("2"), DummyFitRes("2"))],
-                [(DummyClientProxy("3"), DummyFitRes("3"))],
-                [
-                    (DummyClientProxy("1"), DummyFitRes("1")),
-                    (DummyClientProxy("2"), DummyFitRes("2")),
-                ],
-                [
-                    (DummyClientProxy("1"), DummyFitRes("1")),
-                    (DummyClientProxy("3"), DummyFitRes("3")),
-                ],
-                [
-                    (DummyClientProxy("2"), DummyFitRes("2")),
-                    (DummyClientProxy("3"), DummyFitRes("3")),
-                ],
-                [
-                    (DummyClientProxy("1"), DummyFitRes("1")),
-                    (DummyClientProxy("2"), DummyFitRes("2")),
-                    (DummyClientProxy("3"), DummyFitRes("3")),
-                ],
+                [],  # empty coalition
+                ["1"],
+                ["2"],
+                ["3"],
+                ["1", "2"],
+                ["1", "3"],
+                ["2", "3"],
+                ["1", "2", "3"],
             ],
         ),
     ],
 )
-def test_create_coalitions(mocked_shapely_value_strategy, results, expected_coalitions):
-    res = mocked_shapely_value_strategy.create_coalitions(results)
-    result_sorted = sorted(res, key=sort_key)
-    expected_sorted = sorted(expected_coalitions, key=sort_key)
-    assert result_sorted == expected_sorted, (
-        f"Expected {expected_sorted}, got {result_sorted}"
+def test_create_coalitions(
+    mocked_shapley_value_strategy, results, expected_members_lists
+):
+    res = mocked_shapley_value_strategy.create_coalitions(0, results)
+    # Extract and sort the members list from each Coalition.
+    result_members = sorted([sorted(coalition.members) for coalition in res])
+    expected_sorted = sorted([sorted(members) for members in expected_members_lists])
+    assert result_members == expected_sorted, (
+        f"Expected {expected_sorted}, got {result_members}"
     )
 
 
@@ -260,13 +244,13 @@ def generate_compute_contribution_params():
                 for coalition in range(2**7)
             ],
             "player_x_outcome": [
-                (0b0000001, -14.285714285714),
-                (0b0000010, -14.285714285714),
-                (0b0000100, -14.285714285714),
-                (0b0001000, -14.285714285714),
-                (0b0010000, -14.285714285714),
-                (0b0100000, -14.285714285714),
-                (0b1000000, -14.285714285714),
+                ("0b1", -14.285714285714),
+                ("0b10", -14.285714285714),
+                ("0b100", -14.285714285714),
+                ("0b1000", -14.285714285714),
+                ("0b10000", -14.285714285714),
+                ("0b100000", -14.285714285714),
+                ("0b1000000", -14.285714285714),
             ],
         },
         {
@@ -282,19 +266,29 @@ def generate_compute_contribution_params():
                 for coalition in range(2**7)
             ],
             "player_x_outcome": [
-                (0b0000001, 71428.571428571),
-                (0b0000010, 571428.57142857),
-                (0b0000100, 571428.57142857),
-                (0b0001000, 571428.57142857),
-                (0b0010000, 571428.57142857),
-                (0b0100000, 571428.57142857),
-                (0b1000000, 571428.57142857),
+                ("0b1", 71428.571428571),
+                ("0b10", 571428.57142857),
+                ("0b100", 571428.57142857),
+                ("0b1000", 571428.57142857),
+                ("0b10000", 571428.57142857),
+                ("0b100000", 571428.57142857),
+                ("0b1000000", 571428.57142857),
             ],
         },
     ]
 
     for case in test_cases:
-        cs = case["cs"]
+        cs: list[Coalition] = []
+        for addresses, score in case["cs"]:
+            addresses = [
+                bin(address) if isinstance(address, int) else address
+                for address in addresses
+            ]
+            id = uuid.uuid4()
+            id = str(id)
+            coalition = Coalition(id, addresses, Parameters([], ""), {})  # type: ignore
+            coalition.loss = score
+            cs.append(coalition)
         for player, expected in case["player_x_outcome"]:
             yield pytest.param(cs, player, expected)
 
@@ -302,9 +296,9 @@ def generate_compute_contribution_params():
 @pytest.mark.parametrize(
     "cs, player, expected", list(generate_compute_contribution_params())
 )
-def test_compute_contributions(mocked_shapely_value_strategy, cs, player, expected):
+def test_compute_contributions(mocked_shapley_value_strategy, cs, player, expected):
     # Call the function with the coalition and score list.
-    computed = mocked_shapely_value_strategy.compute_contributions(cs)
+    computed = mocked_shapley_value_strategy.compute_contributions(cs)
     # Convert the result list to a dictionary for easier lookup.
     computed_dict = {addr: value for addr, value in computed}
     # Assert that the computed contribution for the given player is as expected.

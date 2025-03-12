@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "centralized_shapley_value"
+name = "decentralized_shapley_value"
 version = "1.0.0"
 description = "Federated Learning with centralized shapley value"
 license = "Apache-2.0"
@@ -24,8 +24,8 @@ allow-direct-references = true
 publisher = "trizelabs"
 
 [tool.flwr.app.components]
-serverapp = "centralized_shapley_value.server_app:app"
-clientapp = "centralized_shapley_value.client_app:app"
+serverapp = "decentralized_shapley_value.server_app:app"
+clientapp = "decentralized_shapley_value.client_app:app"
 
 [tool.flwr.app.config]
 num-server-rounds = 3

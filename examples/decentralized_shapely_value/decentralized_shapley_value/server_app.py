@@ -5,6 +5,7 @@ from flwr.common.typing import Scalar
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
 from rizemind.authentication.config import AccountConfig
+
 from rizemind.contracts.compensation.shapley.shapley_value_strategy import Coalition
 from rizemind.web3.config import Web3Config
 from rizemind.configuration.toml_config import TomlConfig
@@ -12,11 +13,10 @@ from rizemind.contracts.models.model_factory_v1 import (
     ModelFactoryV1Config,
     ModelFactoryV1,
 )
-
-from rizemind.contracts.compensation.shapley.centralized.shapley_value_strategy import (
-    CentralShapleyValueStrategy,
+from rizemind.contracts.compensation.shapley.decentralized.shapley_value_strategy import (
+    DecentralShapleyValueStrategy,
 )
-from .task import evaluate_fn, load_model
+from .task import load_model
 from rizemind.authentication.eth_account_strategy import EthAccountStrategy
 import statistics
 
@@ -44,8 +44,6 @@ def server_fn(context: Context):
     # Let's define the global model and pass it to the strategy
     # Note this is optional.
     parameters = ndarrays_to_parameters(load_model().get_weights())
-    print(context.run_config)
-    print(context.node_config)
     # Define the strategy
     strategy = FedAvg(
         fraction_fit=float(context.run_config["fraction-fit"]),
@@ -53,7 +51,6 @@ def server_fn(context: Context):
         min_available_clients=2,
         initial_parameters=parameters,
         evaluate_metrics_aggregation_fn=weighted_average,
-        evaluate_fn=evaluate_fn,  # type:ignore
     )
     # Read from config
     num_rounds = int(context.run_config["num-server-rounds"])
@@ -71,7 +68,7 @@ def server_fn(context: Context):
     contract = ModelFactoryV1(model_v1_config).deploy(account, members, w3)
     config = ServerConfig(num_rounds=int(num_rounds))
     authStrategy = EthAccountStrategy(
-        CentralShapleyValueStrategy(
+        DecentralShapleyValueStrategy(
             strategy,
             contract,
             coalition_to_score_fn=lambda coalition: coalition.metrics["accuracy"],
