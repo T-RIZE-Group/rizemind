@@ -24,4 +24,4 @@ class DecentralShapleyValueClient(NumPyClient):
         self, parameters: NDArrays, config: dict[str, Scalar]
     ) -> tuple[float, int, dict[str, Scalar]]:
         loss, num_examples, metrics = self.client.evaluate(parameters, {})
-        return loss, num_examples, {"accuracy": metrics["accuracy"], "id": config["id"]}
+        return loss, num_examples, {"id": config["id"]} | metrics

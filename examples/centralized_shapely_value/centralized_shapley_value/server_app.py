@@ -1,9 +1,11 @@
 """signedupdates: A Flower / TensorFlow app."""
 
 from flwr.common import Context, Metrics, ndarrays_to_parameters
+from flwr.common.typing import Scalar
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
 from rizemind.authentication.config import AccountConfig
+from rizemind.contracts.compensation.shapley.shapley_value_strategy import Coalition
 from rizemind.web3.config import Web3Config
 from rizemind.configuration.toml_config import TomlConfig
 from rizemind.contracts.models.model_factory_v1 import (
@@ -16,6 +18,7 @@ from rizemind.contracts.compensation.shapley.centralized.shapley_value_strategy 
 )
 from .task import evaluate_fn, load_model
 from rizemind.authentication.eth_account_strategy import EthAccountStrategy
+import statistics
 
 
 # Define metric aggregation function
@@ -26,6 +29,13 @@ def weighted_average(metrics: list[tuple[int, Metrics]]) -> Metrics:
 
     # Aggregate and return custom metric (weighted average)
     return {"accuracy": sum(accuracies) / sum(examples)}
+
+
+def aggregate_coalitions(coalitions: list[Coalition]) -> dict[str, Scalar]:
+    accuracies = [
+        float(coalition.get_metric("accuracy", 0)) for coalition in coalitions
+    ]
+    return {"median_coalition_accuracy": statistics.median(accuracies)}
 
 
 def server_fn(context: Context):
@@ -61,7 +71,13 @@ def server_fn(context: Context):
     contract = ModelFactoryV1(model_v1_config).deploy(account, members, w3)
     config = ServerConfig(num_rounds=int(num_rounds))
     authStrategy = EthAccountStrategy(
-        CentralShapleyValueStrategy(strategy, contract, parameters), contract
+        CentralShapleyValueStrategy(
+            strategy,
+            contract,
+            coalition_to_score_fn=lambda coalition: coalition.metrics["accuracy"],
+            aggregate_coalition_metrics_fn=aggregate_coalitions,
+        ),
+        contract,
     )
     return ServerAppComponents(strategy=authStrategy, config=config)
 
