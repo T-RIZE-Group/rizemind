@@ -1,4 +1,4 @@
-from logging import WARNING
+from logging import WARNING, INFO
 from typing import cast
 from flwr.server.strategy import Strategy
 from rizemind.contracts.compensation.shapley.shapley_value_strategy import (
@@ -66,7 +66,9 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
         :return: A list of (client, EvaluateIns) pairs.
         :rtype: list[tuple[ClientProxy, EvaluateIns]]
         """
+        log(INFO, "All clients' parameters received, initiating evaluation phase.")
         num_clients = client_manager.num_available()
+        log(INFO, f"Available clients: {num_clients}")
         clients = client_manager.sample(
             num_clients=num_clients, min_num_clients=num_clients
         )
@@ -81,7 +83,7 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
             evaluate_ins = EvaluateIns(coalition.parameters, config)
             # Distribute evaluation instructions among clients using round-robin assignment.
             configurations.append((clients[i % num_clients], evaluate_ins))
-
+        log(INFO, "Coalitions generated, sending evaluation tasks to clients.")
         return configurations
 
     def aggregate_evaluate(
@@ -134,8 +136,14 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
         coalitions = self.get_coalitions()
         player_scores = self.compute_contributions(coalitions)
         player_scores = self.normalize_contribution_scores(player_scores)
+        for address, score in player_scores:
+            if score == 0:
+                log(
+                    WARNING,
+                    f"Free rider detected! Trainer address: {address}, Score: {score}",
+                )
         self.model.distribute(player_scores)
-
+        log(INFO, "Trainers rewards distributed.")
         return self.evaluate_coalitions()
 
     def evaluate(self, server_round: int, parameters: Parameters):
