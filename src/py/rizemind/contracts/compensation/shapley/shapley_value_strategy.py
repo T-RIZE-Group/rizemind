@@ -11,6 +11,8 @@ from flwr.common.typing import Parameters, Scalar, FitIns
 from bidict import bidict
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.client_manager import ClientManager
+from flwr.common.logger import log
+from logging import INFO, DEBUG, WARNING
 
 type CoalitionScore = tuple[list[Address], float]
 type PlayerScore = tuple[Address, float]
@@ -64,6 +66,7 @@ class ShapleyValueStrategy(CompensationStrategy):
             Callable[[list[Coalition]], dict[str, Scalar]]
         ] = None,
     ) -> None:
+        log(DEBUG, "Initializing base class shapely value strategy.")
         super().__init__(strategy, model)
         self.strategy = strategy
         self.model = model
@@ -86,16 +89,24 @@ class ShapleyValueStrategy(CompensationStrategy):
     def configure_fit(
         self, server_round: int, parameters: Parameters, client_manager: ClientManager
     ) -> list[tuple[ClientProxy, FitIns]]:
+        log(DEBUG, "Creating fit instructions for clients.")
+        log(DEBUG, "Selecting the correct coalition.")
         coalition = self.select_coalition()
         parameters = parameters if coalition is None else coalition.parameters
+        log(
+            DEBUG,
+            "Setting the previous rounds best parameter from the selected coalition.",
+        )
         self.last_round_parameters = parameters
         return self.strategy.configure_fit(server_round, parameters, client_manager)
 
     def select_coalition(self) -> Optional[Coalition]:
         coalitions = self.get_coalitions()
         if len(coalitions) == 0:
+            log(DEBUG, "No coalition was found.")
             return None
         # Find the coalition with the highest number of members
+        log(DEBUG, "Get coalition with the highest number of members.")
         return max(coalitions, key=lambda coalition: len(coalition.members))
 
     def aggregate_fit(
@@ -120,7 +131,12 @@ class ShapleyValueStrategy(CompensationStrategy):
         :return: A tuple containing the aggregated parameters (or None) and a dictionary of metrics.
         :rtype: tuple[Parameters | None, dict[str, bool | bytes | float | int | str]]
         """
-
+        log(DEBUG, "Received fit aggregation results from clients.")
+        if len(failures) > 0:
+            log(
+                level=WARNING,
+                msg=f"There have been {len(failures)} on aggregate_fit in round {server_round}.",
+            )
         self.create_coalitions(server_round, results)
 
         return self.strategy.aggregate_fit(server_round, results, failures)
@@ -128,6 +144,7 @@ class ShapleyValueStrategy(CompensationStrategy):
     def create_coalitions(
         self, server_round: int, results: list[tuple[ClientProxy, FitRes]]
     ) -> list[Coalition]:
+        log(DEBUG, "Creating coalitions.")
         results_coalitions = [
             list(combination)
             for r in range(len(results) + 1)
@@ -168,22 +185,24 @@ class ShapleyValueStrategy(CompensationStrategy):
         # First the coalition_and_scores is sorted based on the length of list of addresses
         # Then given that the largest list has all addresses, it will assign it to
         # list_of_addresses
+        log(DEBUG, "Computing contributions.")
         if coalitions is None:
             coalitions = self.get_coalitions()
 
         if len(coalitions) == 0:
+            log(DEBUG, "No coalition was found. Returning empty for computations.")
             return []
 
         coalitions.sort(key=lambda coalition: len(coalition.members))
         list_of_addresses = coalitions[-1].members
-        address_map: bidict = bidict()
+        address_map: bidict[Address, int] = bidict()
         bit = 0b1
         for address in list_of_addresses:
             address_map[address] = bit
             bit = bit << 1
 
         # Create coalition_set
-        coalition_set = dict()
+        coalition_set: dict[int, float] = dict()
         for coalition in coalitions:
             addresses, score = coalition.members, self.get_coalition_score(coalition)
             bit_value = sum([address_map[address] for address in addresses])
@@ -191,7 +210,7 @@ class ShapleyValueStrategy(CompensationStrategy):
 
         num_players = len(list_of_addresses)
 
-        player_scores = dict()
+        player_scores: dict[Address, float] = dict()
         for player in address_map.values():
             shapley = 0
             for coalition, value in coalition_set.items():
@@ -206,6 +225,12 @@ class ShapleyValueStrategy(CompensationStrategy):
                     )
             shapley = shapley / factorial(num_players)
             player_scores[address_map.inverse[player]] = shapley
+
+        log(
+            INFO,
+            "Calculated player contributions.",
+            extra={"player_scores": player_scores},
+        )
         return list(player_scores.items())
 
     def get_coalition_score(self, coalition: Coalition) -> float:
@@ -227,8 +252,13 @@ class ShapleyValueStrategy(CompensationStrategy):
         ]
 
     def evaluate_coalitions(self) -> tuple[float, dict[str, Scalar]]:
+        log(
+            DEBUG,
+            "Evaluating coalitions by calculating their loss and optional metrics.",
+        )
         coalitions = self.get_coalitions()
         if len(coalitions) == 0:
+            log(DEBUG, "No coalition found, returning inf as the loss value.")
             return float("inf"), {}
 
         coalition_losses = [coalition.loss or float("inf") for coalition in coalitions]
