@@ -17,6 +17,8 @@ from rizemind.contracts.models.model_factory_v1 import (
 )
 from .task import load_model
 from rizemind.authentication.eth_account_strategy import EthAccountStrategy
+from flwr.common.logger import log
+from logging import INFO
 
 
 # Define metric aggregation function
@@ -31,8 +33,11 @@ def weighted_average(metrics: list[tuple[int, Metrics]]) -> Metrics:
 
 def server_fn(context: Context):
     """Construct components that set the ServerApp behaviour."""
+    log(INFO, "Creating base model.")
+    log(INFO, "Initializing random weights.")
     parameters = ndarrays_to_parameters(load_model().get_weights())
 
+    log(INFO, "Creating base strategy: FedAvg")
     # Define the strategy
     strategy = FedAvg(
         fraction_fit=float(context.run_config["fraction-fit"]),
@@ -66,12 +71,19 @@ def server_fn(context: Context):
 
     # loads the config for the model
     model_v1_config = ModelFactoryV1Config(**config.get("tool.web3.model_v1"))
+    log(INFO, "Web3 model contract loaded.")
+    log(
+        INFO,
+        "Web3 model contract address: https://testnet-explorer.rizenet.io/address/0xB88D434B10f0bB783A826bC346396AbB19B6C6F7",
+    )
     # deploys the smart contract
     contract = ModelFactoryV1(model_v1_config).deploy(account, members, w3)
     config = ServerConfig(num_rounds=int(num_rounds))
+    log(INFO, "Server configured.")
     authStrategy = EthAccountStrategy(
         SimpleCompensationStrategy(strategy, contract), contract
     )
+    log(INFO, "Compensation strategy configured.")
     return ServerAppComponents(strategy=authStrategy, config=config)
 
 
