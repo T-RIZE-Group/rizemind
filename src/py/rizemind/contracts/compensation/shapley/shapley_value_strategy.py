@@ -66,7 +66,7 @@ class ShapleyValueStrategy(CompensationStrategy):
             Callable[[list[Coalition]], dict[str, Scalar]]
         ] = None,
     ) -> None:
-        log(DEBUG, "Initializing base class shapely value strategy.")
+        log(DEBUG, "ShapleyValueStrategy: initializing")
         super().__init__(strategy, model)
         self.strategy = strategy
         self.model = model
@@ -89,13 +89,16 @@ class ShapleyValueStrategy(CompensationStrategy):
     def configure_fit(
         self, server_round: int, parameters: Parameters, client_manager: ClientManager
     ) -> list[tuple[ClientProxy, FitIns]]:
-        log(DEBUG, "Creating fit instructions for clients.")
-        log(DEBUG, "Selecting the correct coalition.")
+        log(DEBUG, "configure_fit: creating fit instructions for clients")
+        log(
+            DEBUG,
+            "configure_fit: selecting the correct coalition as the best previous coalition",
+        )
         coalition = self.select_coalition()
         parameters = parameters if coalition is None else coalition.parameters
         log(
             DEBUG,
-            "Setting the previous rounds best parameter from the selected coalition.",
+            "configure_fit: setting the previous rounds best parameter from the selected coalition",
         )
         self.last_round_parameters = parameters
         return self.strategy.configure_fit(server_round, parameters, client_manager)
@@ -103,10 +106,10 @@ class ShapleyValueStrategy(CompensationStrategy):
     def select_coalition(self) -> Optional[Coalition]:
         coalitions = self.get_coalitions()
         if len(coalitions) == 0:
-            log(DEBUG, "No coalition was found.")
+            log(DEBUG, "select_coalition: no coalition was found")
             return None
         # Find the coalition with the highest number of members
-        log(DEBUG, "Get coalition with the highest number of members.")
+        log(DEBUG, "select_coalition: get coalition with the highest number of members")
         return max(coalitions, key=lambda coalition: len(coalition.members))
 
     def aggregate_fit(
@@ -131,11 +134,10 @@ class ShapleyValueStrategy(CompensationStrategy):
         :return: A tuple containing the aggregated parameters (or None) and a dictionary of metrics.
         :rtype: tuple[Parameters | None, dict[str, bool | bytes | float | int | str]]
         """
-        log(DEBUG, "Received fit aggregation results from clients.")
         if len(failures) > 0:
             log(
                 level=WARNING,
-                msg=f"There have been {len(failures)} on aggregate_fit in round {server_round}.",
+                msg=f"aggregate_fit: there have been {len(failures)} in round {server_round}",
             )
         self.create_coalitions(server_round, results)
 
@@ -144,7 +146,7 @@ class ShapleyValueStrategy(CompensationStrategy):
     def create_coalitions(
         self, server_round: int, results: list[tuple[ClientProxy, FitRes]]
     ) -> list[Coalition]:
-        log(DEBUG, "Creating coalitions.")
+        log(DEBUG, "create_coalitions: initializing")
         results_coalitions = [
             list(combination)
             for r in range(len(results) + 1)
@@ -185,12 +187,13 @@ class ShapleyValueStrategy(CompensationStrategy):
         # First the coalition_and_scores is sorted based on the length of list of addresses
         # Then given that the largest list has all addresses, it will assign it to
         # list_of_addresses
-        log(DEBUG, "Computing contributions.")
+        log(DEBUG, "compute_contributions: initializing")
         if coalitions is None:
             coalitions = self.get_coalitions()
 
         if len(coalitions) == 0:
-            log(DEBUG, "No coalition was found. Returning empty for computations.")
+            log(DEBUG, "compute_contributions: no coalition was found")
+            log(DEBUG, "compute_contributions: returning empty for computations")
             return []
 
         coalitions.sort(key=lambda coalition: len(coalition.members))
@@ -228,7 +231,7 @@ class ShapleyValueStrategy(CompensationStrategy):
 
         log(
             INFO,
-            "Calculated player contributions.",
+            "compute_contributions: calculated player contributions.",
             extra={"player_scores": player_scores},
         )
         return list(player_scores.items())
@@ -254,11 +257,14 @@ class ShapleyValueStrategy(CompensationStrategy):
     def evaluate_coalitions(self) -> tuple[float, dict[str, Scalar]]:
         log(
             DEBUG,
-            "Evaluating coalitions by calculating their loss and optional metrics.",
+            "evaluate_coalitions: evaluating coalitions by calculating their loss and optional metrics",
         )
         coalitions = self.get_coalitions()
         if len(coalitions) == 0:
-            log(DEBUG, "No coalition found, returning inf as the loss value.")
+            log(
+                DEBUG,
+                "evaluate_coalitions: no coalition found, returning inf as the loss value",
+            )
             return float("inf"), {}
 
         coalition_losses = [coalition.loss or float("inf") for coalition in coalitions]

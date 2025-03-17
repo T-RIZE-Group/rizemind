@@ -18,24 +18,29 @@ class SimpleCompensationStrategy(CompensationStrategy):
         CompensationStrategy.__init__(self, strategy, model)
 
     def calculate(self, client_ids: list[Address]):
-        log(INFO, "Calculating compensations.")
-        return client_ids, [1 for _ in client_ids]
+        log(INFO, "calculate: calculating compensations.")
+        return [(id, 1.0) for id in client_ids]
 
     def aggregate_fit(self, server_round, results, failures):
         log(
             INFO,
-            "Training results received from the clients. Initializing aggregation.",
+            "aggregate_fit: training results received from the clients",
         )
-        trainers, contributions = self.calculate(
+        log(INFO, "aggregate_fit: initializing aggregation")
+        trainer_scores = self.calculate(
             [cast(Address, res.metrics["trainer_address"]) for _, res in results]
         )
-        self.model.distribute(trainers, contributions)
+        self.model.distribute(trainer_scores)
         return self.strategy.aggregate_fit(server_round, results, failures)
 
     def initialize_parameters(self, client_manager: ClientManager) -> Parameters | None:
         log(
             INFO,
-            "First training phase started. Initializing model parameters for the first time.",
+            "initialize_parameters: first training phase started",
+        )
+        log(
+            INFO,
+            "initialize_parameters: initializing model parameters for the first time",
         )
         return self.strategy.initialize_parameters(client_manager)
 
