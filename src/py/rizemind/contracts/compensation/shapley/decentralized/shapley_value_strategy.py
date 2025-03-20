@@ -90,7 +90,6 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
         log(
             DEBUG,
             "configure_evaluate: client evaluation configurations generated",
-            extra={"configurations": configurations},
         )
         return configurations
 
