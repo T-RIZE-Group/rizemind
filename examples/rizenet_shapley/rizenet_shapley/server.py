@@ -21,6 +21,7 @@ from rizemind.authentication.eth_account_strategy import EthAccountStrategy
 import statistics
 from flwr.common.logger import log
 from logging import INFO
+from dotenv import load_dotenv
 
 
 # Define metric aggregation function
@@ -49,7 +50,6 @@ def server_fn(context: Context):
     log(INFO, "Initializing random weights.")
     parameters = ndarrays_to_parameters(load_model().get_weights())
 
-
     # Define the strategy
     log(INFO, "Creating base strategy: FedAvg")
     strategy = FedAvg(
@@ -60,8 +60,8 @@ def server_fn(context: Context):
         evaluate_metrics_aggregation_fn=weighted_average,
     )
 
-
     # Read from config
+    load_dotenv()
     num_rounds = int(context.run_config["num-server-rounds"])
     config = TomlConfig("./pyproject.toml")
     auth_config = AccountConfig(**config.get("tool.eth.account"))

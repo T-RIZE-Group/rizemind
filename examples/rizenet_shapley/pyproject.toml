@@ -3,18 +3,15 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "rizenet_shapley"
+name = "rizenet_shapley_value"
 version = "1.0.0"
-description = "Federated Learning with signed updates and rizenet compensation distribution"
+description = "Federated Learning with decentralized shapley value"
 license = "Apache-2.0"
 dependencies = [
     "flwr[simulation]>=1.10.0",
     "flwr-datasets[vision]>=0.3.0",
     "tensorflow-cpu>=2.9.1, != 2.11.1 ; platform_machine == \"x86_64\"",
-    "tensorflow-macos>=2.9.1, != 2.11.1 ; sys_platform == \"darwin\" and platform_machine == \"arm64\"",
     "ray>=2.0.0",
-    "rizemind>=0.0.1",
-    "python-dotenv>=1.0.1"
 ]
 
 
@@ -27,8 +24,8 @@ allow-direct-references = true
 publisher = "trizelabs"
 
 [tool.flwr.app.components]
-serverapp = "rizenet_shapley.server_app:app"
-clientapp = "rizenet_shapley.client_app:app"
+serverapp = "rizenet_shapley.server:app"
+clientapp = "rizenet_shapley.client:app"
 
 [tool.flwr.app.config]
 num-server-rounds = 3
