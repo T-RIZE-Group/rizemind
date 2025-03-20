@@ -46,12 +46,11 @@ class ModelRegistryV1(FlAccessControl, ModelRegistry):
 
         log(
             INFO,
-            "distribute: trainers rewards distributed %s",
-            [
-                (trainer, contribution)
-                for trainer, contribution in zip(trainers, contributions)
-            ],
+            "distribute: trainers rewards distributed:",
         )
+        log(INFO, "Reward (Address, Value):")
+        for trainer, contribution in zip(trainers, contributions):
+            log(INFO, "\t(%s, %s)", trainer, contribution)
         return tx_receipt["status"] == 0
 
     @staticmethod
