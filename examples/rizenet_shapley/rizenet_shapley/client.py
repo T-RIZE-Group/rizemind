@@ -47,7 +47,7 @@ class FlowerClient(NumPyClient):
     def evaluate(self, parameters, config):
         """Evaluate the model on the data this client has."""
         self.model.set_weights(parameters)
-        loss, accuracy = self.model.evaluate(self.x_test, self.y_test, verbose=0)
+        loss, accuracy = self.model.evaluate(self.x_test, self.y_test, verbose=0)  # type: ignore
         return loss, len(self.x_test), {"accuracy": accuracy}
 
 
@@ -87,4 +87,4 @@ def client_fn(context: Context):
 
 Account.enable_unaudited_hdwallet_features()
 # Flower ClientApp
-app = ClientApp(client_fn=client_fn)
+app = ClientApp(client_fn=client_fn)  # type: ignore
