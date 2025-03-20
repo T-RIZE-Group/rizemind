@@ -34,6 +34,10 @@ def weighted_average(metrics: list[tuple[int, Metrics]]) -> Metrics:
     return {"accuracy": sum(accuracies) / sum(examples)}
 
 
+def fit_metrics_aggregation_fn(metrics):
+    return {}
+
+
 def aggregate_coalitions(coalitions: list[Coalition]) -> dict[str, Scalar]:
     accuracies = [
         float(coalition.get_metric("accuracy", 0)) for coalition in coalitions
@@ -58,6 +62,7 @@ def server_fn(context: Context):
         min_available_clients=2,
         initial_parameters=parameters,
         evaluate_metrics_aggregation_fn=weighted_average,
+        fit_metrics_aggregation_fn=fit_metrics_aggregation_fn,
     )
 
     # Read from config
