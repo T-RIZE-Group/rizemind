@@ -8,6 +8,8 @@ from rizemind.contracts.abi.model_factory_v1 import model_factory_v1_abi
 from rizemind.web3.chains import RIZENET_TESTNET_CHAINID
 from web3 import Web3
 from eth_account.types import TransactionDictType
+from flwr.common.logger import log
+from logging import INFO
 
 
 class ModelFactoryV1Config(BaseModel):
@@ -27,6 +29,10 @@ class ModelFactoryV1Config(BaseModel):
     }
 
     def __init__(self, **data):
+        log(
+            INFO,
+            "Web3 model contract address: https://testnet-explorer.rizenet.io/address/0xB88D434B10f0bB783A826bC346396AbB19B6C6F7",
+        )
         super().__init__(**data)
         if self.ticker is None:
             self.ticker = self.name  # Default to name if ticker is not provided

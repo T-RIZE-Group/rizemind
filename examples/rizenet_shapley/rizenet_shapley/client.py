@@ -65,15 +65,15 @@ def client_fn(context: Context):
     verbose = context.run_config.get("verbose")
     learning_rate = context.run_config["learning-rate"]
 
-    # Load the configuration
+    # Load the configurations
     load_dotenv()
     config = TomlConfig("./pyproject.toml")
-    # Creates a AccountConfig using the config section
+    web3_config = Web3Config(**config.get("tool.web3"))
     account_config = AccountConfig(**config.get("tool.eth.account"))
+
     # Derives and address of the mnemonic using HD path
     account = account_config.get_account(partition_id + 1)
-    # Loads the gateway information
-    web3_config = Web3Config(**config.get("tool.web3"))
+
 
     # Return Client instance
     return SigningClient(
