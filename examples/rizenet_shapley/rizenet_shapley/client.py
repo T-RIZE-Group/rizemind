@@ -74,7 +74,6 @@ def client_fn(context: Context):
     # Derives and address of the mnemonic using HD path
     account = account_config.get_account(partition_id + 1)
 
-
     # Return Client instance
     return SigningClient(
         DecentralShapleyValueClient(
