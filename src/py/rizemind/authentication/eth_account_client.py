@@ -9,7 +9,7 @@ from eth_account.signers.base import BaseAccount
 from web3 import Web3
 
 
-class SigningClient:
+class SigningClient(Client):
     """
     A proxy class that wraps a Flower Client to add signing functionality for trained parameters.
 
