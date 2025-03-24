@@ -1,0 +1,60 @@
+[project]
+name = "tabpfn-local-decentralized"
+version = "0.1.0"
+description = "Federated Learning with decentralized evaluation with TabPFN and Flower"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "flwr[simulation]>=1.16.0",
+    "flwr-datasets[vision]>=0.5.0",
+    "torch==2.5.1",
+    "torchvision==0.20.1",
+    "tabpfn>=2.0.7",
+    "numpy>=2.2.4",
+    "pandas>=2.2.3",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.flwr.app]
+publisher = "trizelabs"
+
+[tool.flwr.app.components]
+serverapp = "tabpfn_local_example.server:app"
+clientapp = "tabpfn_local_example.client:app"
+
+[tool.flwr.app.config]
+num-server-rounds = 3
+local-epochs = 1
+batch-size = 32
+learning-rate = 0.005
+fraction-fit = 0.5
+verbose = false
+
+
+[tool.flwr.federations]
+default = "local-simulation"
+
+[tool.flwr.federations.local-simulation]
+options.num-supernodes = 10
+options.backend.client-resources.num-cpus = 2 # each ClientApp assumes to use 2CPUs
+options.backend.client-resources.num-gpus = 0.0 # ratio of VRAM a ClientApp has access to
+[tool.flwr.federations.local-simulation-gpu]
+options.num-supernodes = 10
+options.backend.client-resources.num-cpus = 2
+options.backend.client-resources.num-gpus = 0.25
+
+[tool.web3.model_v1]
+name = "test_model"
+local_factory_deployment_path = "../../smart_contracts/output/31337/ModelRegistryFactory/latest.json"
+
+[tool.eth.account]
+mnemonic = "test test test test test test test test test test test junk"
+
+[tool.web3]
+url = "http://127.0.0.1:8545"
