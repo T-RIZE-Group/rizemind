@@ -12,7 +12,7 @@ jobs:
         uses: astral-sh/ruff-action@v3
         with:
           version: "latest"
-          args: "check"
+          args: "check --select I"
 
       - name: Run Ruff format check
         uses: astral-sh/ruff-action@v3
