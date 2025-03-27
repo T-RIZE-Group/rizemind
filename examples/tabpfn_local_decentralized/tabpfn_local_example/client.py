@@ -15,6 +15,7 @@ from rizemind.web3.config import Web3Config
 from sklearn.model_selection import train_test_split
 
 from .task import get_weights, load_data, load_model, set_weights, test
+import polars as pl
 
 
 class FlowerClient(NumPyClient):
@@ -52,17 +53,21 @@ def client_fn(context: Context):
     config = TomlConfig("./pyproject.toml")
     sample_data_path = cast(str, config.get("tool.dataset.config.sample_data_path"))
     label_name = cast(str, config.get("tool.dataset.config.label_name"))
-    sample_X, sample_y = load_data(sample_data_path, label_name)
+    df_sample = pl.read_csv(sample_data_path)
+    X_sample, y_sample = (
+        df_sample.drop(label_name),
+        df_sample.select(pl.col(label_name)).to_numpy().ravel(),
+    )
 
-    dataset_path = cast(str, config.get("tool.dataset.config.dataset_path"))
-    data = load_data(dataset_path, label_name)
+    num_partitions = int(context.node_config["num-partitions"])
+    partition_id = int(context.node_config["partition-id"])
+    data = load_data(partition_id, num_partitions)
 
     account_config = AccountConfig(**config.get("tool.eth.account"))
-    partition_id = int(context.node_config["partition-id"])
     account = account_config.get_account(partition_id + 1)
     web3_config = Web3Config(**config.get("tool.web3"))
 
-    base_client = FlowerClient(data, sample_X, sample_y)
+    base_client = FlowerClient(data, X_sample, y_sample)
     sc = DecentralShapleyValueClient(base_client).to_client()
     c = SigningClient(sc, account, web3_config.get_web3())
     return c

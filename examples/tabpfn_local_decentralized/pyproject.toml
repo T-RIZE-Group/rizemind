@@ -40,21 +40,23 @@ batch-size = 32
 learning-rate = 0.005
 fraction-fit = 0.5
 verbose = false
+num_partitions = 10
 
 [tool.dataset.config]
 sample_data_path = "$SAMPLE_DATA_PATH"
 dataset_path = "$DATASET_PATH"
 label_name = "$LABEL"
 
+
 [tool.flwr.federations]
 default = "local-simulation-gpu"
 
 [tool.flwr.federations.local-simulation]
-options.num-supernodes = 4
+options.num-supernodes = 5
 options.backend.client-resources.num-cpus = 2 # each ClientApp assumes to use 2CPUs
 options.backend.client-resources.num-gpus = 0.0 # ratio of VRAM a ClientApp has access to
 [tool.flwr.federations.local-simulation-gpu]
-options.num-supernodes = 10
+options.num-supernodes = 5
 options.backend.client-resources.num-cpus = 2
 options.backend.client-resources.num-gpus = 0.25
 

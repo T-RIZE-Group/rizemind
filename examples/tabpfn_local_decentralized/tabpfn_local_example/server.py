@@ -20,7 +20,8 @@ from rizemind.contracts.models.model_factory_v1 import (
 )
 from rizemind.web3.config import Web3Config
 
-from tabpfn_local_example.task import get_weights, load_data, load_model
+from tabpfn_local_example.task import get_weights, load_model
+import polars as pl
 
 
 def weighted_metrics(metrics: list[tuple[int, Metrics]]) -> Metrics:
@@ -56,8 +57,12 @@ def server_fn(context: Context):
     config = TomlConfig("./pyproject.toml")
     sample_data_path = cast(str, config.get("tool.dataset.config.sample_data_path"))
     label_name = cast(str, config.get("tool.dataset.config.label_name"))
-    sample_X, sample_y = load_data(sample_data_path, label_name)
-    model = load_model(sample_X, sample_y)
+    df_sample = pl.read_csv(sample_data_path)
+    X_sample, y_sample = (
+        df_sample.drop(label_name).to_pandas(),
+        df_sample.select(pl.col(label_name)).to_numpy().ravel(),
+    )
+    model = load_model(X_sample, y_sample)
     model_weights = get_weights(model.model_)
     parameters = ndarrays_to_parameters(model_weights)
 
