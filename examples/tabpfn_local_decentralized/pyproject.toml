@@ -34,13 +34,13 @@ serverapp = "tabpfn_local_example.server:app"
 clientapp = "tabpfn_local_example.client:app"
 
 [tool.flwr.app.config]
-num-server-rounds = 3
+num-server-rounds = 10
 local-epochs = 1
 batch-size = 32
 learning-rate = 0.005
-fraction-fit = 0.5
+fraction-fit = 1
 verbose = false
-num_partitions = 10
+num_partitions = 200
 
 [tool.dataset.config]
 sample_data_path = "$SAMPLE_DATA_PATH"
@@ -52,12 +52,12 @@ label_name = "$LABEL"
 default = "local-simulation-gpu"
 
 [tool.flwr.federations.local-simulation]
-options.num-supernodes = 5
+options.num-supernodes = 4
 options.backend.client-resources.num-cpus = 2 # each ClientApp assumes to use 2CPUs
 options.backend.client-resources.num-gpus = 0.0 # ratio of VRAM a ClientApp has access to
 [tool.flwr.federations.local-simulation-gpu]
-options.num-supernodes = 5
-options.backend.client-resources.num-cpus = 2
+options.num-supernodes = 4
+options.backend.client-resources.num-cpus = 4
 options.backend.client-resources.num-gpus = 0.25
 
 [tool.web3.model_v1]

@@ -60,6 +60,7 @@ def test(model: TabPFNRegressor, X_test, y_test):
 #     return X.to_pandas(), y
 
 partitioner = None  # Cache partitioner
+i = 0
 
 
 def load_data(partition_id: int, num_partitions: int):
@@ -74,7 +75,9 @@ def load_data(partition_id: int, num_partitions: int):
         partitioner = IidPartitioner(num_partitions)
         partitioner.dataset = dataset
 
-    partition = partitioner.load_partition(partition_id)
+    global i
+    partition = partitioner.load_partition((partition_id + i) % num_partitions)
+    i += 1
     df = cast(pl.DataFrame, partition.to_polars())
     label_name = cast(str, config.get("tool.dataset.config.label_name"))
 

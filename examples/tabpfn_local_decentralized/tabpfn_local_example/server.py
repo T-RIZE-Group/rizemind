@@ -22,6 +22,7 @@ from rizemind.web3.config import Web3Config
 
 from tabpfn_local_example.task import get_weights, load_model
 import polars as pl
+import json
 
 
 def weighted_metrics(metrics: list[tuple[int, Metrics]]) -> Metrics:
@@ -38,11 +39,14 @@ def weighted_metrics(metrics: list[tuple[int, Metrics]]) -> Metrics:
     }
 
 
+server_round = 0
+
+
 def aggregate_coalitions(coalitions: list[Coalition]) -> dict[str, Scalar]:
     rmses = [float(coalition.get_metric("rmse", 0)) for coalition in coalitions]
     maes = [float(coalition.get_metric("mae", 0)) for coalition in coalitions]
     r2_scores = [float(coalition.get_metric("r2_score", 0)) for coalition in coalitions]
-    return {
+    res = {
         "avg_root_mean_squared_error": statistics.mean(rmses),
         "median_root_mean_squared_error": statistics.median(rmses),
         "avg_mean_absolute_error": statistics.mean(maes),
@@ -50,6 +54,11 @@ def aggregate_coalitions(coalitions: list[Coalition]) -> dict[str, Scalar]:
         "avg_r2_score": statistics.mean(r2_scores),
         "median_r2_score": statistics.median(r2_scores),
     }
+    global server_round
+    with open(f"metrics/{server_round}.json", "w") as f:
+        json.dump(res, f)
+    server_round += 1
+    return res
 
 
 def server_fn(context: Context):
