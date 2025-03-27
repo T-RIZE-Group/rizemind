@@ -3,14 +3,14 @@ from typing import cast
 
 import numpy as np
 import polars as pl
+import pandas as pd
 import torch
 from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
 from tabpfn import TabPFNRegressor
-from tabpfn.config import ModelInterfaceConfig
 
 
 def load_model(
-    sample_X: pl.DataFrame,
+    sample_X: pd.DataFrame,
     sample_y: np.ndarray,
 ):
     model = TabPFNRegressor(
@@ -18,11 +18,6 @@ def load_model(
         device="auto",
         inference_precision="auto",
         fit_mode="fit_preprocessors",
-        inference_config=ModelInterfaceConfig(
-            FEATURE_SHIFT_METHOD="shuffle",
-            PREPROCESS_TRANSFORMS=None,
-            REGRESSION_Y_PREPROCESS_TRANSFORMS=(),
-        ),
     )
     model.fit(sample_X, sample_y)
     return model
@@ -56,4 +51,4 @@ def load_data(
     df = pl.read_csv(path)
     X, y = df.drop(label_name), df.select(pl.col(label_name)).to_numpy()
     y = y.ravel()
-    return X, y
+    return X.to_pandas(), y

@@ -15,6 +15,8 @@ from sklearn.model_selection import train_test_split
 
 from .task import get_weights, load_data, load_model, set_weights, test
 
+from dotenv import load_dotenv
+
 
 class FlowerClient(NumPyClient):
     def __init__(self, data, sample_X, sample_y) -> None:
@@ -47,14 +49,15 @@ class FlowerClient(NumPyClient):
 
 
 def client_fn(context: Context):
-    sample_data_path = cast(str, context.node_config["sample_data_path"])
-    label_name = cast(str, context.node_config["label_name"])
+    load_dotenv()
+    config = TomlConfig("./pyproject.toml")
+    sample_data_path = cast(str, config.get("tool.dataset.config.sample_data_path"))
+    label_name = cast(str, config.get("tool.dataset.config.label_name"))
     sample_X, sample_y = load_data(sample_data_path, label_name)
 
-    dataset_path = cast(str, context.node_config["dataset_path"])
+    dataset_path = cast(str, config.get("tool.dataset.config.dataset_path"))
     data = load_data(dataset_path, label_name)
 
-    config = TomlConfig("./pyproject.toml")
     account_config = AccountConfig(**config.get("tool.eth.account"))
     partition_id = int(context.node_config["partition-id"])
     account = account_config.get_account(partition_id + 1)

@@ -1,6 +1,7 @@
 import statistics
 from typing import cast
 
+from dotenv import load_dotenv
 from flwr.common import Context, ndarrays_to_parameters
 from flwr.common.typing import Metrics, Scalar
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
@@ -43,8 +44,10 @@ def aggregate_coalitions(coalitions: list[Coalition]) -> dict[str, Scalar]:
 
 
 def server_fn(context: Context):
-    sample_data_path = cast(str, context.node_config["sample_data_path"])
-    label_name = cast(str, context.node_config["label_name"])
+    load_dotenv()
+    config = TomlConfig("./pyproject.toml")
+    sample_data_path = cast(str, config.get("tool.dataset.config.sample_data_path"))
+    label_name = cast(str, config.get("tool.dataset.config.label_name"))
     sample_X, sample_y = load_data(sample_data_path, label_name)
     model = load_model(sample_X, sample_y)
     model_weights = get_weights(model.model_)
@@ -60,7 +63,6 @@ def server_fn(context: Context):
     )
 
     num_rounds = int(context.run_config["num-server-rounds"])
-    config = TomlConfig("./pyproject.toml")
     auth_config = AccountConfig(**config.get("tool.eth.account"))
     web3_config = Web3Config(**config.get("tool.web3"))
     w3 = web3_config.get_web3()
