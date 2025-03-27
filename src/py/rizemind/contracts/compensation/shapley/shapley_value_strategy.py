@@ -92,7 +92,7 @@ class ShapleyValueStrategy(CompensationStrategy):
         log(DEBUG, "configure_fit: creating fit instructions for clients")
         log(
             DEBUG,
-            "configure_fit: selecting the correct coalition as the best previous coalition",
+            "configure_fit: selecting the base coalition for next round",
         )
         coalition = self.select_coalition()
         parameters = parameters if coalition is None else coalition.parameters
@@ -137,7 +137,7 @@ class ShapleyValueStrategy(CompensationStrategy):
         if len(failures) > 0:
             log(
                 level=WARNING,
-                msg=f"aggregate_fit: there have been {len(failures)} in round {server_round}",
+                msg=f"aggregate_fit: there have been {len(failures)} failures in round {server_round}",
             )
         self.create_coalitions(server_round, results)
 
@@ -192,8 +192,7 @@ class ShapleyValueStrategy(CompensationStrategy):
             coalitions = self.get_coalitions()
 
         if len(coalitions) == 0:
-            log(DEBUG, "compute_contributions: no coalition was found")
-            log(DEBUG, "compute_contributions: returning empty for computations")
+            log(DEBUG, "compute_contributions: no coalition was found, returning empty")
             return []
 
         coalitions.sort(key=lambda coalition: len(coalition.members))
