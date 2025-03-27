@@ -14,6 +14,9 @@ dependencies = [
     "pandas>=2.2.3",
     "polars>=1.26.0",
     "eth-account>=0.13.5",
+    "marimo[recommended]>=0.11.28",
+    "dotenv>=0.9.9",
+    "ipython>=9.0.2",
 ]
 
 [build-system]
@@ -38,6 +41,10 @@ learning-rate = 0.005
 fraction-fit = 0.5
 verbose = false
 
+[tool.dataset.config]
+sample_data_path = "$SAMPLE_DATA_PATH"
+dataset_path = "$DATASET_PATH"
+label_name = "$LABEL"
 
 [tool.flwr.federations]
 default = "local-simulation"

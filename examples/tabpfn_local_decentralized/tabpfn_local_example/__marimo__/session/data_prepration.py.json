@@ -1,0 +1,151 @@
+{
+  "version": "1",
+  "metadata": {
+    "marimo_version": "0.11.28"
+  },
+  "cells": [
+    {
+      "id": "Hbol",
+      "code_hash": "5e64364a88a64be43af47d3be2f19e6b",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "FgoQ",
+      "code_hash": "a14d49ea4eb6dc97e39300cc24c015af",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "DWkf",
+      "code_hash": "8ceea61ac689c35a3b83000a298261a7",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/html": "<marimo-ui-element object-id='DWkf-0' random-id='90b75651-762e-d3b0-54a6-cdcfbc3e632a'><marimo-table data-initial-value='[]' data-label='null' data-data='&quot;./@file/5420-4096154-VYe7IC0r.json&quot;' data-total-rows='5' data-total-columns='51' data-banner-text='&quot;Only showing 50 of 51 columns.&quot;' data-pagination='true' data-page-size='10' data-field-types='[[&quot;feature15&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;Year Renov&quot;, [&quot;integer&quot;, &quot;i64&quot;]], [&quot;feature275&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;feature16&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;feature12&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;Typ Fl(m&#92;u00b2)&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;feature23&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;Star Rating&quot;, [&quot;integer&quot;, &quot;i64&quot;]], [&quot;feature22&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;feature114&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;feature150&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;feature256&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;% Leased&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;feature26&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;Land(SF)&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;Last Sale Price&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;feature13&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;m&#92;u00b2 Avail&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;RBA/GLA&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;feature108&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;feature105&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;feature83&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;feature122&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;Year Built&quot;, [&quot;integer&quot;, &quot;i64&quot;]], [&quot;feature56&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;feature69&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;feature195&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;feature163&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;feature33&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;feature127&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;Parking Ratio&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;feature112&quot;, [&quot;number&quot;, &quot;f64&quot;]], [&quot;Tenancy&quot;, [&quot;integer&quot;, &quot;i64&quot;]], [&quot;Class&quot;, [&quot;integer&quot;, &quot;i64&quot;]], [&quot;Secondary Type&quot;, [&quot;integer&quot;, &quot;i64&quot;]], [&quot;Submarket Cluster&quot;, [&quot;integer&quot;, &quot;i64&quot;]], [&quot;Region&quot;, [&quot;integer&quot;, &quot;i64&quot;]], [&quot;Submarket&quot;, [&quot;integer&quot;, &quot;i64&quot;]], [&quot;Market&quot;, [&quot;integer&quot;, &quot;i64&quot;]], [&quot;Province&quot;, [&quot;integer&quot;, &quot;i64&quot;]], [&quot;Type&quot;, [&quot;integer&quot;, &quot;i64&quot;]], [&quot;FEMA Map Identifier&quot;, [&quot;integer&quot;, &quot;i64&quot;]], [&quot;Location Type&quot;, [&quot;integer&quot;, &quot;i64&quot;]], [&quot;Green Rating&quot;, [&quot;integer&quot;, &quot;i64&quot;]], [&quot;Flood Zone&quot;, [&quot;integer&quot;, &quot;i64&quot;]], [&quot;Last Sale Date&quot;, [&quot;integer&quot;, &quot;i64&quot;]], [&quot;Last Sale Date.year&quot;, [&quot;integer&quot;, &quot;i64&quot;]], [&quot;Last Sale Date.month&quot;, [&quot;integer&quot;, &quot;i64&quot;]], [&quot;Last Sale Date.day&quot;, [&quot;integer&quot;, &quot;i64&quot;]], [&quot;Last Sale Date.dayofweek&quot;, [&quot;integer&quot;, &quot;i64&quot;]]]' data-show-filters='true' data-show-download='true' data-show-column-summaries='false' data-row-headers='[]' data-has-stable-row-id='false'></marimo-table></marimo-ui-element>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "FXHj",
+      "code_hash": "0d8d07ddb094f82646c2d62707f348bf",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "application/json": "[\"\", \"feature15\", \"Year Renov\", \"feature275\", \"feature16\", \"feature12\", \"Typ Fl(m\\u00b2)\", \"feature23\", \"Star Rating\", \"feature22\", \"feature114\", \"feature150\", \"feature256\", \"% Leased\", \"feature26\", \"Land(SF)\", \"Last Sale Price\", \"feature13\", \"m\\u00b2 Avail\", \"RBA/GLA\", \"feature108\", \"feature105\", \"feature83\", \"feature122\", \"Year Built\", \"feature56\", \"feature69\", \"feature195\", \"feature163\", \"feature33\", \"feature127\", \"Parking Ratio\", \"feature112\", \"Tenancy\", \"Class\", \"Secondary Type\", \"Submarket Cluster\", \"Region\", \"Submarket\", \"Market\", \"Province\", \"Type\", \"FEMA Map Identifier\", \"Location Type\", \"Green Rating\", \"Flood Zone\", \"Last Sale Date\", \"Last Sale Date.year\", \"Last Sale Date.month\", \"Last Sale Date.day\", \"Last Sale Date.dayofweek\", \"Max Rent/m\\u00b2/yr\"]"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "agkI",
+      "code_hash": "86e2e99139056d8a23fb989ba49d84ae",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/html": "<pre style='font-size: 12px'>&#x27;Max Rent/m\u00b2/yr&#x27;</pre>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "iCEH",
+      "code_hash": "5b2690a327fff3deea4a8fafdb8c92d0",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "cgnD",
+      "code_hash": "2760d6b6fc5eba833e9e65f5fdfb0750",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "application/json": "[\"text/plain:Float64\", \"text/plain:Int64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Int64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Int64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Float64\", \"text/plain:Int64\", \"text/plain:Int64\", \"text/plain:Int64\", \"text/plain:Int64\", \"text/plain:Int64\", \"text/plain:Int64\", \"text/plain:Int64\", \"text/plain:Int64\", \"text/plain:Int64\", \"text/plain:Int64\", \"text/plain:Int64\", \"text/plain:Int64\", \"text/plain:Int64\", \"text/plain:Int64\", \"text/plain:Int64\", \"text/plain:Int64\", \"text/plain:Int64\", \"text/plain:Int64\", \"text/plain:Float64\"]"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "eBvq",
+      "code_hash": "ea19621f98b52d59e8a90ac8a88c45b6",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "jjTi",
+      "code_hash": "fa3615efbfde1e5a1e50bb2d46f2faec",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "PgWR",
+      "code_hash": "6e01dfe8bf7d22d62124b1f258382af3",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "wkEm",
+      "code_hash": "9ac088588202ae1d12c0ca158836a7ed",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "application/json": "[\"_df\", \"__module__\", \"__annotations__\", \"__doc__\", \"_accessors\", \"__init__\", \"deserialize\", \"_from_pydf\", \"_from_arrow\", \"_from_pandas\", \"_replace\", \"plot\", \"style\", \"shape\", \"height\", \"width\", \"columns\", \"dtypes\", \"flags\", \"schema\", \"__array__\", \"__dataframe__\", \"_comp\", \"_compare_to_other_df\", \"_compare_to_non_df\", \"_div\", \"_cast_all_from_to\", \"__floordiv__\", \"__truediv__\", \"__bool__\", \"__eq__\", \"__ne__\", \"__gt__\", \"__lt__\", \"__ge__\", \"__le__\", \"__getstate__\", \"__setstate__\", \"__mul__\", \"__rmul__\", \"__add__\", \"__radd__\", \"__sub__\", \"__mod__\", \"__str__\", \"__repr__\", \"__contains__\", \"__iter__\", \"__reversed__\", \"__getitem__\", \"__setitem__\", \"__len__\", \"__copy__\", \"__deepcopy__\", \"_ipython_key_completions_\", \"__arrow_c_stream__\", \"_repr_html_\", \"collect_schema\", \"item\", \"to_arrow\", \"to_dict\", \"to_dicts\", \"to_numpy\", \"to_jax\", \"to_torch\", \"to_pandas\", \"_to_pandas_with_object_columns\", \"_to_pandas_without_object_columns\", \"to_series\", \"to_init_repr\", \"serialize\", \"write_json\", \"write_ndjson\", \"write_csv\", \"write_clipboard\", \"write_avro\", \"write_excel\", \"write_ipc\", \"write_ipc_stream\", \"write_parquet\", \"write_database\", \"write_iceberg\", \"write_delta\", \"estimated_size\", \"transpose\", \"reverse\", \"rename\", \"insert_column\", \"filter\", \"remove\", \"glimpse\", \"describe\", \"get_column_index\", \"replace_column\", \"sort\", \"sql\", \"top_k\", \"bottom_k\", \"equals\", \"slice\", \"head\", \"tail\", \"limit\", \"drop_nans\", \"drop_nulls\", \"pipe\", \"with_row_index\", \"with_row_count\", \"group_by\", \"rolling\", \"group_by_dynamic\", \"upsample\", \"join_asof\", \"join\", \"join_where\", \"map_rows\", \"hstack\", \"vstack\", \"extend\", \"drop\", \"drop_in_place\", \"cast\", \"clear\", \"clone\", \"get_columns\", \"get_column\", \"fill_null\", \"fill_nan\", \"explode\", \"pivot\", \"unpivot\", \"unstack\", \"partition_by\", \"shift\", \"is_duplicated\", \"is_unique\", \"lazy\", \"select\", \"select_seq\", \"with_columns\", \"with_columns_seq\", \"n_chunks\", \"max\", \"max_horizontal\", \"min\", \"min_horizontal\", \"sum\", \"sum_horizontal\", \"mean\", \"mean_horizontal\", \"std\", \"var\", \"median\", \"product\", \"quantile\", \"to_dummies\", \"unique\", \"n_unique\", \"approx_n_unique\", \"rechunk\", \"null_count\", \"sample\", \"fold\", \"row\", \"rows\", \"rows_by_key\", \"iter_rows\", \"iter_columns\", \"iter_slices\", \"shrink_to_fit\", \"gather_every\", \"hash_rows\", \"interpolate\", \"is_empty\", \"to_struct\", \"unnest\", \"corr\", \"merge_sorted\", \"set_sorted\", \"update\", \"count\", \"melt\", \"_to_metadata\", \"_row_encode\", \"__dict__\", \"__weakref__\", \"__hash__\", \"__new__\", \"__getattribute__\", \"__setattr__\", \"__delattr__\", \"__reduce_ex__\", \"__reduce__\", \"__subclasshook__\", \"__init_subclass__\", \"__format__\", \"__sizeof__\", \"__dir__\", \"__class__\"]"
+          }
+        }
+      ],
+      "console": []
+    }
+  ]
+}
