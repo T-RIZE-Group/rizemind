@@ -34,7 +34,7 @@ def set_weights(net, parameters):
 
 
 def test(model: TabPFNRegressor, X_test, y_test):
-    y_pred = model.predict(y_test)
+    y_pred = model.predict(X_test)
 
     rmse = cast(float, root_mean_squared_error(y_test, y_pred))
     mae = cast(float, mean_absolute_error(y_test, y_pred))
@@ -49,6 +49,7 @@ def load_data(
 ):
     df: pl.DataFrame = pl.DataFrame()
     df = pl.read_csv(path)
+    df = df.sample(100)
     X, y = df.drop(label_name), df.select(pl.col(label_name)).to_numpy()
     y = y.ravel()
     return X.to_pandas(), y

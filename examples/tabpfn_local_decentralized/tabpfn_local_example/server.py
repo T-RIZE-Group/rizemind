@@ -22,25 +22,36 @@ from rizemind.web3.config import Web3Config
 
 from tabpfn_local_example.task import get_weights, load_data, load_model
 
+from flwr.common import log
+from logging import DEBUG
+
 
 def weighted_metrics(metrics: list[tuple[int, Metrics]]) -> Metrics:
     num_examples = [num_examples for num_examples, _ in metrics]
+    log(DEBUG, "Printing metrics available")
+    log(DEBUG, metrics)
     rmses = [num_examples * float(m["rmse"]) for num_examples, m in metrics]
     maes = [num_examples * float(m["mae"]) for num_examples, m in metrics]
     r2_scores = [num_examples * float(m["r2_score"]) for num_examples, m in metrics]
     return {
         "r2_score": sum(r2_scores) / sum(num_examples),
-        "root_mean_squared_error": sum(rmses) / sum(num_examples),
-        "mean_absolute_error": sum(maes) / sum(num_examples),
+        "rmse": sum(rmses) / sum(num_examples),
+        "mae": sum(maes) / sum(num_examples),
     }
 
 
 def aggregate_coalitions(coalitions: list[Coalition]) -> dict[str, Scalar]:
-    rmses = [
-        float(coalition.get_metric("root_mean_squared_error", 0))
-        for coalition in coalitions
-    ]
-    return {"mean_root_mean_squared_error": statistics.mean(rmses)}
+    rmses = [float(coalition.get_metric("rmse", 0)) for coalition in coalitions]
+    maes = [float(coalition.get_metric("mae", 0)) for coalition in coalitions]
+    r2_scores = [float(coalition.get_metric("r2_score", 0)) for coalition in coalitions]
+    return {
+        "avg_root_mean_squared_error": statistics.mean(rmses),
+        "median_root_mean_squared_error": statistics.median(rmses),
+        "avg_mean_absolute_error": statistics.mean(maes),
+        "median_mean_absolute_error": statistics.median(maes),
+        "avg_r2_score": statistics.mean(r2_scores),
+        "median_r2_score": statistics.median(r2_scores),
+    }
 
 
 def server_fn(context: Context):
@@ -58,7 +69,7 @@ def server_fn(context: Context):
         fraction_evaluate=1.0,
         min_available_clients=2,
         initial_parameters=parameters,
-        fit_metrics_aggregation_fn=weighted_metrics,
+        # fit_metrics_aggregation_fn=weighted_metrics,
         evaluate_metrics_aggregation_fn=weighted_metrics,
     )
 
@@ -80,7 +91,7 @@ def server_fn(context: Context):
         DecentralShapleyValueStrategy(
             fedavg_strategy,
             contract,
-            coalition_to_score_fn=lambda coalition: coalition.metrics["accuracy"],
+            coalition_to_score_fn=lambda coalition: coalition.metrics["rmse"],
             aggregate_coalition_metrics_fn=aggregate_coalitions,
         ),
         contract,

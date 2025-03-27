@@ -123,7 +123,7 @@ class ShapleyValueStrategy(CompensationStrategy):
 
         This method performs the following steps:
           1. Creates coalitions from client fit results.
-          5. Delegates further parameter aggregation to the underlying strategy.
+          2. Delegates further parameter aggregation to the underlying strategy.
 
         :param server_round: The current server round number.
         :type server_round: int

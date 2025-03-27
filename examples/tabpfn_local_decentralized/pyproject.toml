@@ -47,10 +47,10 @@ dataset_path = "$DATASET_PATH"
 label_name = "$LABEL"
 
 [tool.flwr.federations]
-default = "local-simulation"
+default = "local-simulation-gpu"
 
 [tool.flwr.federations.local-simulation]
-options.num-supernodes = 10
+options.num-supernodes = 4
 options.backend.client-resources.num-cpus = 2 # each ClientApp assumes to use 2CPUs
 options.backend.client-resources.num-gpus = 0.0 # ratio of VRAM a ClientApp has access to
 [tool.flwr.federations.local-simulation-gpu]

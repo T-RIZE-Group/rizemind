@@ -41,8 +41,8 @@ class FlowerClient(NumPyClient):
             rmse,
             len(X_test),
             {
-                "root_mean_squared_error": rmse,
-                "mean_absolute_error": mae,
+                "rmse": rmse,
+                "mae": mae,
                 "r2_score": r2,
             },
         )
