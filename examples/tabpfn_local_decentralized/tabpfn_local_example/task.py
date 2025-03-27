@@ -2,8 +2,8 @@ from collections import OrderedDict
 from typing import cast
 
 import numpy as np
-import polars as pl
 import pandas as pd
+import polars as pl
 import torch
 from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
 from tabpfn import TabPFNRegressor

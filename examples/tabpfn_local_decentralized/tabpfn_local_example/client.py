@@ -1,5 +1,6 @@
 from typing import cast
 
+from dotenv import load_dotenv
 from eth_account import Account
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
@@ -14,8 +15,6 @@ from rizemind.web3.config import Web3Config
 from sklearn.model_selection import train_test_split
 
 from .task import get_weights, load_data, load_model, set_weights, test
-
-from dotenv import load_dotenv
 
 
 class FlowerClient(NumPyClient):

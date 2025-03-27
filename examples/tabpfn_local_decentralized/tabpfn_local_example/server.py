@@ -1,12 +1,12 @@
 import statistics
+from logging import DEBUG
 from typing import cast
 
 from dotenv import load_dotenv
-from flwr.common import Context, ndarrays_to_parameters
+from flwr.common import Context, log, ndarrays_to_parameters
 from flwr.common.typing import Metrics, Scalar
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
-
 from rizemind.authentication.config import AccountConfig
 from rizemind.authentication.eth_account_strategy import EthAccountStrategy
 from rizemind.configuration.toml_config import TomlConfig
@@ -21,9 +21,6 @@ from rizemind.contracts.models.model_factory_v1 import (
 from rizemind.web3.config import Web3Config
 
 from tabpfn_local_example.task import get_weights, load_data, load_model
-
-from flwr.common import log
-from logging import DEBUG
 
 
 def weighted_metrics(metrics: list[tuple[int, Metrics]]) -> Metrics:

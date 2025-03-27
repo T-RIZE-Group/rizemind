@@ -6,16 +6,18 @@ app = marimo.App(width="medium")
 
 @app.cell
 def _():
-    import polars as pl
     import pandas as pd
-
+    import polars as pl
     from sklearn.model_selection import train_test_split
+
     return pd, pl, train_test_split
 
 
 @app.cell
 def _(pl):
-    df = pl.read_csv('/home/mik/Projects/rizemind/examples/tabpfn_local_decentralized/pre_train_test.csv').drop('')
+    df = pl.read_csv(
+        "/home/mik/Projects/rizemind/examples/tabpfn_local_decentralized/pre_train_test.csv"
+    ).drop("")
     return (df,)
 
 
@@ -33,8 +35,12 @@ def _(df, train_test_split):
 
 @app.cell
 def _(df_sample, df_train):
-    df_train.write_csv('/home/mik/Projects/rizemind/examples/tabpfn_local_decentralized/train.csv')
-    df_sample.write_csv('/home/mik/Projects/rizemind/examples/tabpfn_local_decentralized/sample.csv')
+    df_train.write_csv(
+        "/home/mik/Projects/rizemind/examples/tabpfn_local_decentralized/train.csv"
+    )
+    df_sample.write_csv(
+        "/home/mik/Projects/rizemind/examples/tabpfn_local_decentralized/sample.csv"
+    )
     return
 
 
