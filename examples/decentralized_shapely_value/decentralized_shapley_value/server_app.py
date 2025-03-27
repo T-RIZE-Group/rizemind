@@ -19,6 +19,8 @@ from rizemind.contracts.compensation.shapley.decentralized.shapley_value_strateg
 from .task import load_model
 from rizemind.authentication.eth_account_strategy import EthAccountStrategy
 import statistics
+from flwr.common.logger import log
+from logging import INFO
 
 
 # Define metric aggregation function
@@ -43,8 +45,11 @@ def server_fn(context: Context):
 
     # Let's define the global model and pass it to the strategy
     # Note this is optional.
+    log(INFO, "Creating base model.")
+    log(INFO, "Initializing random weights.")
     parameters = ndarrays_to_parameters(load_model().get_weights())
     # Define the strategy
+    log(INFO, "Creating base strategy: FedAvg")
     strategy = FedAvg(
         fraction_fit=float(context.run_config["fraction-fit"]),
         fraction_evaluate=1.0,
@@ -65,8 +70,14 @@ def server_fn(context: Context):
         members.append(trainer.address)
 
     model_v1_config = ModelFactoryV1Config(**config.get("tool.web3.model_v1"))
+    log(INFO, "Web3 model contract loaded.")
+    log(
+        INFO,
+        "Web3 model contract address: https://testnet-explorer.rizenet.io/address/0xB88D434B10f0bB783A826bC346396AbB19B6C6F7",
+    )
     contract = ModelFactoryV1(model_v1_config).deploy(account, members, w3)
     config = ServerConfig(num_rounds=int(num_rounds))
+    log(INFO, "Server configured.")
     authStrategy = EthAccountStrategy(
         DecentralShapleyValueStrategy(
             strategy,
@@ -76,6 +87,8 @@ def server_fn(context: Context):
         ),
         contract,
     )
+    log(INFO, "Compensation strategy configured.")
+    log(INFO, "Using Shapley values for reward calculation.")
     return ServerAppComponents(strategy=authStrategy, config=config)
 
 

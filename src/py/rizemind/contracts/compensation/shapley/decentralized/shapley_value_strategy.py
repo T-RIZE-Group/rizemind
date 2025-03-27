@@ -1,4 +1,4 @@
-from logging import WARNING
+from logging import WARNING, INFO, DEBUG
 from typing import cast
 from flwr.server.strategy import Strategy
 from rizemind.contracts.compensation.shapley.shapley_value_strategy import (
@@ -44,6 +44,7 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
         :param initial_parameters: The initial model parameters for the federation.
         :type initial_parameters: Parameters
         """
+        log(DEBUG, "DecentralShapleyValueStrategy: initializing")
         ShapleyValueStrategy.__init__(self, strategy, model, **kwargs)
 
     def configure_evaluate(
@@ -66,7 +67,12 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
         :return: A list of (client, EvaluateIns) pairs.
         :rtype: list[tuple[ClientProxy, EvaluateIns]]
         """
+        log(
+            DEBUG,
+            "configure_evaluate: clients' parameters received, initiating evaluation phase",
+        )
         num_clients = client_manager.num_available()
+        log(INFO, f"configure_evaluate: available number clients: {num_clients}")
         clients = client_manager.sample(
             num_clients=num_clients, min_num_clients=num_clients
         )
@@ -81,7 +87,10 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
             evaluate_ins = EvaluateIns(coalition.parameters, config)
             # Distribute evaluation instructions among clients using round-robin assignment.
             configurations.append((clients[i % num_clients], evaluate_ins))
-
+        log(
+            DEBUG,
+            "configure_evaluate: client evaluation configurations generated",
+        )
         return configurations
 
     def aggregate_evaluate(
@@ -116,10 +125,11 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
         :return: A tuple containing the loss value from the best performing coalition and an empty metrics dictionary.
         :rtype: tuple[float | None, dict[str, bool | bytes | float | int | str]]
         """
+        log(DEBUG, "aggregate_evaluate: client evaluations received")
         if len(failures) > 0:
             log(
                 level=WARNING,
-                msg=f"There have been {len(failures)} on aggregate_evalute in round {server_round}.",
+                msg=f"aggregate_evaluate: there have been {len(failures)} on aggregate_evaluate in round {server_round}",
             )
 
         # Evaluate each coalition result to determine the best performing one.
@@ -134,8 +144,13 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
         coalitions = self.get_coalitions()
         player_scores = self.compute_contributions(coalitions)
         player_scores = self.normalize_contribution_scores(player_scores)
+        for address, score in player_scores:
+            if score == 0:
+                log(
+                    WARNING,
+                    f"aggregate_evaluate: free rider detected! Trainer address: {address}, Score: {score}",
+                )
         self.model.distribute(player_scores)
-
         return self.evaluate_coalitions()
 
     def evaluate(self, server_round: int, parameters: Parameters):

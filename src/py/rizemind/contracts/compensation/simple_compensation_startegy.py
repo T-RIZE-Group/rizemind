@@ -9,6 +9,8 @@ from rizemind.contracts.compensation.compensation_strategy import (
 )
 from flwr.server.client_proxy import ClientProxy
 from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
+from flwr.common.logger import log
+from logging import INFO
 
 
 class SimpleCompensationStrategy(CompensationStrategy):
@@ -16,16 +18,30 @@ class SimpleCompensationStrategy(CompensationStrategy):
         CompensationStrategy.__init__(self, strategy, model)
 
     def calculate(self, client_ids: list[Address]):
-        return client_ids, [1 for _ in client_ids]
+        log(INFO, "calculate: calculating compensations.")
+        return [(id, 1.0) for id in client_ids]
 
     def aggregate_fit(self, server_round, results, failures):
-        trainers, contributions = self.calculate(
+        log(
+            INFO,
+            "aggregate_fit: training results received from the clients",
+        )
+        log(INFO, "aggregate_fit: initializing aggregation")
+        trainer_scores = self.calculate(
             [cast(Address, res.metrics["trainer_address"]) for _, res in results]
         )
-        self.model.distribute(trainers, contributions)
+        self.model.distribute(trainer_scores)
         return self.strategy.aggregate_fit(server_round, results, failures)
 
     def initialize_parameters(self, client_manager: ClientManager) -> Parameters | None:
+        log(
+            INFO,
+            "initialize_parameters: first training phase started",
+        )
+        log(
+            INFO,
+            "initialize_parameters: initializing model parameters for the first time",
+        )
         return self.strategy.initialize_parameters(client_manager)
 
     def configure_fit(

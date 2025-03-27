@@ -8,6 +8,8 @@ from eth_account.signers.base import BaseAccount
 from web3.contract import Contract
 from eth_account.types import TransactionDictType
 from rizemind.contracts.abi.model_v1 import model_abi_v1_0_0
+from flwr.common.logger import log
+from logging import INFO
 
 CONTRIBUTION_DECIMALS = 6
 
@@ -41,6 +43,14 @@ class ModelRegistryV1(FlAccessControl, ModelRegistry):
         signed_tx = self.account.sign_transaction(cast(TransactionDictType, tx))
         tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
         tx_receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
+
+        log(
+            INFO,
+            "distribute: trainers rewards distributed:",
+        )
+        log(INFO, "Reward (Address, Value):")
+        for trainer, contribution in zip(trainers, contributions):
+            log(INFO, "\t(%s, %s)", trainer, contribution)
         return tx_receipt["status"] == 0
 
     @staticmethod
