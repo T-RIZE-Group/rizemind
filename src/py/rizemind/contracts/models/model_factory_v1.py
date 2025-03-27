@@ -8,6 +8,8 @@ from rizemind.contracts.abi.model_factory_v1 import model_factory_v1_abi
 from rizemind.web3.chains import RIZENET_TESTNET_CHAINID
 from web3 import Web3
 from eth_account.types import TransactionDictType
+from flwr.common.logger import log
+from logging import INFO
 
 
 class ModelFactoryV1Config(BaseModel):
@@ -52,6 +54,7 @@ class ModelFactoryV1:
         factory = w3.eth.contract(
             abi=factory_meta.abi, address=factory_meta.address_as_bytes()
         )
+        log(INFO, "Web3 model contract address: %s", factory_meta.address)
 
         tx = factory.functions.createModel(
             self.config.name, self.config.ticker, deployer.address, member_address
