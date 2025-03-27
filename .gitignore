@@ -16,10 +16,12 @@ poetry.lock
 *.pkl
 **/build
 
-*.log
+**.log
 
 .vscode
 
 **/.swp
 
 **/*.csv
+
+**/__marimo__/
