@@ -29,10 +29,6 @@ class ModelFactoryV1Config(BaseModel):
     }
 
     def __init__(self, **data):
-        log(
-            INFO,
-            "Web3 model contract address: https://testnet-explorer.rizenet.io/address/0xB88D434B10f0bB783A826bC346396AbB19B6C6F7",
-        )
         super().__init__(**data)
         if self.ticker is None:
             self.ticker = self.name  # Default to name if ticker is not provided
@@ -58,6 +54,7 @@ class ModelFactoryV1:
         factory = w3.eth.contract(
             abi=factory_meta.abi, address=factory_meta.address_as_bytes()
         )
+        log(INFO, "Web3 model contract address: %s", factory_meta.address)
 
         tx = factory.functions.createModel(
             self.config.name, self.config.ticker, deployer.address, member_address
