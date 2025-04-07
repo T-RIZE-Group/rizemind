@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
-import {EIP712Upgradeable} from "@ozupgradeable/contracts/utils/cryptography/EIP712Upgradeable.sol";
-import {Context} from "@openzeppelin/contracts/utils/Context.sol";
-import {ContextUpgradeable} from "@ozupgradeable/contracts/utils/ContextUpgradeable.sol";
+import {EIP712Upgradeable} from "@openzeppelin-contracts-upgradeable-5.2.0/utils/cryptography/EIP712Upgradeable.sol";
+import {Context} from "@openzeppelin-contracts-5.2.0/utils/Context.sol";
+import {ContextUpgradeable} from "@openzeppelin-contracts-upgradeable-5.2.0/utils/ContextUpgradeable.sol";
 
 import {IModelRegistry, RoundSummary} from "./IModelRegistry.sol";
-import {FLAccessControl} from "../access_control/FLAccessControl.sol";
+import {FLAccessControl} from "../access/FLAccessControl.sol";
 import {SimpleContributionDistributor} from "../compensation/SimpleContributionDistributor.sol";
 
 contract ModelRegistryV1 is
@@ -38,7 +38,10 @@ contract ModelRegistryV1 is
         __FLAccessControl_init(aggregator, initialTrainers);
     }
 
-    function canTrain(address trainer, uint256 roundId) public returns (bool) {
+    function canTrain(
+        address trainer,
+        uint256 /*roundId*/
+    ) public view returns (bool) {
         return isTrainer(trainer);
     }
 
@@ -71,7 +74,7 @@ contract ModelRegistryV1 is
         internal
         view
         virtual
-        override(Context, ContextUpgradeable)
+        override(ContextUpgradeable)
         returns (address)
     {
         return ContextUpgradeable._msgSender();
@@ -81,7 +84,7 @@ contract ModelRegistryV1 is
         internal
         view
         virtual
-        override(Context, ContextUpgradeable)
+        override(ContextUpgradeable)
         returns (bytes calldata)
     {
         return ContextUpgradeable._msgData();
@@ -91,7 +94,7 @@ contract ModelRegistryV1 is
         internal
         view
         virtual
-        override(Context, ContextUpgradeable)
+        override(ContextUpgradeable)
         returns (uint256)
     {
         return ContextUpgradeable._contextSuffixLength();
@@ -106,7 +109,7 @@ contract ModelRegistryV1 is
     // solhint-disable-next-line func-name-mixedcase
     function _EIP712Version()
         internal
-        view
+        pure
         override(EIP712Upgradeable)
         returns (string memory)
     {

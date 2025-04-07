@@ -1,9 +1,9 @@
-pragma solidity ^0.8.10;
 // SPDX-License-Identifier: MIT
-
-// File: MemberManagement.sol
+pragma solidity ^0.8.20;
 
 contract MemberManagement {
+    string private _name;
+
     address[] public members;
     mapping(address => bool) public isMember;
     mapping(uint256 => Proposal) public proposals;
@@ -41,13 +41,22 @@ contract MemberManagement {
     mapping(bytes32 => ModelUpdate) public modelUpdates;
     mapping(address => mapping(uint256 => Model)) public clientHistory;
 
-    event ProposalCreated(uint256 proposalId, address proposer, address member, bool add);
+    event ProposalCreated(
+        uint256 proposalId,
+        address proposer,
+        address member,
+        bool add
+    );
     event ProposalSigned(uint256 proposalId, address signer);
     event MemberAdded(address member);
     event MemberRemoved(address member);
     event ModelUpdateSubmitted(bytes32 modelHash, address signer);
     event ModelUpdateVerified(bytes32 modelHash, address signer);
-    event ModelAdded(address indexed owner, uint256 indexed round, string ipfsHash);
+    event ModelAdded(
+        address indexed owner,
+        uint256 indexed round,
+        string ipfsHash
+    );
     event NewRoundStarted(uint256 newRound);
 
     modifier onlyMember() {
@@ -65,7 +74,12 @@ contract MemberManagement {
         _;
     }
 
-    constructor(address[] memory initialMembers, uint256 initialThreshold) {
+    constructor(
+        string memory name_,
+        address[] memory initialMembers,
+        uint256 initialThreshold
+    ) {
+        _name = name_;
         for (uint256 i = 0; i < initialMembers.length; i++) {
             members.push(initialMembers[i]);
             isMember[initialMembers[i]] = true;
@@ -73,6 +87,10 @@ contract MemberManagement {
         }
         threshold = initialThreshold;
         round = 0; // Initialize round number
+    }
+
+    function name() public view returns (string memory) {
+        return _name;
     }
 
     function proposeAddMember(address member) public onlyMember {
@@ -137,7 +155,9 @@ contract MemberManagement {
         return members;
     }
 
-    function getMemberStatus(address _address) public view returns (bool member, bool whitelisted) {
+    function getMemberStatus(
+        address _address
+    ) public view returns (bool member, bool whitelisted) {
         return (isMember[_address], whitelist[_address]);
     }
 
@@ -145,7 +165,10 @@ contract MemberManagement {
         return modelCount;
     }
 
-    function submitModelUpdate(bytes memory newModelData, bytes memory signature) public {
+    function submitModelUpdate(
+        bytes memory newModelData,
+        bytes memory signature
+    ) public {
         require(isValidSignature(newModelData, signature), "Invalid signature");
 
         bytes32 modelHash = keccak256(newModelData);
@@ -176,11 +199,9 @@ contract MemberManagement {
         emit ModelUpdateVerified(modelHash, update.signer);
     }
 
-    function addModel(string memory _ipfsHash)
-        public
-        onlyWhitelisted
-        onlyOnce(_ipfsHash)
-    {
+    function addModel(
+        string memory _ipfsHash
+    ) public onlyWhitelisted onlyOnce(_ipfsHash) {
         existIPFS[_ipfsHash] = true;
 
         Model memory newModel = Model({
@@ -193,8 +214,11 @@ contract MemberManagement {
         clientHistory[msg.sender][round] = newModel;
         emit ModelAdded(msg.sender, round, _ipfsHash);
     }
-    
-    function isValidSignature(bytes memory data, bytes memory signature) internal view returns (bool) {
+
+    function isValidSignature(
+        bytes memory data,
+        bytes memory signature
+    ) internal view returns (bool) {
         bytes32 messageHash = keccak256(data);
         bytes32 prefixedHash = prefixed(messageHash);
         address recoveredAddress = recoverSigner(prefixedHash, signature);
@@ -202,10 +226,16 @@ contract MemberManagement {
     }
 
     function prefixed(bytes32 hash) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
+        return
+            keccak256(
+                abi.encodePacked("\x19Ethereum Signed Message:\n32", hash)
+            );
     }
 
-    function recoverSigner(bytes32 message, bytes memory sig) internal pure returns (address) {
+    function recoverSigner(
+        bytes32 message,
+        bytes memory sig
+    ) internal pure returns (address) {
         uint8 v;
         bytes32 r;
         bytes32 s;
@@ -213,7 +243,9 @@ contract MemberManagement {
         return ecrecover(message, v, r, s);
     }
 
-    function splitSignature(bytes memory sig) internal pure returns (uint8, bytes32, bytes32) {
+    function splitSignature(
+        bytes memory sig
+    ) internal pure returns (uint8, bytes32, bytes32) {
         require(sig.length == 65, "invalid signature length");
         bytes32 r;
         bytes32 s;
@@ -226,7 +258,10 @@ contract MemberManagement {
         return (v, r, s);
     }
 
-    function getModelIPFSHash(address member, uint256 _round) public view returns (string memory) {
+    function getModelIPFSHash(
+        address member,
+        uint256 _round
+    ) public view returns (string memory) {
         return clientHistory[member][_round].ipfsHash;
     }
 

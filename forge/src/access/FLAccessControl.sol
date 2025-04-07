@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
-import {Initializable} from "@ozupgradeable/contracts/proxy/utils/Initializable.sol";
+import {AccessControlUpgradeable} from "@openzeppelin-contracts-upgradeable-5.2.0/access/AccessControlUpgradeable.sol";
 
-contract FLAccessControl is AccessControl, Initializable {
+contract FLAccessControl is AccessControlUpgradeable {
     bytes32 constant AGGREGATOR_ROLE = keccak256("AGGREGATOR");
     bytes32 constant TRAINER_ROLE = keccak256("TRAINER");
 

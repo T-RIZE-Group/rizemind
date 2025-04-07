@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {ERC1967Proxy} from "@openzeppelin-contracts-5.2.0/proxy/ERC1967/ERC1967Proxy.sol";
+import {AccessControl} from "@openzeppelin-contracts-5.2.0/access/AccessControl.sol";
 
 import {ModelRegistryV1} from "./ModelRegistryV1.sol";
 
@@ -26,7 +26,7 @@ contract ModelRegistryFactory is AccessControl {
         string memory symbol,
         address aggregator,
         address[] memory initialTrainers
-    ) external {
+    ) external returns (address) {
         bytes memory data = abi.encodeWithSelector(
             ModelRegistryV1.initialize.selector,
             name,
@@ -38,9 +38,10 @@ contract ModelRegistryFactory is AccessControl {
         ERC1967Proxy proxy = new ERC1967Proxy(_logicContract, data);
 
         emit ContractCreated(address(proxy), msg.sender, name);
+        return address(proxy);
     }
 
-    function implementation() external returns (address) {
+    function getImplementation() external view returns (address) {
         return _logicContract;
     }
 

@@ -34,10 +34,10 @@ class ModelFactoryV1Config(BaseModel):
             self.ticker = self.name  # Default to name if ticker is not provided
 
     def get_factory_deployment(self, chain_id: int) -> DeployedContract:
+        if self.local_factory_deployment_path is not None:
+            return load_local_deployment(self.local_factory_deployment_path)
         if chain_id in self.factory_deployments:
             return self.factory_deployments[chain_id]
-        elif self.local_factory_deployment_path is not None:
-            return load_local_deployment(self.local_factory_deployment_path)
         raise Exception(
             f"Chain ID#{chain_id} is unsupported, provide a local_deployment_path"
         )

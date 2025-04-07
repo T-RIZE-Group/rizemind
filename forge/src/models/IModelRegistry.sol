@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
-import {IERC5267} from "@openzeppelin/contracts/interfaces/IERC5267.sol";
+import {IERC5267} from "@openzeppelin-contracts-5.2.0/interfaces/IERC5267.sol";
 
 struct RoundSummary {
     uint256 roundId;

@@ -12,3 +12,9 @@ docs/
 
 # Dotenv file
 .env
+
+
+# Soldeer
+/dependencies
+
+output/31337
