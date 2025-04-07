@@ -48,17 +48,6 @@ def test(model: TabPFNRegressor, X_test, y_test):
     return r2, rmse, mae
 
 
-# def load_data(
-#     path: str,
-#     label_name: str,
-# ):
-#     df: pl.DataFrame = pl.DataFrame()
-#     df = pl.read_csv(path)
-#     df = df.sample(100)
-#     X, y = df.drop(label_name), df.select(pl.col(label_name)).to_numpy()
-#     y = y.ravel()
-#     return X.to_pandas(), y
-
 partitioner = None  # Cache partitioner
 i = 0
 
