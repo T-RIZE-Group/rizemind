@@ -46,9 +46,11 @@ $ anvil
 ```
 
 ### Deploy
+Deploy the model factory on your local node.
 
+DO NOT USER THIS KEY IN PRODUCTION
 ```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
+$ forge script script/deployments/ModelV1Factory.s.sol --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
 ```
 
 ### Cast
