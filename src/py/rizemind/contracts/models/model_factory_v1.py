@@ -23,8 +23,7 @@ class ModelFactoryV1Config(BaseModel):
         RIZENET_TESTNET_CHAINID: DeployedContract(
             address=Web3.to_checksum_address(
                 "0xB88D434B10f0bB783A826bC346396AbB19B6C6F7"
-            ),
-            abi=model_factory_v1_abi,
+            )
         )
     }
 
@@ -52,7 +51,7 @@ class ModelFactoryV1:
     def deploy(self, deployer: BaseAccount, member_address: list[str], w3: Web3):
         factory_meta = self.config.get_factory_deployment(w3.eth.chain_id)
         factory = w3.eth.contract(
-            abi=factory_meta.abi, address=factory_meta.address_as_bytes()
+            abi=model_factory_v1_abi, address=factory_meta.address_as_bytes()
         )
         log(INFO, "Web3 model contract address: %s", factory_meta.address)
 
@@ -75,7 +74,7 @@ class ModelFactoryV1:
         event_signature = w3.keccak(
             text="ContractCreated(address,address,address)"
         ).hex()
-        event_filter = factory.events.ContractCreated.create_filter(
+        event_filter = factory.events.ContractCreated.create_filter(  # type: ignore
             from_block=tx_receipt["blockNumber"],
             to_block=tx_receipt["blockNumber"],
             topics=[event_signature, Web3.to_hex(deployer.address.encode("utf-8"))],
