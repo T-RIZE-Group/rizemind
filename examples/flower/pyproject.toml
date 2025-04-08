@@ -1,0 +1,13 @@
+[project]
+name = "flower"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "flwr-datasets[vision]>=0.5.0",
+    "flwr[simulation]>=1.17.0",
+    "ipfshttpclient>=0.7.0",
+    "ray>=2.31.0",
+    "tensorflow>=2.19.0",
+]

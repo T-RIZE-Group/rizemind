@@ -7,13 +7,14 @@ name = "rizenet_shapley_value"
 version = "1.0.0"
 description = "Federated Learning with decentralized shapley value"
 license = "Apache-2.0"
+readme = "README.md"
+requires-python = ">=3.12"
 dependencies = [
-    "flwr[simulation]>=1.10.0",
-    "flwr-datasets[vision]>=0.3.0",
-    "tensorflow-cpu>=2.9.1, != 2.11.1 ; platform_machine == \"x86_64\"",
-    "ray>=2.0.0",
+    "flwr-datasets[vision]>=0.5.0",
+    "flwr[simulation]>=1.17.0",
+    "ray>=2.31.0",
+    "tensorflow>=2.19.0",
 ]
-
 
 [tool.hatch.build.targets.wheel]
 packages = ["."]

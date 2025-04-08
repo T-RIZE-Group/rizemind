@@ -34,7 +34,7 @@ class SigningClient:
         from rizemind.authentication.eth_account_signature import SigningClient
 
         client = NumPyClient()
-        account = Account.create() # or load from mnemonic/private key
+        account = Account.create()  # or load from mnemonic/private key
         w3 = Web3()
 
         signed_client = SigningClient(client, account, w3)

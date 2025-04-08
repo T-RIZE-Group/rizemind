@@ -1,0 +1,10 @@
+[project]
+name = "base-flower"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "flwr>=1.17.0",
+    "tensorflow>=2.19.0",
+]

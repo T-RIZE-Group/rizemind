@@ -1,7 +1,6 @@
 import flwr as fl
 from web3 import Web3
 
-# import ipfshttpclient
 import json
 import pickle
 import ipfshttpclient
@@ -12,8 +11,8 @@ import time
 contract_address = "0x0165878A594ca255338adfa4d48449f69242Eb8F"
 web3 = Web3(Web3.HTTPProvider("HTTP://127.0.0.1:7545"))
 MemberMgtAbi = json.loads(""" [
-    
-                
+
+
       {
           "inputs": [
             {
