@@ -1,7 +1,5 @@
 # T-RIZE DML Infrastructure
 
-T-RIZE Distributed Machine Learning (DML) Infrastructure simplifies environment setup, dependency management, and provides consistent tooling for development, testing, and documentation.
-
 ## Prerequisites
 
 First, install the [`uv`](https://github.com/astral-sh/uv) package manager:
