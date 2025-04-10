@@ -1,11 +1,11 @@
+from flwr.common.typing import EvaluateIns, EvaluateRes, Parameters
+from flwr.server.client_manager import ClientManager
+from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
 from rizemind.contracts.compensation.shapley.shapley_value_strategy import (
     ShapleyValueStrategy,
 )
 from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
-from flwr.common.typing import EvaluateIns, EvaluateRes, Parameters
-from flwr.server.client_manager import ClientManager
-from flwr.server.client_proxy import ClientProxy
 
 
 class CentralShapleyValueStrategy(ShapleyValueStrategy):

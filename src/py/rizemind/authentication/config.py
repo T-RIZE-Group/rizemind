@@ -1,7 +1,6 @@
-from mnemonic import Mnemonic
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
-
+from mnemonic import Mnemonic
 from pydantic import BaseModel, Field, field_validator
 
 

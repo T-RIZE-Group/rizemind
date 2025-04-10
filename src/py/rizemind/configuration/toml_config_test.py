@@ -1,4 +1,5 @@
 import os
+
 from rizemind.configuration.toml_config import TomlConfig
 
 

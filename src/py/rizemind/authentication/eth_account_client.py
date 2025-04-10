@@ -1,12 +1,14 @@
 from typing import Dict
+
+from eth_account.signers.base import BaseAccount
 from flwr.client import Client
-from flwr.common import FitRes, FitIns, EvaluateIns
+from flwr.common import EvaluateIns, FitIns, FitRes
+from web3 import Web3
+
 from rizemind.authentication.signature import (
     sign_parameters_model,
 )
 from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
-from eth_account.signers.base import BaseAccount
-from web3 import Web3
 
 
 class SigningClient:

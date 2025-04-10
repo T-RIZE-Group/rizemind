@@ -4,17 +4,18 @@ from flwr.common import Context, Metrics, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
 from rizemind.authentication.config import AccountConfig
+from rizemind.authentication.eth_account_strategy import EthAccountStrategy
+from rizemind.configuration.toml_config import TomlConfig
 from rizemind.contracts.compensation.simple_compensation_startegy import (
     SimpleCompensationStrategy,
 )
-from rizemind.web3.config import Web3Config
-from rizemind.configuration.toml_config import TomlConfig
 from rizemind.contracts.models.model_factory_v1 import (
-    ModelFactoryV1Config,
     ModelFactoryV1,
+    ModelFactoryV1Config,
 )
+from rizemind.web3.config import Web3Config
+
 from .task import load_model
-from rizemind.authentication.eth_account_strategy import EthAccountStrategy
 
 
 # Define metric aggregation function

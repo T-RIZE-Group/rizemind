@@ -1,4 +1,4 @@
-from eth_typing import HexAddress, Address
+from eth_typing import Address, HexAddress
 from pydantic import BaseModel
 
 

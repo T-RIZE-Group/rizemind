@@ -1,5 +1,5 @@
-from rizemind.authentication.config import AccountConfig
 from eth_account.hdaccount import generate_mnemonic
+from rizemind.authentication.config import AccountConfig
 
 
 def main():

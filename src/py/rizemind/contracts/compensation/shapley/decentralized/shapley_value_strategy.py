@@ -1,10 +1,8 @@
-from logging import WARNING, INFO, DEBUG
+import random
+from logging import DEBUG, INFO, WARNING
 from typing import cast
-from flwr.server.strategy import Strategy
-from rizemind.contracts.compensation.shapley.shapley_value_strategy import (
-    ShapleyValueStrategy,
-)
-from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
+
+from flwr.common.logger import log
 from flwr.common.typing import (
     EvaluateIns,
     EvaluateRes,
@@ -13,8 +11,11 @@ from flwr.common.typing import (
 )
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
-from flwr.common.logger import log
-import random
+from flwr.server.strategy import Strategy
+from rizemind.contracts.compensation.shapley.shapley_value_strategy import (
+    ShapleyValueStrategy,
+)
+from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
 
 
 class DecentralShapleyValueStrategy(ShapleyValueStrategy):

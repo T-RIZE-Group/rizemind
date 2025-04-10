@@ -1,18 +1,19 @@
 import itertools
+import uuid
+from logging import DEBUG, INFO, WARNING
 from math import factorial
 from typing import Callable, Optional, cast
-import uuid
-from eth_typing import Address
-from rizemind.contracts.compensation.compensation_strategy import CompensationStrategy
-from flwr.server.strategy import Strategy
-from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
-from flwr.common import FitRes
-from flwr.common.typing import Parameters, Scalar, FitIns
+
 from bidict import bidict
-from flwr.server.client_proxy import ClientProxy
-from flwr.server.client_manager import ClientManager
+from eth_typing import Address
+from flwr.common import FitRes
 from flwr.common.logger import log
-from logging import INFO, DEBUG, WARNING
+from flwr.common.typing import FitIns, Parameters, Scalar
+from flwr.server.client_manager import ClientManager
+from flwr.server.client_proxy import ClientProxy
+from flwr.server.strategy import Strategy
+from rizemind.contracts.compensation.compensation_strategy import CompensationStrategy
+from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
 
 type CoalitionScore = tuple[list[Address], float]
 type PlayerScore = tuple[Address, float]
