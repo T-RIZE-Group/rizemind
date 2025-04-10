@@ -1,4 +1,4 @@
-# T-RIZE DML Infrastructure
+# Rizemind
 
 ## Prerequisites
 
