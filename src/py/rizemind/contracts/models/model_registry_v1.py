@@ -1,15 +1,16 @@
+from logging import INFO
 from typing import Optional, cast
+
+from eth_account.signers.base import BaseAccount
+from eth_account.types import TransactionDictType
 from eth_typing import Address
+from flwr.common.logger import log
+from rizemind.contracts.abi.model_v1 import model_abi_v1_0_0
 from rizemind.contracts.access_control.FlAccessControl import FlAccessControl
 from rizemind.contracts.models.erc5267 import ERC5267
 from rizemind.contracts.models.model_registry import ModelRegistry
 from web3 import Web3
-from eth_account.signers.base import BaseAccount
 from web3.contract import Contract
-from eth_account.types import TransactionDictType
-from rizemind.contracts.abi.model_v1 import model_abi_v1_0_0
-from flwr.common.logger import log
-from logging import INFO
 
 CONTRIBUTION_DECIMALS = 6
 

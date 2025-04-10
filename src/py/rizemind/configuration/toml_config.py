@@ -1,8 +1,9 @@
-import tomli
 import os
+from functools import reduce
 from pathlib import Path
 from typing import Any, Optional, Union, cast
-from functools import reduce
+
+import tomli
 
 
 def replace_env_vars(obj: Union[dict[str, Any], str]) -> Union[dict[str, Any], str]:

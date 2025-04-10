@@ -1,16 +1,16 @@
+from logging import INFO
 from typing import cast
+
 from eth_typing import Address
 from flwr.common import EvaluateIns, EvaluateRes, FitIns, Parameters
+from flwr.common.logger import log
 from flwr.server.client_manager import ClientManager
+from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
-
 from rizemind.contracts.compensation.compensation_strategy import (
     CompensationStrategy,
 )
-from flwr.server.client_proxy import ClientProxy
 from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
-from flwr.common.logger import log
-from logging import INFO
 
 
 class SimpleCompensationStrategy(CompensationStrategy):

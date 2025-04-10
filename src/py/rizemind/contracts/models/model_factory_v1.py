@@ -1,15 +1,16 @@
+from logging import INFO
 from typing import Optional, cast
-from pydantic import BaseModel, Field
+
 from eth_account.signers.base import BaseAccount
+from eth_account.types import TransactionDictType
+from flwr.common.logger import log
+from pydantic import BaseModel, Field
+from rizemind.contracts.abi.model_factory_v1 import model_factory_v1_abi
 from rizemind.contracts.deployment import DeployedContract
 from rizemind.contracts.local_deployment import load_local_deployment
 from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
-from rizemind.contracts.abi.model_factory_v1 import model_factory_v1_abi
 from rizemind.web3.chains import RIZENET_TESTNET_CHAINID
 from web3 import Web3
-from eth_account.types import TransactionDictType
-from flwr.common.logger import log
-from logging import INFO
 
 
 class ModelFactoryV1Config(BaseModel):

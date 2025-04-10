@@ -1,6 +1,7 @@
-from flwr.server.strategy import Strategy
-from flwr.server.client_proxy import ClientProxy
 from flwr.common.typing import FitRes
+from flwr.server.client_proxy import ClientProxy
+from flwr.server.strategy import Strategy
+
 from rizemind.authentication.signature import recover_model_signer
 from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
 

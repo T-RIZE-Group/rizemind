@@ -1,12 +1,14 @@
 from typing import Dict
+
+from eth_account.signers.base import BaseAccount
 from flwr.client import Client
-from flwr.common import FitRes, FitIns, EvaluateIns
+from flwr.common import EvaluateIns, FitIns, FitRes
+from web3 import Web3
+
 from rizemind.authentication.signature import (
     sign_parameters_model,
 )
 from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
-from eth_account.signers.base import BaseAccount
-from web3 import Web3
 
 
 class SigningClient:
@@ -34,7 +36,7 @@ class SigningClient:
         from rizemind.authentication.eth_account_signature import SigningClient
 
         client = NumPyClient()
-        account = Account.create() # or load from mnemonic/private key
+        account = Account.create()  # or load from mnemonic/private key
         w3 = Web3()
 
         signed_client = SigningClient(client, account, w3)

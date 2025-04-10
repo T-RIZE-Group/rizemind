@@ -1,7 +1,8 @@
-from web3.contract import Contract
 from typing import NamedTuple
+
 from rizemind.contracts.abi.erc5267 import abi
 from web3 import Web3
+from web3.contract import Contract
 
 
 class EIP712Domain(NamedTuple):

@@ -1,8 +1,7 @@
 from eth_account import Account
-
 from rizemind.contracts.models.model_factory_v1 import (
-    ModelFactoryV1Config,
     ModelFactoryV1,
+    ModelFactoryV1Config,
 )
 from web3 import Web3
 
@@ -17,7 +16,7 @@ def test_model_v1_config_deploy():
     model_config = ModelFactoryV1Config(
         name="test",
         ticker="tst",
-        local_factory_deployment_path="smart_contracts/output/31337/ModelRegistryFactory/latest.json",
+        local_factory_deployment_path="forge/output/31337/ModelRegistryFactory.json",
     )
     model_factory = ModelFactoryV1(model_config)
     model = model_factory.deploy(account, [account.address], w3)

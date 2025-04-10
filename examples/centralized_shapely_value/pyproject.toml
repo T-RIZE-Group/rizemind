@@ -3,17 +3,17 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "centralized_shapley_value"
-version = "1.0.0"
-description = "Federated Learning with centralized shapley value"
-license = "Apache-2.0"
+name = "centralized-shapely-value"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
 dependencies = [
-    "flwr[simulation]>=1.10.0",
-    "flwr-datasets[vision]>=0.3.0",
-    "tensorflow-cpu>=2.9.1, != 2.11.1 ; platform_machine == \"x86_64\"",
+    "flwr-datasets[vision]>=0.5.0",
+    "flwr[simulation]>=1.17.0",
     "ray>=2.0.0",
+    "tensorflow-cpu>=2.9.1,!=2.11.1 ; platform_machine == 'x86_64'",
 ]
-
 
 [tool.hatch.build.targets.wheel]
 packages = ["."]

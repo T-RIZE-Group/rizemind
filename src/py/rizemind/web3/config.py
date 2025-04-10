@@ -1,8 +1,8 @@
 from typing import Optional
+
 from pydantic import BaseModel, Field, HttpUrl
 from rizemind.web3.chains import RIZENET_TESTNET_CHAINID
-from web3 import HTTPProvider
-from web3 import Web3
+from web3 import HTTPProvider, Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 
 poaChains = [RIZENET_TESTNET_CHAINID]

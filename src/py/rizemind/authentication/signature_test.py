@@ -1,11 +1,12 @@
 import pytest
 from eth_account import Account
 from eth_account.datastructures import SignedMessage
+
 from .signature import (
-    sign_parameters_model,
-    prepare_eip712_message,
-    hash_parameters,
     Parameters,
+    hash_parameters,
+    prepare_eip712_message,
+    sign_parameters_model,
 )
 
 

@@ -1,13 +1,12 @@
-from typing import Tuple
-from eth_typing import HexAddress
-from eth_typing import HexStr
-from web3 import Web3
-from eth_account.messages import encode_typed_data
+from typing import Tuple, TypedDict
+
 from eth_account import Account
-from eth_account.signers.base import BaseAccount
 from eth_account.datastructures import SignedMessage
-from typing import TypedDict
+from eth_account.messages import encode_typed_data
+from eth_account.signers.base import BaseAccount
+from eth_typing import HexAddress, HexStr
 from flwr.common.typing import Parameters, Scalar
+from web3 import Web3
 
 
 class EIP712DomainAttrib(TypedDict):

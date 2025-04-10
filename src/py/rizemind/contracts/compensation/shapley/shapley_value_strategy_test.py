@@ -1,9 +1,10 @@
-from math import isclose
 import uuid
+from math import isclose
+
+import pytest
 from flwr.common import EvaluateIns, EvaluateRes, FitRes, Parameters
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
-import pytest
 from rizemind.contracts.compensation.shapley.shapley_value_strategy import (
     Coalition,
     ShapleyValueStrategy,
