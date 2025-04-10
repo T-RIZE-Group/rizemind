@@ -2075,14 +2075,11 @@ source = { editable = "." }
 dependencies = [
     { name = "bidict" },
     { name = "eth-account" },
-    { name = "flwr", extra = ["simulation"] },
-    { name = "flwr-datasets", extra = ["vision"] },
+    { name = "flwr" },
     { name = "mnemonic" },
     { name = "numpy" },
     { name = "py-solc-x" },
     { name = "pydantic" },
-    { name = "ray" },
-    { name = "tensorflow-cpu", marker = "platform_machine == 'x86_64'" },
     { name = "tomli" },
     { name = "web3" },
 ]
@@ -2091,7 +2088,6 @@ dependencies = [
 dev = [
     { name = "pytest" },
     { name = "ruff" },
-    { name = "torch" },
 ]
 docs = [
     { name = "pygments" },
@@ -2100,19 +2096,23 @@ docs = [
     { name = "sphinx-book-theme" },
     { name = "sphinx-copybutton" },
 ]
+ml = [
+    { name = "flwr", extra = ["simulation"] },
+    { name = "flwr-datasets", extra = ["vision"] },
+    { name = "ray" },
+    { name = "tensorflow-cpu", marker = "platform_machine == 'x86_64'" },
+    { name = "torch" },
+]
 
 [package.metadata]
 requires-dist = [
     { name = "bidict", specifier = ">=0.23.1" },
     { name = "eth-account", specifier = ">=0.13.6" },
-    { name = "flwr", extras = ["simulation"], specifier = ">=1.17.0" },
-    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.5.0" },
+    { name = "flwr", specifier = ">=1.17.0" },
     { name = "mnemonic", specifier = ">=0.21" },
     { name = "numpy", specifier = ">=2.0.2" },
     { name = "py-solc-x", specifier = ">=2.0.3" },
     { name = "pydantic", specifier = ">=2.11.3" },
-    { name = "ray", specifier = ">=2.0.0" },
-    { name = "tensorflow-cpu", marker = "platform_machine == 'x86_64'", specifier = ">=2.9.1,!=2.11.1" },
     { name = "tomli", specifier = ">=2.2.1" },
     { name = "web3", specifier = ">=7.10.0" },
 ]
@@ -2121,7 +2121,6 @@ requires-dist = [
 dev = [
     { name = "pytest", specifier = ">=8.3.5" },
     { name = "ruff", specifier = ">=0.11.4" },
-    { name = "torch", specifier = ">=2.6.0" },
 ]
 docs = [
     { name = "pygments", specifier = ">=2.19.1" },
@@ -2129,6 +2128,13 @@ docs = [
     { name = "sphinx-autobuild", specifier = ">=2024.10.3" },
     { name = "sphinx-book-theme", specifier = ">=1.1.4" },
     { name = "sphinx-copybutton", specifier = ">=0.5.2" },
+]
+ml = [
+    { name = "flwr", extras = ["simulation"], specifier = ">=1.17.0" },
+    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.5.0" },
+    { name = "ray", specifier = ">=2.0.0" },
+    { name = "tensorflow-cpu", marker = "platform_machine == 'x86_64'", specifier = ">=2.9.1,!=2.11.1" },
+    { name = "torch", specifier = ">=2.6.0" },
 ]
 
 [[package]]
