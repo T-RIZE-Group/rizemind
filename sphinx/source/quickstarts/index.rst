@@ -8,5 +8,4 @@ read the How Tos or References.
    :maxdepth: 1
    :caption: Quickstarts
 
-   library-readme
-   rizenet-deployment
+   examples

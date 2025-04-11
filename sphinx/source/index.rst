@@ -7,13 +7,13 @@
 Home
 =================
 
-**About RizeMind**  
+**About RizeMind**
 
-RizeMind is a decentralized federated learning library that empowers users, data owners, 
-and businesses to retain full sovereignty over their data while collaborating to train 
-machine learning models. By ensuring privacy, fair compensation, and equitable participation, 
-RizeMind transforms AI development into a collective intelligence network where innovation 
-benefits all. Built for transparency and decentralization, it turns data collaboration 
+RizeMind is a decentralized federated learning library that empowers users, data owners,
+and businesses to retain full sovereignty over their data while collaborating to train
+machine learning models. By ensuring privacy, fair compensation, and equitable participation,
+RizeMind transforms AI development into a collective intelligence network where innovation
+benefits all. Built for transparency and decentralization, it turns data collaboration
 into a positive-sum game.
 
 
@@ -22,8 +22,9 @@ RizeMind is maintained by `T-RIZE Group <https://t-rize.io>`_ and leverages the 
 .. toctree::
    :maxdepth: 2
    :caption: Sections
-   
+
    install
    quickstarts/index
    how-tos/index
    references/index
+   developers/index

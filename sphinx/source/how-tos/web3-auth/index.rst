@@ -1,6 +1,6 @@
-=====
+==============================================
 How To Add Web3-Based Signature Authentication
-=====
+==============================================
 
 This guide will walk you through implementing **Web3-based signature authentication** using `rizemind` with **Flower**, ensuring secure, blockchain-validated authentication for federated learning.
 
