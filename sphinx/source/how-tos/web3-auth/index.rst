@@ -14,8 +14,11 @@ We recommend installing `python-dotenv` to store your mnemonic in a `.env` file:
 
 .. code:: shell
 
+   # If you use pip
    pip install python-dotenv
 
+   # If you use uv
+   uv add python-dotenv
 Modifying the Client
 ====================
 
