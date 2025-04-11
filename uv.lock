@@ -1761,19 +1761,6 @@ wheels = [
 ]
 
 [[package]]
-name = "py-solc-x"
-version = "2.0.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "packaging" },
-    { name = "requests" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/2a/42/60f33a2d32b1308656b9f1e49a478ea81e294d9aaba4404f83dc20e1d60e/py-solc-x-2.0.3.tar.gz", hash = "sha256:1b5fe26d5f4976b1fcc2b3276fb2fe182633bc35757a3abf3b9af5ac57ec2544", size = 77698 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/9d/30/c2075d568e3cef46947089a07878cf8da1dde4e0c8a566e9b04c1ea0fec6/py_solc_x-2.0.3-py3-none-any.whl", hash = "sha256:ef131f2f0e708fcaf92068a38c7569920839d259fdaa9946af3393f1dc86c5b1", size = 18532 },
-]
-
-[[package]]
 name = "pyarrow"
 version = "19.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2129,7 +2116,6 @@ dependencies = [
     { name = "flwr" },
     { name = "mnemonic" },
     { name = "numpy" },
-    { name = "py-solc-x" },
     { name = "pydantic" },
     { name = "tomli" },
     { name = "web3" },
@@ -2164,7 +2150,6 @@ requires-dist = [
     { name = "flwr", specifier = ">=1.17.0" },
     { name = "mnemonic", specifier = ">=0.21" },
     { name = "numpy", specifier = ">=1.26.4" },
-    { name = "py-solc-x", specifier = ">=2.0.3" },
     { name = "pydantic", specifier = ">=2.11.3" },
     { name = "tomli", specifier = ">=2.2.1" },
     { name = "web3", specifier = ">=7.10.0" },

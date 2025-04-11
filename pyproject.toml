@@ -13,7 +13,6 @@ dependencies = [
     "bidict>=0.23.1",
     "eth-account>=0.13.6",
     "mnemonic>=0.21",
-    "py-solc-x>=2.0.3",
     "pydantic>=2.11.3",
     "tomli>=2.2.1",
     "web3>=7.10.0",
