@@ -8,3 +8,4 @@ How-To
 
    web3-auth/index
    generate-store-mnemonic
+   examples

@@ -21,7 +21,7 @@ uv run -- flwr run .
 
 Several examples utilize Foundry to create a local testing environment for contracts before deployment. To set up Foundry in this repository:
 
-1. Navigate to the [forge directory](../forge/) in your terminal.
+1. Navigate to the [forge directory](https://github.com/T-RIZE-Group/rizemind/tree/main/forge).
 2. Follow the instructions provided in the README within that directory.
 
 Ensure your local blockchain is running before executing examples requiring a local blockchain.

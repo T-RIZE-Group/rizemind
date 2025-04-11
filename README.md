@@ -106,7 +106,7 @@ For smoother workflow in VSCode:
 
 ## Examples
 
-Check the [examples](examples/) directory for detailed instructions on running specific examples.
+Check the [examples](https://github.com/T-RIZE-Group/rizemind/tree/main/examples) directory for detailed instructions on running specific examples.
 
 ## Documentation
 
