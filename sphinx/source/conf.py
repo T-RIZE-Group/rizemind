@@ -22,7 +22,7 @@ extensions = [
 
 source_suffix = {
     ".rst": "restructuredtext",
-    '.txt': 'markdown',
+    ".txt": "markdown",
     ".md": "markdown",
 }
 
@@ -34,7 +34,7 @@ exclude_patterns = ["reST.rst"]
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "sphinx_book_theme"
-html_static_path = []
+html_static_path = ["_static"]
 
 
 # -- options for Auto Doc ----------------------------------------------------
