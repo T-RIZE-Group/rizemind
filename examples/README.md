@@ -30,7 +30,45 @@ Ensure your local blockchain is running before executing examples requiring a lo
 
 ## Using Rizenet
 
-Some examples rely on Rizenet. For setup and usage instructions specific to Rizenet examples, refer to the individual example's README file.
+Some examples rely on Rizenet. For setup and usage instructions specific to Rizenet examples, follow the steps below:
+
+## Set up
+
+0. Setup the repository
+
+First make sure you have properly followed the repository by following the main "for developers" section in our documents.
+
+1. Generate mnemonics
+
+Generate 12-word mnemonics by running:
+
+```bash
+uv run -- python {project_name}/generate_mnemonic.py
+```
+
+and copy the mnemonic key into a `.env` file as the following:
+
+```bash
+RIZENET_MNEMONIC="your mnemonic"
+```
+
+2. Run the project
+
+You can run your Flower project in both _simulation_ and _deployment_ mode without making changes to the code. If you are starting with Flower, we recommend you using the _simulation_ mode as it requires fewer components to be launched manually. By default, `flwr run` will make use of the Simulation Engine.
+
+- Run with the Simulation Engine
+
+```bash
+uv run -- flwr run .
+```
+
+You can also override some of the settings for your `ClientApp` and `ServerApp` defined in `pyproject.toml`. For example:
+
+```bash
+uv run -- flwr run . --run-config num-server-rounds=5,learning-rate=0.05
+```
+
+> Note: Make sure to always use the command `uv run --` before calling the actual command. This way `uv` will make sure you have the proper dependencies installed.
 
 ---
 
