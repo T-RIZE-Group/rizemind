@@ -8,4 +8,4 @@ read the How Tos or References.
    :maxdepth: 1
    :caption: Quickstarts
 
-   rizenet-deployment
+   examples

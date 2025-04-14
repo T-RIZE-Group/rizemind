@@ -1,6 +1,6 @@
-=========
+=================================
 Generating and Storing a Mnemonic
-=========
+=================================
 
 A mnemonic phrase, also known as a seed phrase, is a set of words used to recover a cryptocurrency wallet. It is crucial for securing access to blockchain-based accounts and should be handled with care.
 
@@ -8,13 +8,13 @@ Generating a Mnemonic
 =====================
 
 .. caution::
-   Never share your mnemonic with anyone. Anyone with access to your mnemonic can gain full control over your assets. 
+   Never share your mnemonic with anyone. Anyone with access to your mnemonic can gain full control over your assets.
    Store it securely and avoid exposing it to untrusted software or online services.
 
 Wallet-Based Option
 -------------------
 
-Most wallets, such as **MetaMask**, **Ledger Live**, and **Trezor Suite**, provide an option to generate a mnemonic phrase when setting up a new wallet. 
+Most wallets, such as **MetaMask**, **Ledger Live**, and **Trezor Suite**, provide an option to generate a mnemonic phrase when setting up a new wallet.
 
 To generate a mnemonic using MetaMask:
 
@@ -57,14 +57,14 @@ Storing Your Mnemonic
 
 Since your mnemonic provides access to your account, it must be stored securely. Here are some recommended methods:
 
-1. **Environment Variables**  
+1. **Environment Variables**
    Set an environment variable to store your mnemonic securely:
 
    .. code:: shell
 
        export MY_MNEMONIC="test test test test test test test test test test test junk"
 
-2. **.env File (Unchecked from Git)**  
+2. **.env File (Unchecked from Git)**
    Store your mnemonic in a `.env` file and **ensure it is excluded from version control (e.g., `.gitignore`)**:
 
    **.env file:**
@@ -85,7 +85,7 @@ Since your mnemonic provides access to your account, it must be stored securely.
 
        print(mnemonic)
 
-3. **Hardware Wallets or Secure Password Managers**  
+3. **Hardware Wallets or Secure Password Managers**
    Rizemind does not support those methods at the moment.
 
 Using Mnemonic with rizemind

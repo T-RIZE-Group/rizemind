@@ -12,3 +12,10 @@ Installing with pip
 .. code-block:: bash
 
     pip install rizemind
+
+Installing with uv
+==================
+
+.. code-block:: bash
+
+    uv add rizemind

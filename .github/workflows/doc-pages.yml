@@ -34,7 +34,7 @@ jobs:
       #          build Sphinx documentation
       #----------------------------------------------
       - name: Build Sphinx documentation
-        run: uv run --only-group docs sphinx-build sphinx/source build/html
+        run: uv run --no-default-groups --group docs sphinx-build sphinx/source build/html
 
       #----------------------------------------------
       #          Deploy to GitHub Pages

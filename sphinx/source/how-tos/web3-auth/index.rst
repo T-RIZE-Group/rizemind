@@ -1,6 +1,6 @@
-=====
+==============================================
 How To Add Web3-Based Signature Authentication
-=====
+==============================================
 
 This guide will walk you through implementing **Web3-based signature authentication** using `rizemind` with **Flower**, ensuring secure, blockchain-validated authentication for federated learning.
 
@@ -14,7 +14,11 @@ We recommend installing `python-dotenv` to store your mnemonic in a `.env` file:
 
 .. code:: shell
 
+   # If you use pip
    pip install python-dotenv
+
+   # If you use uv
+   uv add python-dotenv
 
 Modifying the Client
 ====================

@@ -13,6 +13,7 @@ dependencies = [
     "flwr[simulation]>=1.17.0",
     "python-dotenv>=1.1.0",
     "ray>=2.0.0",
+    "tensorflow-macos>=2.9.1,!=2.11.1 ; sys_platform == 'darwin'",
     "tensorflow-cpu>=2.9.1,!=2.11.1 ; platform_machine == 'x86_64'",
 ]
 
