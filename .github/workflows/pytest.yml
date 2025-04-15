@@ -9,6 +9,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -18,6 +20,23 @@ jobs:
 
       - name: Install the project
         run: uv sync
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install Dependencies
+        working-directory: forge
+        run: forge soldeer install
+
+      - name: Start anvil in background
+        run: |
+          anvil --host 127.0.0.1 > anvil.log 2>&1 &
+      
+      - name: deploy factory
+        working-directory: forge
+        run: forge script script/deployments/ModelV1Factory.s.sol --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 
 
       - name: Run tests
         run: uv run pytest .
