@@ -32,7 +32,7 @@ jobs:
 
       - name: Start anvil in background
         run: |
-          anvil --host 127.0.0.1 > anvil.log 2>&1 &
+          anvil --host 127.0.0.1 &
       
       - name: deploy factory
         working-directory: forge
