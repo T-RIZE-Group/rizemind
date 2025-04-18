@@ -1,3 +1,6 @@
 [submodule "forge/lib/forge-std"]
 	path = forge/lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
+[submodule "examples/shapley_commitment/lib/forge-std"]
+	path = examples/shapley_commitment/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
