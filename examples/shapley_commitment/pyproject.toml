@@ -1,0 +1,20 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "shapley-commitment"
+version = "0.1.0"
+description = "Shapley Value Commitment Scheme"
+requires-python = ">=3.12"
+dependencies = [
+    "web3>=6.0.0",
+    "eth-account>=0.8.0",
+    "py-solc-x>=1.1.0"
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.python.dev-dependencies]
+dev = ["pytest>=7.3.1"]
