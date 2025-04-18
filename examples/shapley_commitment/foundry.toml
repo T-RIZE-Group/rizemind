@@ -1,8 +1,0 @@
-[profile.default]
-src = 'contracts'
-test = 'test'
-out = 'out'
-libs = ['lib']
-
-# Compiler settings
-solc-version = '0.8.20'

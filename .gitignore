@@ -24,3 +24,6 @@ poetry.lock
 
 **/*.csv
 repomix-output.xml
+examples/private_shapley/contracts/out
+node_modules
+examples/private_shapley/contracts/lib
