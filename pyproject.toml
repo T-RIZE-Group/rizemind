@@ -18,6 +18,7 @@ dependencies = [
     "web3>=7.10.0",
     "flwr>=1.17.0",
     "numpy>=1.26.4",
+    "dotenv>=0.9.9",
 ]
 
 [dependency-groups]
