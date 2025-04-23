@@ -19,7 +19,6 @@ dependencies = [
     "flwr>=1.17.0",
     "numpy>=1.26.4",
     "dotenv>=0.9.9",
-    "torch>=2.6.0",
 ]
 
 [dependency-groups]
@@ -32,14 +31,12 @@ docs = [
     "sphinx-book-theme>=1.1.4",
     "sphinx-copybutton>=0.5.2",
 ]
-ml = [
-    "flwr[simulation]>=1.17.0",
-    "flwr-datasets[vision]>=0.5.0",
-    "ray>=2.0.0",
-    "torch>=2.6.0",
+ml = ["flwr[simulation]>=1.17.0", "flwr-datasets[vision]>=0.5.0", "ray>=2.0.0"]
+tensorflow = [
     "tensorflow-macos>=2.9.1,!=2.11.1 ; sys_platform == 'darwin'",
     "tensorflow-cpu>=2.9.1,!=2.11.1 ; platform_machine == 'x86_64'",
 ]
+torch = ["torch>=2.6.0", "torchvision>=0.21.0"]
 
 [tool.hatch.build.targets.sdist]
 include = ["src/py/rizemind"]
@@ -84,7 +81,6 @@ exclude = [
     "site-packages",
     "venv",
 ]
-
 line-length = 88
 indent-width = 4
 target-version = "py312"
@@ -92,10 +88,8 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F"]
 ignore = []
-
 fixable = ["ALL"]
 unfixable = []
-
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.format]
