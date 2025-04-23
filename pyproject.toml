@@ -117,4 +117,5 @@ members = [
     "examples/rizenet_deployment",
     "examples/rizenet_shapley",
     "examples/dpf_mnist",
+    "examples/dpsv_fmnist",
 ]
