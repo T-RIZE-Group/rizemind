@@ -116,7 +116,7 @@ members = [
     "examples/decentralized_shapely_value",
     "examples/rizenet_deployment",
     "examples/rizenet_shapley",
-    "examples/dpf_mnist",
+    "examples/dp_fmnist",
     "examples/dpsv_fmnist",
     "examples/sv_fmnist",
 ]
