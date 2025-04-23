@@ -119,4 +119,5 @@ members = [
     "examples/dp_fmnist",
     "examples/dpsv_fmnist",
     "examples/sv_fmnist",
+    "examples/dp_mnist",
 ]

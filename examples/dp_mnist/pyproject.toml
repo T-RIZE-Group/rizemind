@@ -1,0 +1,51 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dp-mnist"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+
+license = "Apache-2.0"
+dependencies = [
+    "flwr-datasets[vision]>=0.3.0",
+    "flwr[simulation]>=1.13.1",
+    "numpy>=1.26.4",
+    "torch>=2.6.0",
+    "torchvision>=0.21.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["dp-mnist"]
+
+[tool.flwr.app]
+publisher = "flwrlabs"
+
+[tool.flwr.app.components]
+serverapp = "dp_mnist.server_app:app"
+clientapp = "dp_mnist.client_app:app"
+
+[tool.flwr.app.config]
+num-server-rounds = 20
+fraction-evaluate = 1.0
+local-epochs = 5  #If your data is highly Non-IID (α=0.1 or 0.5) → Use local-epochs = 5 ✅ Frequent global updates help generalization.
+learning-rate = 0.01
+batch-size = 32
+alpha = 0.5            # For Non-IID partitioning 0.1 highly non-iid
+epsilon = 0.5         # Privacy parameter epsilon
+delta = 1e-5          # Privacy parameter delta (optional, not used in basic LDP)
+num-partitions = 4  # Total clients
+
+[tool.flwr.federations]
+default = "local-simulation-gpu"
+
+[tool.flwr.federations.local-simulation]
+options.num-supernodes = 10
+
+[tool.flwr.federations.local-simulation-gpu]
+options.num-supernodes = 10
+options.backend.client-resources.num-cpus = 2  # each ClientApp assumes to use 2 CPUs
+options.backend.client-resources.num-gpus = 0.2  # at most 5 ClientApps will run on a given GPU
