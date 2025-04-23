@@ -1,9 +1,10 @@
 import logging
+
+import numpy as np
+import numpy.random as rnd
 import torch
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
-import numpy as np
-import numpy.random as rnd
 
 from .task import (
     Net,

@@ -1,13 +1,15 @@
-from flwr.common import Context, Metrics, ndarrays_to_parameters, EvaluateRes
-from flwr.server import ServerApp, ServerAppComponents, ServerConfig
-from flwr.server.strategy import FedAvg
-from flwr.server.client_manager import ClientManager
-from itertools import combinations
-import numpy as np
-from typing import List, Tuple, Optional
-import warnings
-from .task import Net, get_weights
 import math
+import warnings
+from itertools import combinations
+from typing import List, Optional, Tuple
+
+import numpy as np
+from flwr.common import Context, EvaluateRes, Metrics, ndarrays_to_parameters
+from flwr.server import ServerApp, ServerAppComponents, ServerConfig
+from flwr.server.client_manager import ClientManager
+from flwr.server.strategy import FedAvg
+
+from .task import Net, get_weights
 
 warnings.filterwarnings("ignore")
 

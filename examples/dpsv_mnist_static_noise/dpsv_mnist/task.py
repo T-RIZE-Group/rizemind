@@ -1,4 +1,6 @@
-from collections import OrderedDict, Counter
+import logging
+from collections import Counter, OrderedDict
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -6,7 +8,6 @@ from flwr_datasets import FederatedDataset
 from flwr_datasets.partitioner import DirichletPartitioner
 from torch.utils.data import DataLoader
 from torchvision.transforms import Compose, Normalize, ToTensor
-import logging
 
 # Configure logging to log output to a file and console (if not already configured)
 logging.basicConfig(
