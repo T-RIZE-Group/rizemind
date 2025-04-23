@@ -120,4 +120,5 @@ members = [
     "examples/dpsv_fmnist",
     "examples/sv_fmnist",
     "examples/dp_mnist",
+    "examples/dpsv_mnist_dyn_noise",
 ]

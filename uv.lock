@@ -10,6 +10,7 @@ members = [
     "dp-fmnist",
     "dp-mnist",
     "dpsv-fmnist",
+    "dpsv-mnist-dyn-noise",
     "rizemind",
     "rizenet-deployment",
     "rizenet-shapley",
@@ -639,6 +640,27 @@ requires-dist = [
 name = "dpsv-fmnist"
 version = "0.1.0"
 source = { editable = "examples/dpsv_fmnist" }
+dependencies = [
+    { name = "flwr", extra = ["simulation"] },
+    { name = "flwr-datasets", extra = ["vision"] },
+    { name = "numpy" },
+    { name = "torch" },
+    { name = "torchvision" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "flwr", extras = ["simulation"], specifier = ">=1.13.1" },
+    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.3.0" },
+    { name = "numpy", specifier = ">=1.26.4" },
+    { name = "torch", specifier = ">=2.6.0" },
+    { name = "torchvision", specifier = ">=0.21.0" },
+]
+
+[[package]]
+name = "dpsv-mnist-dyn-noise"
+version = "0.1.0"
+source = { editable = "examples/dpsv_mnist_dyn_noise" }
 dependencies = [
     { name = "flwr", extra = ["simulation"] },
     { name = "flwr-datasets", extra = ["vision"] },
