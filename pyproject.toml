@@ -19,6 +19,7 @@ dependencies = [
     "flwr>=1.17.0",
     "numpy>=1.26.4",
     "dotenv>=0.9.9",
+    "torch>=2.6.0",
 ]
 
 [dependency-groups]
@@ -115,4 +116,5 @@ members = [
     "examples/decentralized_shapely_value",
     "examples/rizenet_deployment",
     "examples/rizenet_shapley",
+    "examples/dpf_mnist",
 ]
