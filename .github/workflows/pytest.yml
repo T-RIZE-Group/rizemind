@@ -7,12 +7,16 @@ jobs:
     env:
       UV_LINK_MODE: copy
     services:
-      # Start Anvil, the local Ethereum node for smart contract development
+      # Use Docker Compose to start Anvil, the local Ethereum node for smart contract development
       anvil:
         image: ghcr.io/foundry-rs/foundry:latest
+        container_name: anvil
         ports:
           - 8545:8545
-        options: --entrypoint "anvil" --health-cmd="curl --silent --fail localhost:8545" --health-interval=10s --health-timeout=5s --health-retries=5
+        environment:
+          ANVIL_IP_ADDR: "0.0.0.0"
+        command: anvil
+        options: --health-cmd="curl --silent --fail http://localhost:8545" --health-interval=10s --health-timeout=5s --health-retries=5
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -33,7 +37,7 @@ jobs:
           echo "Waiting for Anvil to be ready..."
           until curl --silent --fail http://localhost:8545; do
             echo "Waiting for Anvil..."
-            sleep 1
+            sleep 5
           done
           echo "Anvil is ready!"
 
