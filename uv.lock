@@ -5,6 +5,7 @@ requires-python = ">=3.12"
 [manifest]
 members = [
     "basic-signature",
+    "basic-torch",
     "centralized-shapely-value",
     "decentralized-shapely-value",
     "dp-fmnist",
@@ -192,6 +193,25 @@ requires-dist = [
     { name = "ray", specifier = ">=2.0.0" },
     { name = "tensorflow-cpu", marker = "platform_machine == 'x86_64'", specifier = ">=2.9.1,!=2.11.1" },
     { name = "tensorflow-macos", marker = "sys_platform == 'darwin'", specifier = ">=2.9.1,!=2.11.1" },
+]
+
+[[package]]
+name = "basic-torch"
+version = "0.1.0"
+source = { virtual = "examples/basic_torch" }
+dependencies = [
+    { name = "flwr", extra = ["simulation"] },
+    { name = "flwr-datasets", extra = ["vision"] },
+    { name = "torch" },
+    { name = "torchvision" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "flwr", extras = ["simulation"], specifier = ">=1.18.0" },
+    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.5.0" },
+    { name = "torch", specifier = ">=2.7.0" },
+    { name = "torchvision", specifier = ">=0.22.0" },
 ]
 
 [[package]]
@@ -2298,7 +2318,7 @@ dependencies = [
     { name = "bidict" },
     { name = "dotenv" },
     { name = "eth-account" },
-    { name = "flwr" },
+    { name = "flwr", extra = ["simulation"] },
     { name = "mnemonic" },
     { name = "numpy" },
     { name = "pydantic" },
@@ -2338,7 +2358,7 @@ requires-dist = [
     { name = "bidict", specifier = ">=0.23.1" },
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "eth-account", specifier = ">=0.13.6" },
-    { name = "flwr", specifier = ">=1.17.0" },
+    { name = "flwr", extras = ["simulation"], specifier = ">=1.17.0" },
     { name = "mnemonic", specifier = ">=0.21" },
     { name = "numpy", specifier = ">=1.26.4" },
     { name = "pydantic", specifier = ">=2.11.3" },
