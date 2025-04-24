@@ -10,7 +10,6 @@ jobs:
       # Use Docker Compose to start Anvil, the local Ethereum node for smart contract development
       anvil:
         image: ghcr.io/foundry-rs/foundry:latest
-        container_name: anvil
         ports:
           - 8545:8545
         environment:
