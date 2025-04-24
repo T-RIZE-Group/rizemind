@@ -15,11 +15,7 @@ jobs:
         env:
           ANVIL_IP_ADDR: "0.0.0.0"
         options: >-
-          --entrypoint anvil
-          --health-cmd "curl --silent --fail -X POST http://localhost:8545 -H \"Content-Type: application/json\" -d '{\"jsonrpc\":\"2.0\",\"method\":\"eth_blockNumber\",\"params\":[],\"id\":1}'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5    
+          --entrypoint anvil  
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
