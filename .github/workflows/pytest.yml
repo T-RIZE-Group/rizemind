@@ -1,57 +1,52 @@
 name: Pytest
 run-name: Pytest will run to check if all tests pass
 on: pull_request
+
 jobs:
   test:
     runs-on: ubuntu-latest
     env:
       UV_LINK_MODE: copy
     services:
-      # Use Docker Compose to start Anvil, the local Ethereum node for smart contract development
       anvil:
         image: ghcr.io/foundry-rs/foundry:latest
         ports:
           - 8545:8545
-        environment:
+        env:
           ANVIL_IP_ADDR: "0.0.0.0"
-        command: anvil
-        options: --health-cmd="curl --silent --fail http://localhost:8545" --health-interval=10s --health-timeout=5s --health-retries=5
+        options: >-
+          --entrypoint anvil
+          --health-cmd "curl --silent --fail http://localhost:8545"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
 
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: nightly
+    - name: Install Foundry
+      uses: foundry-rs/foundry-toolchain@v1
+      with:
+        version: nightly
 
-      - name: Install Dependencies
-        working-directory: forge
-        run: forge soldeer install
+    - name: Install Dependencies
+      working-directory: forge
+      run: forge soldeer install
 
-      - name: Wait for Anvil to be ready
-        run: |
-          echo "Waiting for Anvil to be ready..."
-          until curl --silent --fail http://localhost:8545; do
-            echo "Waiting for Anvil..."
-            sleep 5
-          done
-          echo "Anvil is ready!"
+    - name: Deploy factory
+      working-directory: forge
+      run: forge script script/deployments/ModelV1Factory.s.sol --rpc-url http://localhost:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 
-      - name: Deploy factory
-        working-directory: forge
-        run: forge script script/deployments/ModelV1Factory.s.sol --rpc-url http://localhost:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
+    - name: Set up Python
+      run: uv python install
 
-      - name: Set up Python
-        run: uv python install
+    - name: Install the project
+      run: uv sync
 
-      - name: Install the project
-        run: uv sync
-
-      - name: Run tests
-        run: uv run pytest .
+    - name: Run tests
+      run: uv run pytest .
