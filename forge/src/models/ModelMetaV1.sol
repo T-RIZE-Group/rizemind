@@ -15,7 +15,7 @@ contract ModelMetaV1 is
     SimpleMintCompensation,
     EIP712Upgradeable
 {
-    uint256 private _round = 0;
+    uint256 private _round;
     string private constant _VERSION = "1.0.0";
 
     event RoundFinished(
@@ -36,6 +36,7 @@ contract ModelMetaV1 is
         __EIP712_init(name, _VERSION);
         __SimpleMintCompensation_init(name, symbol, 10 ** 20);
         __FLAccessControl_init(aggregator, initialTrainers);
+        _round = 1;
     }
 
     function canTrain(

@@ -268,7 +268,7 @@ class ShapleyValueStrategy(Strategy):
         next_model = self.select_coalition()
         score = 0 if next_model is None else self.get_coalition_score(next_model)
         self.model.next_round(
-            round_id - 1,
+            round_id,
             len(player_scores),
             score,
             sum(score[1] for score in player_scores),
