@@ -9,7 +9,7 @@ struct RoundSummary {
     uint128 totalContributions;
 }
 
-interface IModelRegistry is IERC5267 {
+interface IModelMeta is IERC5267 {
     function canTrain(address trainer, uint256 roundId) external returns (bool);
 
     function curentRound() external view returns (uint256);

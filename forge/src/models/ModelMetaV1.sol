@@ -5,12 +5,12 @@ import {EIP712Upgradeable} from "@openzeppelin-contracts-upgradeable-5.2.0/utils
 import {Context} from "@openzeppelin-contracts-5.2.0/utils/Context.sol";
 import {ContextUpgradeable} from "@openzeppelin-contracts-upgradeable-5.2.0/utils/ContextUpgradeable.sol";
 
-import {IModelRegistry, RoundSummary} from "./IModelRegistry.sol";
+import {IModelMeta, RoundSummary} from "./IModelMeta.sol";
 import {FLAccessControl} from "../access/FLAccessControl.sol";
 import {SimpleMintCompensation} from "../compensation/SimpleMintCompensation.sol";
 
-contract ModelRegistryV1 is
-    IModelRegistry,
+contract ModelMetaV1 is
+    IModelMeta,
     FLAccessControl,
     SimpleMintCompensation,
     EIP712Upgradeable

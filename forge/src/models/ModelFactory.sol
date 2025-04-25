@@ -4,9 +4,9 @@ pragma solidity ^0.8.20;
 import {ERC1967Proxy} from "@openzeppelin-contracts-5.2.0/proxy/ERC1967/ERC1967Proxy.sol";
 import {AccessControl} from "@openzeppelin-contracts-5.2.0/access/AccessControl.sol";
 
-import {ModelRegistryV1} from "./ModelRegistryV1.sol";
+import {ModelMetaV1} from "./ModelMetaV1.sol";
 
-contract ModelRegistryFactory is AccessControl {
+contract ModelFactory is AccessControl {
     address private _logicContract;
 
     event ContractCreated(
@@ -28,7 +28,7 @@ contract ModelRegistryFactory is AccessControl {
         address[] memory initialTrainers
     ) external returns (address) {
         bytes memory data = abi.encodeWithSelector(
-            ModelRegistryV1.initialize.selector,
+            ModelMetaV1.initialize.selector,
             name,
             symbol,
             aggregator,
