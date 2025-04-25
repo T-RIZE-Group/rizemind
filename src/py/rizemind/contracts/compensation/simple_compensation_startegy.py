@@ -10,11 +10,11 @@ from flwr.server.strategy import Strategy
 from rizemind.contracts.compensation.compensation_strategy import (
     CompensationStrategy,
 )
-from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
+from rizemind.contracts.models.model_meta_v1 import ModelMetaV1
 
 
 class SimpleCompensationStrategy(CompensationStrategy):
-    def __init__(self, strategy: Strategy, model: ModelRegistryV1):
+    def __init__(self, strategy: Strategy, model: ModelMetaV1):
         CompensationStrategy.__init__(self, strategy, model)
 
     def calculate(self, client_ids: list[Address]):

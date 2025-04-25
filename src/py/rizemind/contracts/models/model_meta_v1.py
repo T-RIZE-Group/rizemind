@@ -7,15 +7,14 @@ from eth_typing import Address
 from flwr.common.logger import log
 from rizemind.contracts.abi.model_v1 import model_abi_v1_0_0
 from rizemind.contracts.access_control.FlAccessControl import FlAccessControl
+from rizemind.contracts.models.constants import CONTRIBUTION_DECIMALS
 from rizemind.contracts.models.erc5267 import ERC5267
-from rizemind.contracts.models.model_registry import ModelRegistry
+from rizemind.contracts.models.model_meta import ModelMeta
 from web3 import Web3
 from web3.contract import Contract
 
-CONTRIBUTION_DECIMALS = 6
 
-
-class ModelRegistryV1(FlAccessControl, ModelRegistry):
+class ModelMetaV1(FlAccessControl, ModelMeta):
     account: Optional[BaseAccount]
     w3: Web3
 
@@ -23,7 +22,7 @@ class ModelRegistryV1(FlAccessControl, ModelRegistry):
 
     def __init__(self, model: Contract, account: Optional[BaseAccount], w3: Web3):
         FlAccessControl.__init__(self, model)
-        ModelRegistry.__init__(self, model)
+        ModelMeta.__init__(self, model)
         self.account = account
         self.w3 = w3
 
@@ -57,17 +56,17 @@ class ModelRegistryV1(FlAccessControl, ModelRegistry):
     @staticmethod
     def from_address(
         address: str, w3: Web3, account: Optional[BaseAccount] = None
-    ) -> "ModelRegistryV1":
+    ) -> "ModelMetaV1":
         erc5267 = ERC5267.from_address(address, w3)
         domain = erc5267.get_eip712_domain()
-        model_abi = ModelRegistryV1.get_abi(domain.version)
+        model_abi = ModelMetaV1.get_abi(domain.version)
         checksum_address = Web3.to_checksum_address(address)
-        return ModelRegistryV1(
+        return ModelMetaV1(
             w3.eth.contract(address=checksum_address, abi=model_abi), account, w3
         )
 
     @staticmethod
     def get_abi(version: str) -> list[dict]:
-        if version in ModelRegistryV1.abi_versions:
-            return ModelRegistryV1.abi_versions[version]
+        if version in ModelMetaV1.abi_versions:
+            return ModelMetaV1.abi_versions[version]
         raise Exception(f"Version {version} not supported")

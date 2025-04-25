@@ -15,7 +15,7 @@ from flwr.server.strategy import Strategy
 from rizemind.contracts.compensation.shapley.shapley_value_strategy import (
     ShapleyValueStrategy,
 )
-from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
+from rizemind.contracts.models.model_meta_v1 import ModelMetaV1
 
 
 class DecentralShapleyValueStrategy(ShapleyValueStrategy):
@@ -32,7 +32,7 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
     def __init__(
         self,
         strategy: Strategy,
-        model: ModelRegistryV1,
+        model: ModelMetaV1,
         **kwargs,
     ) -> None:
         """

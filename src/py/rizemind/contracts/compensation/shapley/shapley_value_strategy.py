@@ -13,7 +13,7 @@ from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
 from rizemind.contracts.compensation.compensation_strategy import CompensationStrategy
-from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
+from rizemind.contracts.models.model_meta_v1 import ModelMetaV1
 
 type CoalitionScore = tuple[list[Address], float]
 type PlayerScore = tuple[Address, float]
@@ -50,7 +50,7 @@ class Coalition:
 
 class ShapleyValueStrategy(CompensationStrategy):
     strategy: Strategy
-    model: ModelRegistryV1
+    model: ModelMetaV1
     coalitions: dict[str, Coalition]
     coalition_to_score_fn: Optional[Callable[[Coalition], float]] = None
     last_round_parameters: Optional[Parameters]
@@ -61,7 +61,7 @@ class ShapleyValueStrategy(CompensationStrategy):
     def __init__(
         self,
         strategy: Strategy,
-        model: ModelRegistryV1,
+        model: ModelMetaV1,
         coalition_to_score_fn: Optional[Callable[[Coalition], float]] = None,
         aggregate_coalition_metrics_fn: Optional[
             Callable[[list[Coalition]], dict[str, Scalar]]
