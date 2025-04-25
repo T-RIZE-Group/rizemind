@@ -71,20 +71,12 @@ class ModelFactoryV1:
 
         tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
         assert tx_receipt["status"] != 0, "Deployment transaction failed or reverted."
+        print(tx_receipt)
 
-        event_signature = w3.keccak(
-            text="ContractCreated(address,address,address)"
-        ).hex()
-        event_filter = factory.events.ContractCreated.create_filter(  # type: ignore
-            from_block=tx_receipt["blockNumber"],
-            to_block=tx_receipt["blockNumber"],
-            topics=[event_signature, Web3.to_hex(deployer.address.encode("utf-8"))],
-        )
-        logs = event_filter.get_all_entries()
-        assert len(logs) == 1, "multiple instance started in the same block?"
+        logs = factory.events.ContractCreated().process_receipt(tx_receipt)
+        print(logs)
+        assert len(logs) == 1, "no events discovered, factory might not be deployed"
         contract_created = logs[0]
-
-        event_args = contract_created["args"]
-        proxy_address = event_args["proxyAddress"]
+        proxy_address = contract_created["args"]["proxyAddress"]
 
         return ModelRegistryV1.from_address(proxy_address, w3, deployer)
