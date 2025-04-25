@@ -7,12 +7,12 @@ import {ContextUpgradeable} from "@openzeppelin-contracts-upgradeable-5.2.0/util
 
 import {IModelRegistry, RoundSummary} from "./IModelRegistry.sol";
 import {FLAccessControl} from "../access/FLAccessControl.sol";
-import {SimpleContributionDistributor} from "../compensation/SimpleContributionDistributor.sol";
+import {SimpleMintCompensation} from "../compensation/SimpleMintCompensation.sol";
 
 contract ModelRegistryV1 is
     IModelRegistry,
     FLAccessControl,
-    SimpleContributionDistributor,
+    SimpleMintCompensation,
     EIP712Upgradeable
 {
     uint256 private _round = 0;
@@ -34,7 +34,7 @@ contract ModelRegistryV1 is
         address[] memory initialTrainers
     ) public initializer {
         __EIP712_init(name, _VERSION);
-        __SimpleContributionDistributor_init(name, symbol, 10 ** 20);
+        __SimpleMintCompensation_init(name, symbol, 10 ** 20);
         __FLAccessControl_init(aggregator, initialTrainers);
     }
 

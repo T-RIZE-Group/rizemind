@@ -3,13 +3,13 @@ pragma solidity ^0.8.10;
 
 import {ERC20Upgradeable} from "@openzeppelin-contracts-upgradeable-5.2.0/token/ERC20/ERC20Upgradeable.sol";
 
-abstract contract SimpleContributionDistributor is ERC20Upgradeable {
+abstract contract SimpleMintCompensation is ERC20Upgradeable {
     uint8 constant CONTRIBUTION_DECIMALS = 6;
     uint256 private _maxRewards;
 
     error BadRewards();
 
-    function __SimpleContributionDistributor_init(
+    function __SimpleMintCompensation_init(
         string memory name,
         string memory symbol,
         uint256 maxRewards
