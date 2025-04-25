@@ -44,8 +44,4 @@ class CentralShapleyValueStrategy(ShapleyValueStrategy):
             coalition.loss = loss
             coalition.metrics = metrics
 
-        # Do reward calculation
-        player_scores = self.compute_contributions(coalitions)
-        player_scores = self.normalize_contribution_scores(player_scores)
-        self.model.distribute(player_scores)
-        return self.evaluate_coalitions()
+        return self.close_round(server_round)

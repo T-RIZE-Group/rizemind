@@ -6,7 +6,7 @@ from flwr.server.strategy import FedAvg
 from rizemind.authentication.config import AccountConfig
 from rizemind.authentication.eth_account_strategy import EthAccountStrategy
 from rizemind.configuration.toml_config import TomlConfig
-from rizemind.contracts.compensation.simple_compensation_startegy import (
+from rizemind.contracts.compensation.simple_compensation_strategy import (
     SimpleCompensationStrategy,
 )
 from rizemind.contracts.models.model_factory_v1 import (

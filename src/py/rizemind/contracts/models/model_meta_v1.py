@@ -1,5 +1,5 @@
 from logging import INFO
-from typing import Optional, cast
+from typing import Optional, Tuple, cast
 
 from eth_account.signers.base import BaseAccount
 from eth_account.types import TransactionDictType
@@ -7,11 +7,15 @@ from eth_typing import Address
 from flwr.common.logger import log
 from rizemind.contracts.abi.model_v1 import model_abi_v1_0_0
 from rizemind.contracts.access_control.FlAccessControl import FlAccessControl
-from rizemind.contracts.models.constants import CONTRIBUTION_DECIMALS
+from rizemind.contracts.models.constants import (
+    CONTRIBUTION_DECIMALS,
+    MODEL_SCORE_DECIMALS,
+)
 from rizemind.contracts.models.erc5267 import ERC5267
 from rizemind.contracts.models.model_meta import ModelMeta
 from web3 import Web3
 from web3.contract import Contract
+import math
 
 
 class ModelMetaV1(FlAccessControl, ModelMeta):
@@ -51,6 +55,37 @@ class ModelMetaV1(FlAccessControl, ModelMeta):
         log(INFO, "Reward (Address, Value):")
         for trainer, contribution in zip(trainers, contributions):
             log(INFO, "\t(%s, %s)", trainer, contribution)
+        return tx_receipt["status"] == 0
+
+    def next_round(
+        self,
+        round_id: int,
+        n_trainers: int,
+        model_score: float,
+        total_contributions: float,
+    ):
+        if self.account is None:
+            raise Exception("No account connected")
+
+        address = self.account.address
+        round_summary_data: Tuple[int, int, int, int] = (
+            round_id,
+            n_trainers,
+            math.floor(model_score * 10**MODEL_SCORE_DECIMALS),
+            math.floor(total_contributions * 10**CONTRIBUTION_DECIMALS),
+        )
+        tx = self.model.functions.nextRound(round_summary_data).build_transaction(
+            {"from": address, "nonce": self.w3.eth.get_transaction_count(address)}
+        )
+        signed_tx = self.account.sign_transaction(cast(TransactionDictType, tx))
+        tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+        tx_receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
+
+        log(
+            INFO,
+            "next_round: marked round as finished",
+        )
+
         return tx_receipt["status"] == 0
 
     @staticmethod

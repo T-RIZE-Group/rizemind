@@ -141,18 +141,7 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
             coalition.loss = evaluate_res.loss
             coalition.metrics = evaluate_res.metrics
 
-        # Sort coalitions by the number of trainers (clients) and distribute rewards accordingly.
-        coalitions = self.get_coalitions()
-        player_scores = self.compute_contributions(coalitions)
-        player_scores = self.normalize_contribution_scores(player_scores)
-        for address, score in player_scores:
-            if score == 0:
-                log(
-                    WARNING,
-                    f"aggregate_evaluate: free rider detected! Trainer address: {address}, Score: {score}",
-                )
-        self.model.distribute(player_scores)
-        return self.evaluate_coalitions()
+        return self.close_round(server_round)
 
     def evaluate(self, server_round: int, parameters: Parameters):
         """
