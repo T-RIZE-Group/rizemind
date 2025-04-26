@@ -1,3 +1,4 @@
+import math
 from logging import INFO
 from typing import Optional, Tuple, cast
 
@@ -16,7 +17,6 @@ from rizemind.contracts.models.erc5267 import ERC5267
 from rizemind.contracts.models.model_meta import ModelMeta
 from web3 import Web3
 from web3.contract import Contract
-import math
 
 
 class ModelMetaV1(FlAccessControl, ModelMeta):

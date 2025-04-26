@@ -1,5 +1,5 @@
-from eth_account import Account
 import pytest
+from eth_account import Account
 from rizemind.contracts.models.model_factory_v1 import (
     ModelFactoryV1,
     ModelFactoryV1Config,

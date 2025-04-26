@@ -1,4 +1,5 @@
 from typing import List, Optional, Union
+
 from eth_typing import HexAddress
 from pydantic import BaseModel
 from rizemind.contracts.models.constants import (
@@ -6,8 +7,8 @@ from rizemind.contracts.models.constants import (
     MODEL_SCORE_DECIMALS,
 )
 from rizemind.contracts.models.erc5267 import ERC5267
-from web3.contract import Contract
 from web3 import Web3
+from web3.contract import Contract
 
 
 class RoundMetrics(BaseModel):
