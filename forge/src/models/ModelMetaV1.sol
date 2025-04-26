@@ -20,7 +20,7 @@ contract ModelMetaV1 is
 
     event RoundFinished(
         uint256 indexed roundId,
-        uint64 trainer,
+        uint64 nTrainers,
         uint64 modelScore,
         uint128 totalContribution
     );

@@ -5,6 +5,7 @@ from eth_account.signers.base import BaseAccount
 from eth_account.types import TransactionDictType
 from eth_typing import Address
 from flwr.common.logger import log
+from hexbytes import HexBytes
 from rizemind.contracts.abi.model_v1 import model_abi_v1_0_0
 from rizemind.contracts.access_control.FlAccessControl import FlAccessControl
 from rizemind.contracts.models.constants import (
@@ -30,7 +31,7 @@ class ModelMetaV1(FlAccessControl, ModelMeta):
         self.account = account
         self.w3 = w3
 
-    def distribute(self, trainer_scores: list[tuple[Address, float]]) -> bool:
+    def distribute(self, trainer_scores: list[tuple[Address, float]]) -> HexBytes:
         if self.account is None:
             raise Exception("No account connected")
 
@@ -55,7 +56,9 @@ class ModelMetaV1(FlAccessControl, ModelMeta):
         log(INFO, "Reward (Address, Value):")
         for trainer, contribution in zip(trainers, contributions):
             log(INFO, "\t(%s, %s)", trainer, contribution)
-        return tx_receipt["status"] == 0
+
+        assert tx_receipt["status"] != 0, "distribute returned an error"
+        return tx_hash
 
     def next_round(
         self,
@@ -63,7 +66,7 @@ class ModelMetaV1(FlAccessControl, ModelMeta):
         n_trainers: int,
         model_score: float,
         total_contributions: float,
-    ):
+    ) -> HexBytes:
         if self.account is None:
             raise Exception("No account connected")
 
@@ -86,7 +89,8 @@ class ModelMetaV1(FlAccessControl, ModelMeta):
             "next_round: marked round as finished",
         )
 
-        return tx_receipt["status"] == 0
+        assert tx_receipt["status"] != 0, "nextRound returned an error"
+        return tx_hash
 
     @staticmethod
     def from_address(
