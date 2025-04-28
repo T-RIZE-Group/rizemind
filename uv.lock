@@ -8,17 +8,11 @@ members = [
     "basic-torch",
     "centralized-shapely-value",
     "decentralized-shapely-value",
-    "dp-fmnist",
-    "dp-mnist",
-    "dpsv-fmnist",
-    "dpsv-mnist-dyn-noise",
-    "dpsv-mnist-non-iid",
-    "dpsv-mnist-static-noise",
+    "dyn-opacus-torch",
     "opacus-torch",
     "rizemind",
     "rizenet-deployment",
     "rizenet-shapley",
-    "sv-fmnist",
 ]
 
 [[package]]
@@ -618,129 +612,24 @@ wheels = [
 ]
 
 [[package]]
-name = "dp-fmnist"
+name = "dyn-opacus-torch"
 version = "0.1.0"
-source = { editable = "examples/dp_fmnist" }
+source = { virtual = "examples/dyn_opacus_torch" }
 dependencies = [
     { name = "flwr", extra = ["simulation"] },
     { name = "flwr-datasets", extra = ["vision"] },
-    { name = "numpy" },
+    { name = "opacus" },
     { name = "torch" },
     { name = "torchvision" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "flwr", extras = ["simulation"], specifier = ">=1.13.1" },
-    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.3.0" },
-    { name = "numpy", specifier = ">=1.26.4" },
-    { name = "torch", specifier = ">=2.6.0" },
-    { name = "torchvision", specifier = ">=0.21.0" },
-]
-
-[[package]]
-name = "dp-mnist"
-version = "0.1.0"
-source = { editable = "examples/dp_mnist" }
-dependencies = [
-    { name = "flwr", extra = ["simulation"] },
-    { name = "flwr-datasets", extra = ["vision"] },
-    { name = "numpy" },
-    { name = "torch" },
-    { name = "torchvision" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "flwr", extras = ["simulation"], specifier = ">=1.13.1" },
-    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.3.0" },
-    { name = "numpy", specifier = ">=1.26.4" },
-    { name = "torch", specifier = ">=2.6.0" },
-    { name = "torchvision", specifier = ">=0.21.0" },
-]
-
-[[package]]
-name = "dpsv-fmnist"
-version = "0.1.0"
-source = { editable = "examples/dpsv_fmnist" }
-dependencies = [
-    { name = "flwr", extra = ["simulation"] },
-    { name = "flwr-datasets", extra = ["vision"] },
-    { name = "numpy" },
-    { name = "torch" },
-    { name = "torchvision" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "flwr", extras = ["simulation"], specifier = ">=1.13.1" },
-    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.3.0" },
-    { name = "numpy", specifier = ">=1.26.4" },
-    { name = "torch", specifier = ">=2.6.0" },
-    { name = "torchvision", specifier = ">=0.21.0" },
-]
-
-[[package]]
-name = "dpsv-mnist-dyn-noise"
-version = "0.1.0"
-source = { editable = "examples/dpsv_mnist_dyn_noise" }
-dependencies = [
-    { name = "flwr", extra = ["simulation"] },
-    { name = "flwr-datasets", extra = ["vision"] },
-    { name = "numpy" },
-    { name = "torch" },
-    { name = "torchvision" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "flwr", extras = ["simulation"], specifier = ">=1.13.1" },
-    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.3.0" },
-    { name = "numpy", specifier = ">=1.26.4" },
-    { name = "torch", specifier = ">=2.6.0" },
-    { name = "torchvision", specifier = ">=0.21.0" },
-]
-
-[[package]]
-name = "dpsv-mnist-non-iid"
-version = "0.1.0"
-source = { editable = "examples/dpsv_mnist_non_iid" }
-dependencies = [
-    { name = "flwr", extra = ["simulation"] },
-    { name = "flwr-datasets", extra = ["vision"] },
-    { name = "numpy" },
-    { name = "torch" },
-    { name = "torchvision" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "flwr", extras = ["simulation"], specifier = ">=1.13.1" },
-    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.3.0" },
-    { name = "numpy", specifier = ">=1.26.4" },
-    { name = "torch", specifier = ">=2.6.0" },
-    { name = "torchvision", specifier = ">=0.21.0" },
-]
-
-[[package]]
-name = "dpsv-mnist-static-noise"
-version = "0.1.0"
-source = { editable = "examples/dpsv_mnist_static_noise" }
-dependencies = [
-    { name = "flwr", extra = ["simulation"] },
-    { name = "flwr-datasets", extra = ["vision"] },
-    { name = "numpy" },
-    { name = "torch" },
-    { name = "torchvision" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "flwr", extras = ["simulation"], specifier = ">=1.13.1" },
-    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.3.0" },
-    { name = "numpy", specifier = ">=1.26.4" },
-    { name = "torch", specifier = ">=2.6.0" },
-    { name = "torchvision", specifier = ">=0.21.0" },
+    { name = "flwr", extras = ["simulation"], specifier = ">=1.18.0" },
+    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.5.0" },
+    { name = "opacus", specifier = ">=1.5.3" },
+    { name = "torch", specifier = ">=2.7.0" },
+    { name = "torchvision", specifier = ">=0.22.0" },
 ]
 
 [[package]]
@@ -2807,27 +2696,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ce/20/08dfcd9c983f6a6f4a1000d934b9e6d626cff8d2eeb77a89a68eef20a2b7/starlette-0.46.2.tar.gz", hash = "sha256:7f7361f34eed179294600af672f565727419830b54b7b084efe44bb82d2fccd5", size = 2580846 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8b/0c/9d30a4ebeb6db2b25a841afbb80f6ef9a854fc3b41be131d249a977b4959/starlette-0.46.2-py3-none-any.whl", hash = "sha256:595633ce89f8ffa71a015caed34a5b2dc1c0cdb3f0f1fbd1e69339cf2abeec35", size = 72037 },
-]
-
-[[package]]
-name = "sv-fmnist"
-version = "0.1.0"
-source = { editable = "examples/sv_fmnist" }
-dependencies = [
-    { name = "flwr", extra = ["simulation"] },
-    { name = "flwr-datasets", extra = ["vision"] },
-    { name = "numpy" },
-    { name = "torch" },
-    { name = "torchvision" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "flwr", extras = ["simulation"], specifier = ">=1.13.1" },
-    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.3.0" },
-    { name = "numpy", specifier = ">=1.26.4" },
-    { name = "torch", specifier = ">=2.6.0" },
-    { name = "torchvision", specifier = ">=0.21.0" },
 ]
 
 [[package]]

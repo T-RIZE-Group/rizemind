@@ -112,4 +112,5 @@ members = [
     "examples/rizenet_shapley",
     "examples/basic_torch",
     "examples/opacus_torch",
+    "examples/dyn_opacus_torch",
 ]

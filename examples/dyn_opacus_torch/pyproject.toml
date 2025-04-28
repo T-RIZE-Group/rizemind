@@ -1,5 +1,5 @@
 [project]
-name = "opacus-torch"
+name = "dyn-opacus-torch"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -19,8 +19,8 @@ packages = ["."]
 publisher = "trize"
 
 [tool.flwr.app.components]
-serverapp = "opacus_torch.server_app:app"
-clientapp = "opacus_torch.client_app:app"
+serverapp = "dyn_opacus_torch.server_app:app"
+clientapp = "dyn_opacus_torch.client_app:app"
 
 [tool.flwr.app.config]
 fraction-evaluate = 0.4
