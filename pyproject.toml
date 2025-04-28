@@ -118,4 +118,5 @@ members = [
     "examples/dpsv_mnist_static_noise",
     "examples/dpsv_mnist_non_iid",
     "examples/basic_torch",
+    "examples/opacus_torch",
 ]
