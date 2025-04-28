@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from rizemind.contracts.abi.model_factory_v1 import model_factory_v1_abi
 from rizemind.contracts.deployment import DeployedContract
 from rizemind.contracts.local_deployment import load_local_deployment
-from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
+from rizemind.contracts.models.model_meta_v1 import ModelMetaV1
 from rizemind.web3.chains import RIZENET_TESTNET_CHAINID
 from web3 import Web3
 
@@ -71,12 +71,10 @@ class ModelFactoryV1:
 
         tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
         assert tx_receipt["status"] != 0, "Deployment transaction failed or reverted."
-        print(tx_receipt)
 
         logs = factory.events.ContractCreated().process_receipt(tx_receipt)
-        print(logs)
         assert len(logs) == 1, "no events discovered, factory might not be deployed"
         contract_created = logs[0]
         proxy_address = contract_created["args"]["proxyAddress"]
 
-        return ModelRegistryV1.from_address(proxy_address, w3, deployer)
+        return ModelMetaV1.from_address(proxy_address, w3, deployer)

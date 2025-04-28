@@ -2,11 +2,28 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
-// Adjust the import path as needed.
-import "./TESTSimpleContributionDistributor.sol";
 
-contract TESTSimpleContributionDistributorTest is Test {
-    TESTSimpleContributionDistributor public token;
+import {SimpleMintCompensation} from "@rizemind-contracts/compensation/SimpleMintCompensation.sol";
+
+contract TESTSimpleMintCompensation is SimpleMintCompensation {
+    function initialize(
+        string memory name,
+        string memory symbol,
+        uint256 maxRewards
+    ) public initializer {
+        __SimpleMintCompensation_init(name, symbol, maxRewards);
+    }
+
+    function distribute(
+        address[] calldata trainers,
+        uint64[] calldata contributions
+    ) external {
+        _distribute(trainers, contributions);
+    }
+}
+
+contract TESTSimpleMintCompensationTest is Test {
+    TESTSimpleMintCompensation public token;
     address public aggregator;
     address[] public trainers;
     address public nonTrainer;
@@ -24,7 +41,7 @@ contract TESTSimpleContributionDistributorTest is Test {
 
         // Deploy and initialize the token contract as aggregator.
         vm.prank(aggregator);
-        token = new TESTSimpleContributionDistributor();
+        token = new TESTSimpleMintCompensation();
         vm.prank(aggregator);
         token.initialize("Test", "tst", maxRewards);
     }
