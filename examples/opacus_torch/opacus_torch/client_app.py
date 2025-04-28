@@ -1,13 +1,14 @@
-from typing import cast
+import logging
 import warnings
+from typing import cast
 
 import datasets
 import torch
-from opacus import PrivacyEngine
-from .task import Net, get_weights, load_data, set_weights, test, train
-import logging
-from flwr.client import NumPyClient, ClientApp
+from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context, Scalar
+from opacus import PrivacyEngine
+
+from .task import Net, get_weights, load_data, set_weights, test, train
 
 flwr_logger = logging.getLogger("flwr")
 flwr_logger.setLevel(logging.INFO)
