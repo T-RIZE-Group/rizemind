@@ -64,6 +64,8 @@ class ModelMeta(ERC5267):
 
         event = self.model.events.TrainerContributed()
 
+        if type(from_block) is int:
+            from_block = from_block - 1 if from_block > 0 else from_block
         logs: List[dict] = event.get_logs(
             from_block=from_block,
             to_block=to_block,
@@ -93,14 +95,24 @@ class ModelMeta(ERC5267):
         latest_contribution = self.get_latest_contribution_log(
             trainer, from_block, to_block
         )
-        print(latest_contribution)
+
         if latest_contribution is None:
             return None
+
+        print(latest_contribution)
         return self.get_round_at(latest_contribution["blockNumber"])
 
     def get_round_at(self, block_height: int) -> RoundSummary:
         event = self.model.events.RoundFinished()
-        logs: List[dict] = event.get_logs()
+
+        # Since event.get_logs returns logs as below:
+        # range: (from_block, latest]
+        # then we need to subtract '1' from from_block
+        from_block = block_height - 1 if block_height > 0 else block_height
+        logs: List[dict] = event.get_logs(
+            from_block=from_block,
+            to_block="latest",
+        )
         for log in logs:
             if log["blockNumber"] >= block_height:
                 metrics = RoundMetrics(
