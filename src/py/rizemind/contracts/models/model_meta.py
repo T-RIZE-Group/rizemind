@@ -93,9 +93,12 @@ class ModelMeta(ERC5267):
         latest_contribution = self.get_latest_contribution_log(
             trainer, from_block, to_block
         )
-        print(latest_contribution)
+
         if latest_contribution is None:
+            print("latest contribution is not yet calculated.")
             return None
+
+        print(latest_contribution)
         return self.get_round_at(latest_contribution["blockNumber"])
 
     def get_round_at(self, block_height: int) -> RoundSummary:
