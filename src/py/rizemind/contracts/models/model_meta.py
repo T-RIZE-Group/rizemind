@@ -99,7 +99,6 @@ class ModelMeta(ERC5267):
         if latest_contribution is None:
             return None
 
-        print(latest_contribution)
         return self.get_round_at(latest_contribution["blockNumber"])
 
     def get_round_at(self, block_height: int) -> RoundSummary:
