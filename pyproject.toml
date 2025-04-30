@@ -105,12 +105,12 @@ rizemind = { workspace = true }
 
 [tool.uv.workspace]
 members = [
-    "examples/basic_signature",
-    "examples/centralized_shapely_value",
-    "examples/decentralized_shapely_value",
-    "examples/rizenet_deployment",
-    "examples/rizenet_shapley",
-    "examples/basic_torch",
-    "examples/opacus_torch",
-    "examples/dyn_opacus_torch",
+    "examples/tf_basic_signature",
+    "examples/tf_centralized_shapely",
+    "examples/tf_decentralized_shapley",
+    "examples/tf_rizenet_deployment",
+    "examples/tf_rizenet_shapley",
+    "examples/torch_basic",
+    "examples/torch_opacus",
+    "examples/torch_dyn_privacy_opacus",
 ]

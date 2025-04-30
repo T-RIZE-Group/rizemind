@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "basic-signature"
+name = "tf-rizenet-shapley"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -16,6 +16,7 @@ dependencies = [
     "tensorflow-cpu>=2.9.1,!=2.11.1 ; platform_machine == 'x86_64'",
 ]
 
+
 [tool.hatch.build.targets.wheel]
 packages = ["."]
 [tool.hatch.metadata]
@@ -25,8 +26,8 @@ allow-direct-references = true
 publisher = "trizelabs"
 
 [tool.flwr.app.components]
-serverapp = "signedupdates.server_app:app"
-clientapp = "signedupdates.client_app:app"
+serverapp = "rizenet_shapley.server:app"
+clientapp = "rizenet_shapley.client:app"
 
 [tool.flwr.app.config]
 num-server-rounds = 3
@@ -44,10 +45,10 @@ options.num-supernodes = 10
 
 [tool.web3.model_v1]
 name = "test_model"
-local_factory_deployment_path = "../../forge/output/31337/ModelRegistryFactory.json"
+ticker = "tst"
 
 [tool.eth.account]
-mnemonic = "test test test test test test test test test test test junk"
+mnemonic = "$RIZENET_MNEMONIC"
 
 [tool.web3]
-url = "http://127.0.0.1:8545"
+url = "https://testnet.rizenet.io"

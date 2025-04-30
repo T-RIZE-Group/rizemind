@@ -4,15 +4,14 @@ requires-python = ">=3.12"
 
 [manifest]
 members = [
-    "basic-signature",
-    "basic-torch",
-    "centralized-shapely-value",
-    "decentralized-shapely-value",
-    "dyn-opacus-torch",
-    "opacus-torch",
     "rizemind",
-    "rizenet-deployment",
-    "rizenet-shapley",
+    "tf-basic-signature",
+    "tf-decentralized-shapley",
+    "tf-rizenet-deployment",
+    "tf-rizenet-shapley",
+    "torch-basic",
+    "torch-dyn-privacy-opacus",
+    "torch-opacus",
 ]
 
 [[package]]
@@ -170,46 +169,6 @@ wheels = [
 ]
 
 [[package]]
-name = "basic-signature"
-version = "0.1.0"
-source = { editable = "examples/basic_signature" }
-dependencies = [
-    { name = "flwr", extra = ["simulation"] },
-    { name = "flwr-datasets", extra = ["vision"] },
-    { name = "ray" },
-    { name = "tensorflow-cpu", marker = "platform_machine == 'x86_64'" },
-    { name = "tensorflow-macos", marker = "sys_platform == 'darwin'" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "flwr", extras = ["simulation"], specifier = ">=1.17.0" },
-    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.5.0" },
-    { name = "ray", specifier = ">=2.0.0" },
-    { name = "tensorflow-cpu", marker = "platform_machine == 'x86_64'", specifier = ">=2.9.1,!=2.11.1" },
-    { name = "tensorflow-macos", marker = "sys_platform == 'darwin'", specifier = ">=2.9.1,!=2.11.1" },
-]
-
-[[package]]
-name = "basic-torch"
-version = "0.1.0"
-source = { virtual = "examples/basic_torch" }
-dependencies = [
-    { name = "flwr", extra = ["simulation"] },
-    { name = "flwr-datasets", extra = ["vision"] },
-    { name = "torch" },
-    { name = "torchvision" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "flwr", extras = ["simulation"], specifier = ">=1.18.0" },
-    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.5.0" },
-    { name = "torch", specifier = ">=2.7.0" },
-    { name = "torchvision", specifier = ">=0.22.0" },
-]
-
-[[package]]
 name = "beautifulsoup4"
 version = "4.13.4"
 source = { registry = "https://pypi.org/simple" }
@@ -265,27 +224,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/b2/be/129860498d652e6c91ca3a95b7a7d606ab1039f66b4fbc4deceb2414b497/bitarray-3.3.1-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:824bd92e53f8e32dfa4bf38643246d1a500b13461ade361d342a8fcc3ddb6905", size = 300584 },
     { url = "https://files.pythonhosted.org/packages/72/d5/e3c2698948b2554d3fe676b51969bd4a951538bb37772687add8b0c55bea/bitarray-3.3.1-cp313-cp313-win32.whl", hash = "sha256:8c84c3df9b921439189d0be6ad4f4212085155813475a58fbc5fb3f1d5e8a001", size = 130759 },
     { url = "https://files.pythonhosted.org/packages/79/42/8611854fb876123d330cc6f8ea51dadc2ced4030d02aae07ba4556ca1d45/bitarray-3.3.1-cp313-cp313-win_amd64.whl", hash = "sha256:71838052ad546da110b8a8aaa254bda2e162e65af563d92b15c8bc7ab1642909", size = 137691 },
-]
-
-[[package]]
-name = "centralized-shapely-value"
-version = "0.1.0"
-source = { editable = "examples/centralized_shapely_value" }
-dependencies = [
-    { name = "flwr", extra = ["simulation"] },
-    { name = "flwr-datasets", extra = ["vision"] },
-    { name = "ray" },
-    { name = "tensorflow-cpu", marker = "platform_machine == 'x86_64'" },
-    { name = "tensorflow-macos", marker = "sys_platform == 'darwin'" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "flwr", extras = ["simulation"], specifier = ">=1.17.0" },
-    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.5.0" },
-    { name = "ray", specifier = ">=2.0.0" },
-    { name = "tensorflow-cpu", marker = "platform_machine == 'x86_64'", specifier = ">=2.9.1,!=2.11.1" },
-    { name = "tensorflow-macos", marker = "sys_platform == 'darwin'", specifier = ">=2.9.1,!=2.11.1" },
 ]
 
 [[package]]
@@ -562,27 +500,6 @@ wheels = [
 ]
 
 [[package]]
-name = "decentralized-shapely-value"
-version = "0.1.0"
-source = { editable = "examples/decentralized_shapely_value" }
-dependencies = [
-    { name = "flwr", extra = ["simulation"] },
-    { name = "flwr-datasets", extra = ["vision"] },
-    { name = "ray" },
-    { name = "tensorflow-cpu", marker = "platform_machine == 'x86_64'" },
-    { name = "tensorflow-macos", marker = "sys_platform == 'darwin'" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "flwr", extras = ["simulation"], specifier = ">=1.17.0" },
-    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.5.0" },
-    { name = "ray", specifier = ">=2.0.0" },
-    { name = "tensorflow-cpu", marker = "platform_machine == 'x86_64'", specifier = ">=2.9.1,!=2.11.1" },
-    { name = "tensorflow-macos", marker = "sys_platform == 'darwin'", specifier = ">=2.9.1,!=2.11.1" },
-]
-
-[[package]]
 name = "dill"
 version = "0.3.8"
 source = { registry = "https://pypi.org/simple" }
@@ -609,27 +526,6 @@ dependencies = [
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b2/b7/545d2c10c1fc15e48653c91efde329a790f2eecfbbf2bd16003b5db2bab0/dotenv-0.9.9-py2.py3-none-any.whl", hash = "sha256:29cf74a087b31dafdb5a446b6d7e11cbce8ed2741540e2339c69fbef92c94ce9", size = 1892 },
-]
-
-[[package]]
-name = "dyn-opacus-torch"
-version = "0.1.0"
-source = { virtual = "examples/dyn_opacus_torch" }
-dependencies = [
-    { name = "flwr", extra = ["simulation"] },
-    { name = "flwr-datasets", extra = ["vision"] },
-    { name = "opacus" },
-    { name = "torch" },
-    { name = "torchvision" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "flwr", extras = ["simulation"], specifier = ">=1.18.0" },
-    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.5.0" },
-    { name = "opacus", specifier = ">=1.5.3" },
-    { name = "torch", specifier = ">=2.7.0" },
-    { name = "torchvision", specifier = ">=0.22.0" },
 ]
 
 [[package]]
@@ -1641,27 +1537,6 @@ wheels = [
 ]
 
 [[package]]
-name = "opacus-torch"
-version = "0.1.0"
-source = { virtual = "examples/opacus_torch" }
-dependencies = [
-    { name = "flwr", extra = ["simulation"] },
-    { name = "flwr-datasets", extra = ["vision"] },
-    { name = "opacus" },
-    { name = "torch" },
-    { name = "torchvision" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "flwr", extras = ["simulation"], specifier = ">=1.18.0" },
-    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.5.0" },
-    { name = "opacus", specifier = ">=1.5.3" },
-    { name = "torch", specifier = ">=2.7.0" },
-    { name = "torchvision", specifier = ">=0.22.0" },
-]
-
-[[package]]
 name = "opt-einsum"
 version = "3.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2320,50 +2195,6 @@ torch = [
 ]
 
 [[package]]
-name = "rizenet-deployment"
-version = "0.1.0"
-source = { editable = "examples/rizenet_deployment" }
-dependencies = [
-    { name = "flwr", extra = ["simulation"] },
-    { name = "flwr-datasets", extra = ["vision"] },
-    { name = "python-dotenv" },
-    { name = "ray" },
-    { name = "tensorflow-cpu", marker = "platform_machine == 'x86_64'" },
-    { name = "tensorflow-macos", marker = "sys_platform == 'darwin'" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "flwr", extras = ["simulation"], specifier = ">=1.17.0" },
-    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.5.0" },
-    { name = "python-dotenv", specifier = ">=1.1.0" },
-    { name = "ray", specifier = ">=2.0.0" },
-    { name = "tensorflow-cpu", marker = "platform_machine == 'x86_64'", specifier = ">=2.9.1,!=2.11.1" },
-    { name = "tensorflow-macos", marker = "sys_platform == 'darwin'", specifier = ">=2.9.1,!=2.11.1" },
-]
-
-[[package]]
-name = "rizenet-shapley"
-version = "0.1.0"
-source = { editable = "examples/rizenet_shapley" }
-dependencies = [
-    { name = "flwr", extra = ["simulation"] },
-    { name = "flwr-datasets", extra = ["vision"] },
-    { name = "ray" },
-    { name = "tensorflow-cpu", marker = "platform_machine == 'x86_64'" },
-    { name = "tensorflow-macos", marker = "sys_platform == 'darwin'" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "flwr", extras = ["simulation"], specifier = ">=1.17.0" },
-    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.5.0" },
-    { name = "ray", specifier = ">=2.0.0" },
-    { name = "tensorflow-cpu", marker = "platform_machine == 'x86_64'", specifier = ">=2.9.1,!=2.11.1" },
-    { name = "tensorflow-macos", marker = "sys_platform == 'darwin'", specifier = ">=2.9.1,!=2.11.1" },
-]
-
-[[package]]
 name = "rlp"
 version = "4.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2824,6 +2655,92 @@ wheels = [
 ]
 
 [[package]]
+name = "tf-basic-signature"
+version = "0.1.0"
+source = { editable = "examples/tf_basic_signature" }
+dependencies = [
+    { name = "flwr", extra = ["simulation"] },
+    { name = "flwr-datasets", extra = ["vision"] },
+    { name = "ray" },
+    { name = "tensorflow-cpu", marker = "platform_machine == 'x86_64'" },
+    { name = "tensorflow-macos", marker = "sys_platform == 'darwin'" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "flwr", extras = ["simulation"], specifier = ">=1.17.0" },
+    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.5.0" },
+    { name = "ray", specifier = ">=2.0.0" },
+    { name = "tensorflow-cpu", marker = "platform_machine == 'x86_64'", specifier = ">=2.9.1,!=2.11.1" },
+    { name = "tensorflow-macos", marker = "sys_platform == 'darwin'", specifier = ">=2.9.1,!=2.11.1" },
+]
+
+[[package]]
+name = "tf-decentralized-shapley"
+version = "0.1.0"
+source = { editable = "examples/tf_decentralized_shapley" }
+dependencies = [
+    { name = "flwr", extra = ["simulation"] },
+    { name = "flwr-datasets", extra = ["vision"] },
+    { name = "ray" },
+    { name = "tensorflow-cpu", marker = "platform_machine == 'x86_64'" },
+    { name = "tensorflow-macos", marker = "sys_platform == 'darwin'" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "flwr", extras = ["simulation"], specifier = ">=1.17.0" },
+    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.5.0" },
+    { name = "ray", specifier = ">=2.0.0" },
+    { name = "tensorflow-cpu", marker = "platform_machine == 'x86_64'", specifier = ">=2.9.1,!=2.11.1" },
+    { name = "tensorflow-macos", marker = "sys_platform == 'darwin'", specifier = ">=2.9.1,!=2.11.1" },
+]
+
+[[package]]
+name = "tf-rizenet-deployment"
+version = "0.1.0"
+source = { editable = "examples/tf_rizenet_deployment" }
+dependencies = [
+    { name = "flwr", extra = ["simulation"] },
+    { name = "flwr-datasets", extra = ["vision"] },
+    { name = "python-dotenv" },
+    { name = "ray" },
+    { name = "tensorflow-cpu", marker = "platform_machine == 'x86_64'" },
+    { name = "tensorflow-macos", marker = "sys_platform == 'darwin'" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "flwr", extras = ["simulation"], specifier = ">=1.17.0" },
+    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.5.0" },
+    { name = "python-dotenv", specifier = ">=1.1.0" },
+    { name = "ray", specifier = ">=2.0.0" },
+    { name = "tensorflow-cpu", marker = "platform_machine == 'x86_64'", specifier = ">=2.9.1,!=2.11.1" },
+    { name = "tensorflow-macos", marker = "sys_platform == 'darwin'", specifier = ">=2.9.1,!=2.11.1" },
+]
+
+[[package]]
+name = "tf-rizenet-shapley"
+version = "0.1.0"
+source = { editable = "examples/tf_rizenet_shapley" }
+dependencies = [
+    { name = "flwr", extra = ["simulation"] },
+    { name = "flwr-datasets", extra = ["vision"] },
+    { name = "ray" },
+    { name = "tensorflow-cpu", marker = "platform_machine == 'x86_64'" },
+    { name = "tensorflow-macos", marker = "sys_platform == 'darwin'" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "flwr", extras = ["simulation"], specifier = ">=1.17.0" },
+    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.5.0" },
+    { name = "ray", specifier = ">=2.0.0" },
+    { name = "tensorflow-cpu", marker = "platform_machine == 'x86_64'", specifier = ">=2.9.1,!=2.11.1" },
+    { name = "tensorflow-macos", marker = "sys_platform == 'darwin'", specifier = ">=2.9.1,!=2.11.1" },
+]
+
+[[package]]
 name = "tomli"
 version = "2.2.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2911,6 +2828,67 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/9d/f5/0bd30e9da04c3036614aa1b935a9f7e505a9e4f1f731b15e165faf8a4c74/torch-2.7.0-cp313-cp313t-manylinux_2_28_x86_64.whl", hash = "sha256:176300ff5bc11a5f5b0784e40bde9e10a35c4ae9609beed96b4aeb46a27f5fae", size = 865104023 },
     { url = "https://files.pythonhosted.org/packages/d1/b7/2235d0c3012c596df1c8d39a3f4afc1ee1b6e318d469eda4c8bb68566448/torch-2.7.0-cp313-cp313t-win_amd64.whl", hash = "sha256:d0ca446a93f474985d81dc866fcc8dccefb9460a29a456f79d99c29a78a66993", size = 212750916 },
     { url = "https://files.pythonhosted.org/packages/90/48/7e6477cf40d48cc0a61fa0d41ee9582b9a316b12772fcac17bc1a40178e7/torch-2.7.0-cp313-none-macosx_11_0_arm64.whl", hash = "sha256:27f5007bdf45f7bb7af7f11d1828d5c2487e030690afb3d89a651fd7036a390e", size = 68575074 },
+]
+
+[[package]]
+name = "torch-basic"
+version = "0.1.0"
+source = { virtual = "examples/torch_basic" }
+dependencies = [
+    { name = "flwr", extra = ["simulation"] },
+    { name = "flwr-datasets", extra = ["vision"] },
+    { name = "torch" },
+    { name = "torchvision" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "flwr", extras = ["simulation"], specifier = ">=1.18.0" },
+    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.5.0" },
+    { name = "torch", specifier = ">=2.7.0" },
+    { name = "torchvision", specifier = ">=0.22.0" },
+]
+
+[[package]]
+name = "torch-dyn-privacy-opacus"
+version = "0.1.0"
+source = { virtual = "examples/torch_dyn_privacy_opacus" }
+dependencies = [
+    { name = "flwr", extra = ["simulation"] },
+    { name = "flwr-datasets", extra = ["vision"] },
+    { name = "opacus" },
+    { name = "torch" },
+    { name = "torchvision" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "flwr", extras = ["simulation"], specifier = ">=1.18.0" },
+    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.5.0" },
+    { name = "opacus", specifier = ">=1.5.3" },
+    { name = "torch", specifier = ">=2.7.0" },
+    { name = "torchvision", specifier = ">=0.22.0" },
+]
+
+[[package]]
+name = "torch-opacus"
+version = "0.1.0"
+source = { virtual = "examples/torch_opacus" }
+dependencies = [
+    { name = "flwr", extra = ["simulation"] },
+    { name = "flwr-datasets", extra = ["vision"] },
+    { name = "opacus" },
+    { name = "torch" },
+    { name = "torchvision" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "flwr", extras = ["simulation"], specifier = ">=1.18.0" },
+    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.5.0" },
+    { name = "opacus", specifier = ">=1.5.3" },
+    { name = "torch", specifier = ">=2.7.0" },
+    { name = "torchvision", specifier = ">=0.22.0" },
 ]
 
 [[package]]

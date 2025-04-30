@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "centralized-shapely-value"
+name = "tf-centralized-shapely"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
