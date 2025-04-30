@@ -5,22 +5,22 @@ import {EIP712Upgradeable} from "@openzeppelin-contracts-upgradeable-5.2.0/utils
 import {Context} from "@openzeppelin-contracts-5.2.0/utils/Context.sol";
 import {ContextUpgradeable} from "@openzeppelin-contracts-upgradeable-5.2.0/utils/ContextUpgradeable.sol";
 
-import {IModelRegistry, RoundSummary} from "./IModelRegistry.sol";
+import {IModelMeta, RoundSummary} from "./IModelMeta.sol";
 import {FLAccessControl} from "../access/FLAccessControl.sol";
-import {SimpleContributionDistributor} from "../compensation/SimpleContributionDistributor.sol";
+import {SimpleMintCompensation} from "../compensation/SimpleMintCompensation.sol";
 
-contract ModelRegistryV1 is
-    IModelRegistry,
+contract ModelMetaV1 is
+    IModelMeta,
     FLAccessControl,
-    SimpleContributionDistributor,
+    SimpleMintCompensation,
     EIP712Upgradeable
 {
-    uint256 private _round = 0;
+    uint256 private _round;
     string private constant _VERSION = "1.0.0";
 
     event RoundFinished(
         uint256 indexed roundId,
-        uint64 trainer,
+        uint64 nTrainers,
         uint64 modelScore,
         uint128 totalContribution
     );
@@ -34,8 +34,9 @@ contract ModelRegistryV1 is
         address[] memory initialTrainers
     ) public initializer {
         __EIP712_init(name, _VERSION);
-        __SimpleContributionDistributor_init(name, symbol, 10 ** 20);
+        __SimpleMintCompensation_init(name, symbol, 10 ** 20);
         __FLAccessControl_init(aggregator, initialTrainers);
+        _round = 1;
     }
 
     function canTrain(
