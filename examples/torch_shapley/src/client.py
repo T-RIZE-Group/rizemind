@@ -1,8 +1,7 @@
-from eth_account import Account
 import torch
+from eth_account import Account
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
-
 from rizemind.authentication.config import AccountConfig
 from rizemind.authentication.eth_account_client import SigningClient
 from rizemind.configuration.toml_config import TomlConfig
