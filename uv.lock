@@ -12,6 +12,7 @@ members = [
     "torch-basic",
     "torch-dyn-privacy-opacus",
     "torch-opacus",
+    "torch-shapley",
 ]
 
 [[package]]
@@ -2887,6 +2888,25 @@ requires-dist = [
     { name = "flwr", extras = ["simulation"], specifier = ">=1.18.0" },
     { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.5.0" },
     { name = "opacus", specifier = ">=1.5.3" },
+    { name = "torch", specifier = ">=2.7.0" },
+    { name = "torchvision", specifier = ">=0.22.0" },
+]
+
+[[package]]
+name = "torch-shapley"
+version = "0.1.0"
+source = { virtual = "examples/torch_shapley" }
+dependencies = [
+    { name = "flwr", extra = ["simulation"] },
+    { name = "flwr-datasets", extra = ["vision"] },
+    { name = "torch" },
+    { name = "torchvision" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "flwr", extras = ["simulation"], specifier = ">=1.18.0" },
+    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.5.0" },
     { name = "torch", specifier = ">=2.7.0" },
     { name = "torchvision", specifier = ">=0.22.0" },
 ]

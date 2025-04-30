@@ -1,0 +1,53 @@
+[project]
+name = "torch-shapley"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "flwr-datasets[vision]>=0.5.0",
+    "flwr[simulation]>=1.18.0",
+    "torch>=2.7.0",
+    "torchvision>=0.22.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.flwr.app]
+publisher = "trizelabs"
+
+[tool.flwr.app.components]
+serverapp = "src.server:app"
+clientapp = "src.client:app"
+
+[tool.flwr.app.config]
+num-server-rounds = 3
+local-epochs = 1
+batch-size = 32
+learning-rate = 0.005
+fraction-fit = 0.5
+verbose = false
+fraction-evaluate = 0.5
+num-supernodes = 10
+
+[tool.flwr.federations]
+default = "local-simulation-gpu"
+
+[tool.flwr.federations.local-simulation]
+options.num-supernodes = 10
+
+[tool.flwr.federations.local-simulation-gpu]
+options.num-supernodes = 10
+options.backend.client-resources.num-cpus = 1 # each ClientApp assumes to use 2CPUs
+options.backend.client-resources.num-gpus = 0.10 # at most 5 ClientApp will run in a given GPU
+
+[tool.web3.model_v1]
+name = "test_model"
+local_factory_deployment_path = "../../forge/output/31337/ModelRegistryFactory.json"
+
+[tool.eth.account]
+mnemonic = "test test test test test test test test test test test junk"
+
+[tool.web3]
+url = "http://127.0.0.1:8545"

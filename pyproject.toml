@@ -113,4 +113,5 @@ members = [
     "examples/torch_basic",
     "examples/torch_opacus",
     "examples/torch_dyn_privacy_opacus",
+    "examples/torch_shapley",
 ]
