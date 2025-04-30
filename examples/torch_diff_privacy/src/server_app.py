@@ -29,9 +29,9 @@ def server_fn(context: Context) -> ServerAppComponents:
     parameters = ndarrays_to_parameters(ndarrays)
 
     strategy = FedAvg(
-        fraction_fit=1.0,
+        fraction_fit=cast(float, context.run_config["fraction-fit"]),
         fraction_evaluate=cast(float, context.run_config["fraction-evaluate"]),
-        min_available_clients=2,
+        min_available_clients=cast(int, context.run_config["min-available-clients"]),
         evaluate_metrics_aggregation_fn=weighted_average,
         initial_parameters=parameters,
         fit_metrics_aggregation_fn=average_epsilons,

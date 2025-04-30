@@ -10,8 +10,8 @@ members = [
     "tf-rizenet-deployment",
     "tf-rizenet-shapley",
     "torch-basic",
-    "torch-dyn-privacy-opacus",
-    "torch-opacus",
+    "torch-diff-privacy",
+    "torch-dyn-diff-privacy-shapley",
     "torch-shapley",
 ]
 
@@ -2851,9 +2851,9 @@ requires-dist = [
 ]
 
 [[package]]
-name = "torch-dyn-privacy-opacus"
+name = "torch-diff-privacy"
 version = "0.1.0"
-source = { virtual = "examples/torch_dyn_privacy_opacus" }
+source = { virtual = "examples/torch_diff_privacy" }
 dependencies = [
     { name = "flwr", extra = ["simulation"] },
     { name = "flwr-datasets", extra = ["vision"] },
@@ -2872,9 +2872,9 @@ requires-dist = [
 ]
 
 [[package]]
-name = "torch-opacus"
+name = "torch-dyn-diff-privacy-shapley"
 version = "0.1.0"
-source = { virtual = "examples/torch_opacus" }
+source = { virtual = "examples/torch_dyn_diff_privacy_shapley" }
 dependencies = [
     { name = "flwr", extra = ["simulation"] },
     { name = "flwr-datasets", extra = ["vision"] },
