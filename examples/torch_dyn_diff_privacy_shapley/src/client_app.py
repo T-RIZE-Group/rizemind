@@ -72,18 +72,24 @@ class FlowerClient(NumPyClient):
             model.parameters(), lr=self.learning_rate, momentum=0.9
         )
 
-        previous_contribution = config["contribution"]
+        trainer_contribution = float(config["trainer_contribution"])
+        total_contributions = float(config["total_contributions"])
+        n_trainers = int(config["n_trainers"])
 
-        if previous_contribution is not None:
-            previous_contribution = float(previous_contribution)
-            if previous_contribution > self.contribution_upper:
+        if trainer_contribution is not None:
+            avg_contribution_percentage = 1 / n_trainers
+            trainer_contribution_percentage = trainer_contribution / total_contributions
+            # TODO: Improve the condition
+            # if trainer_contribution_percentage > self.contribution_upper:
+            if trainer_contribution_percentage > avg_contribution_percentage:
                 self.target_epsilon = self.target_epsilon / self.epsilon_multiplier
                 self.target_epsilon = (
                     self.target_epsilon_upper
                     if self.target_epsilon > self.target_epsilon_upper
                     else self.target_epsilon
                 )
-            elif previous_contribution < self.contribution_lower:
+            # elif trainer_contribution_percentage < self.contribution_lower:
+            elif trainer_contribution_percentage < avg_contribution_percentage:
                 self.target_epsilon = self.target_epsilon * self.epsilon_multiplier
                 self.target_epsilon = (
                     self.target_epsilon_lower
