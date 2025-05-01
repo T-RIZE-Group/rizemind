@@ -3,6 +3,8 @@ import warnings
 from typing import cast
 
 import datasets
+from eth_account import Account
+from eth_typing import HexAddress
 import torch
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context, Scalar
@@ -14,6 +16,9 @@ from rizemind.configuration.toml_config import TomlConfig
 from rizemind.contracts.compensation.shapley.decentralized.shapley_value_client import (
     DecentralShapleyValueClient,
 )
+from rizemind.contracts.models.erc5267 import Web3
+from rizemind.contracts.models.model_meta import RoundMetrics
+from rizemind.contracts.models.model_meta_v1 import ModelMetaV1
 from rizemind.web3.config import Web3Config
 
 from .task import Net, get_weights, load_data, set_weights, test, train
@@ -125,14 +130,41 @@ class FlowerClient(NumPyClient):
 
 
 class DynamicPrivacyClient(NumPyClient):
-    def __init__(self, flwr_client: FlowerClient):
+    def __init__(self, flwr_client: FlowerClient, w3: Web3, client_address: HexAddress):
         self.flwr_client = flwr_client
+        self.w3 = w3
+        self.client_address = client_address
 
     def fit(self, parameters, config):
+        contract_address = str(config["contract_address"])
+        round = int(config["current_round"])
+        trainer_contribution, total_contributions, n_trainers = self._get_contribution(
+            self.client_address, round, contract_address
+        )
+        config["trainer_contribution"] = cast(Scalar, trainer_contribution)
+        config["total_contributions"] = cast(Scalar, total_contributions)
+        config["n_trainers"] = cast(Scalar, n_trainers)
         return self.flwr_client.fit(parameters, config)
 
     def evaluate(self, parameters, config):
         return self.flwr_client.evaluate(parameters, config)
+
+    def _get_contribution(
+        self, client_address: HexAddress, round: int, contract_address: str
+    ):
+        model = ModelMetaV1.from_address(contract_address, account=None, w3=self.w3)
+        round_summary = model.get_last_contributed_round_summary(trainer=client_address)
+        if round_summary is None:
+            return None, None, None
+        metrics = cast(RoundMetrics, round_summary.metrics)
+        n_trainers, total_contributions = (
+            metrics.n_trainers,
+            metrics.total_contributions,
+        )
+        trainer_contribution = cast(
+            float, model.get_latest_contribution(trainer=client_address)
+        )
+        return trainer_contribution, total_contributions, n_trainers
 
 
 def client_fn(context: Context):
@@ -157,7 +189,6 @@ def client_fn(context: Context):
         contribution_lower=context.run_config["contribution-lower"],
         contribution_upper=context.run_config["contribution-upper"],
     )
-    dp_client = DynamicPrivacyClient(flwr_client)
 
     config = TomlConfig("./pyproject.toml")
     account_config = AccountConfig(**config.get("tool.eth.account"))
@@ -165,13 +196,16 @@ def client_fn(context: Context):
         cast(int, context.node_config["partition-id"]) + 1
     )
     web3_config = Web3Config(**config.get("tool.web3"))
+    w3 = web3_config.get_web3()
 
+    dp_client = DynamicPrivacyClient(flwr_client, w3, account.address)
     shapley_client = DecentralShapleyValueClient(client=dp_client)
     signing_client = SigningClient(
-        client=shapley_client.to_client(), account=account, w3=web3_config.get_web3()
+        client=shapley_client.to_client(), account=account, w3=w3
     )
 
     return signing_client
 
 
+Account.enable_unaudited_hdwallet_features()
 app = ClientApp(client_fn=client_fn)
