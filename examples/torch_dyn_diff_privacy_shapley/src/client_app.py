@@ -8,6 +8,14 @@ from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context, Scalar
 from opacus import PrivacyEngine
 
+from rizemind.authentication.config import AccountConfig
+from rizemind.authentication.eth_account_client import SigningClient
+from rizemind.configuration.toml_config import TomlConfig
+from rizemind.contracts.compensation.shapley.decentralized.shapley_value_client import (
+    DecentralShapleyValueClient,
+)
+from rizemind.web3.config import Web3Config
+
 from .task import Net, get_weights, load_data, set_weights, test, train
 
 flwr_logger = logging.getLogger("flwr")
@@ -22,19 +30,33 @@ class FlowerClient(NumPyClient):
         self,
         train_loader,
         test_loader,
-        target_delta,
         noise_multiplier,
         max_grad_norm,
         learning_rate,
+        target_delta,
+        target_epsilon,
+        target_epsilon_upper,
+        target_epsilon_lower,
+        epsilon_multiplier,
+        epochs,
+        contribution_upper,
+        contribution_lower,
     ) -> None:
         super().__init__()
         self.model = Net()
         self.train_loader = train_loader
         self.test_loader = test_loader
-        self.target_delta = target_delta
         self.noise_multiplier = noise_multiplier
         self.max_grad_norm = max_grad_norm
         self.learning_rate = learning_rate
+        self.target_delta = target_delta
+        self.target_epsilon = target_epsilon
+        self.target_epsilon_upper = target_epsilon_upper
+        self.target_epsilon_lower = target_epsilon_lower
+        self.epsilon_multiplier = epsilon_multiplier
+        self.epochs = epochs
+        self.contribution_upper = contribution_upper
+        self.contribution_lower = contribution_lower
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     def fit(self, parameters, config):
@@ -45,26 +67,49 @@ class FlowerClient(NumPyClient):
             model.parameters(), lr=self.learning_rate, momentum=0.9
         )
 
+        previous_contribution = config["contribution"]
+
+        if previous_contribution is not None:
+            previous_contribution = float(previous_contribution)
+            if previous_contribution > self.contribution_upper:
+                self.target_epsilon = self.target_epsilon / self.epsilon_multiplier
+                self.target_epsilon = (
+                    self.target_epsilon_upper
+                    if self.target_epsilon > self.target_epsilon_upper
+                    else self.target_epsilon
+                )
+            elif previous_contribution < self.contribution_lower:
+                self.target_epsilon = self.target_epsilon * self.epsilon_multiplier
+                self.target_epsilon = (
+                    self.target_epsilon_lower
+                    if self.target_epsilon < self.target_epsilon_lower
+                    else self.target_epsilon
+                )
+
         privacy_engine = PrivacyEngine(secure_mode=False)
         (
             model,
             optimizer,
             self.train_loader,
-        ) = privacy_engine.make_private(
+        ) = privacy_engine.make_private_with_epsilon(
             module=model,
             optimizer=optimizer,
             data_loader=self.train_loader,
             noise_multiplier=self.noise_multiplier,
             max_grad_norm=self.max_grad_norm,
+            target_delta=self.target_delta,
+            target_epsilon=self.target_epsilon,
+            epochs=self.epochs,
         )
 
         epsilon = train(
-            model,
-            self.train_loader,
-            privacy_engine,
-            optimizer,
-            self.target_delta,
+            net=model,
+            train_loader=self.train_loader,
+            privacy_engine=privacy_engine,
+            optimizer=optimizer,
+            target_delta=self.target_delta,
             device=self.device,
+            epochs=self.epochs,
         )
 
         return (
@@ -79,6 +124,17 @@ class FlowerClient(NumPyClient):
         return loss, len(self.test_loader.dataset), {"accuracy": accuracy}
 
 
+class DynamicPrivacyClient(NumPyClient):
+    def __init__(self, flwr_client: FlowerClient):
+        self.flwr_client = flwr_client
+
+    def fit(self, parameters, config):
+        return self.flwr_client.fit(parameters, config)
+
+    def evaluate(self, parameters, config):
+        return self.flwr_client.evaluate(parameters, config)
+
+
 def client_fn(context: Context):
     train_loader, test_loader = load_data(
         partition_id=cast(int, context.node_config["partition-id"]),
@@ -86,15 +142,36 @@ def client_fn(context: Context):
         batch_size=cast(int, context.run_config["batch-size"]),
         alpha=cast(float, context.run_config["alpha"]),
     )
+    flwr_client = FlowerClient(
+        train_loader=train_loader,
+        test_loader=test_loader,
+        noise_multiplier=context.run_config["noise-multiplier"],
+        max_grad_norm=context.run_config["max-grad-norm"],
+        learning_rate=context.run_config["learning-rate"],
+        target_delta=context.run_config["target-delta"],
+        target_epsilon=context.run_config["target-epsilon"],
+        target_epsilon_lower=context.run_config["target-epsilon-lower"],
+        target_epsilon_upper=context.run_config["target-epsilon-upper"],
+        epsilon_multiplier=context.run_config["epsilon-multiplier"],
+        epochs=context.run_config["epochs"],
+        contribution_lower=context.run_config["contribution-lower"],
+        contribution_upper=context.run_config["contribution-upper"],
+    )
+    dp_client = DynamicPrivacyClient(flwr_client)
 
-    return FlowerClient(
-        train_loader,
-        test_loader,
-        context.run_config["target-delta"],
-        context.run_config["noise-multiplier"],
-        context.run_config["max-grad-norm"],
-        context.run_config["learning-rate"],
-    ).to_client()
+    config = TomlConfig("./pyproject.toml")
+    account_config = AccountConfig(**config.get("tool.eth.account"))
+    account = account_config.get_account(
+        cast(int, context.node_config["partition-id"]) + 1
+    )
+    web3_config = Web3Config(**config.get("tool.web3"))
+
+    shapley_client = DecentralShapleyValueClient(client=dp_client)
+    signing_client = SigningClient(
+        client=shapley_client.to_client(), account=account, w3=web3_config.get_web3()
+    )
+
+    return signing_client
 
 
 app = ClientApp(client_fn=client_fn)
