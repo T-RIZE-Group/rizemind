@@ -1,5 +1,4 @@
 import statistics
-from typing import cast
 
 from flwr.common import Context, Metrics, Scalar, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
@@ -50,9 +49,9 @@ def server_fn(context: Context):
 
     # Define the strategy
     strategy = FedAvg(
-        fraction_fit=cast(float, context.run_config["fraction-fit"]),
-        fraction_evaluate=cast(float, context.run_config["fraction-evaluate"]),
-        min_available_clients=2,
+        fraction_fit=float(context.run_config["fraction-fit"]),
+        fraction_evaluate=float(context.run_config["fraction-evaluate"]),
+        min_available_clients=int(context.run_config["min-available-clients"]),
         evaluate_metrics_aggregation_fn=weighted_average,
         initial_parameters=parameters,
     )
