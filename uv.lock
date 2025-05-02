@@ -2151,6 +2151,7 @@ tensorflow = [
     { name = "tensorflow-macos", marker = "sys_platform == 'darwin'" },
 ]
 torch = [
+    { name = "opacus" },
     { name = "torch" },
     { name = "torchvision" },
 ]
@@ -2191,6 +2192,7 @@ tensorflow = [
     { name = "tensorflow-macos", marker = "sys_platform == 'darwin'", specifier = ">=2.9.1,!=2.11.1" },
 ]
 torch = [
+    { name = "opacus", specifier = ">=1.5.3" },
     { name = "torch", specifier = ">=2.6.0" },
     { name = "torchvision", specifier = ">=0.21.0" },
 ]
