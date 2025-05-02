@@ -5,7 +5,6 @@ from typing import List, Tuple, cast
 from flwr.common import Context, Metrics, Scalar, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
-
 from rizemind.authentication.config import AccountConfig
 from rizemind.authentication.eth_account_strategy import EthAccountStrategy
 from rizemind.configuration.toml_config import TomlConfig

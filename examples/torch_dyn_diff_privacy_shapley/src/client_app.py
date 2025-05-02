@@ -3,13 +3,12 @@ import warnings
 from typing import cast
 
 import datasets
+import torch
 from eth_account import Account
 from eth_typing import HexAddress
-import torch
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context, Scalar
 from opacus import PrivacyEngine
-
 from rizemind.authentication.config import AccountConfig
 from rizemind.authentication.eth_account_client import SigningClient
 from rizemind.configuration.toml_config import TomlConfig
