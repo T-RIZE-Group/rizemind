@@ -71,24 +71,21 @@ class FlowerClient(NumPyClient):
 
         trainer_contribution = float(config["trainer_contribution"])
         total_contributions = float(config["total_contributions"])
-        n_trainers = int(config["n_trainers"])
 
         if (
             trainer_contribution >= 0
         ):  # If the trainer had a contribution, it is always equal or above zero
-            avg_contribution_percentage = 1 / n_trainers
-            trainer_contribution_percentage = trainer_contribution / total_contributions
-            # TODO: Improve the condition
-            # if trainer_contribution_percentage > self.contribution_upper:
-            if trainer_contribution_percentage > avg_contribution_percentage:
+            one_tenth_of_contribution = total_contributions / 10
+            upper_contribution = self.contribution_upper * one_tenth_of_contribution
+            lower_contribution = self.contribution_lower * one_tenth_of_contribution
+            if trainer_contribution > upper_contribution:
                 self.target_epsilon = self.target_epsilon / self.epsilon_multiplier
                 self.target_epsilon = (
                     self.target_epsilon_upper
                     if self.target_epsilon > self.target_epsilon_upper
                     else self.target_epsilon
                 )
-            # elif trainer_contribution_percentage < self.contribution_lower:
-            elif trainer_contribution_percentage < avg_contribution_percentage:
+            elif trainer_contribution < lower_contribution:
                 self.target_epsilon = self.target_epsilon * self.epsilon_multiplier
                 self.target_epsilon = (
                     self.target_epsilon_lower
