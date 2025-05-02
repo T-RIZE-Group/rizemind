@@ -35,7 +35,6 @@ class FlowerClient(NumPyClient):
         self,
         train_loader,
         test_loader,
-        noise_multiplier,
         max_grad_norm,
         learning_rate,
         target_delta,
@@ -51,7 +50,6 @@ class FlowerClient(NumPyClient):
         self.model = Net()
         self.train_loader = train_loader
         self.test_loader = test_loader
-        self.noise_multiplier = noise_multiplier
         self.max_grad_norm = max_grad_norm
         self.learning_rate = learning_rate
         self.target_delta = target_delta
@@ -76,7 +74,9 @@ class FlowerClient(NumPyClient):
         total_contributions = float(config["total_contributions"])
         n_trainers = int(config["n_trainers"])
 
-        if trainer_contribution is not None:
+        if (
+            trainer_contribution >= 0
+        ):  # If the trainer had a contribution, it is always equal or above zero
             avg_contribution_percentage = 1 / n_trainers
             trainer_contribution_percentage = trainer_contribution / total_contributions
             # TODO: Improve the condition
@@ -106,7 +106,6 @@ class FlowerClient(NumPyClient):
             module=model,
             optimizer=optimizer,
             data_loader=self.train_loader,
-            noise_multiplier=self.noise_multiplier,
             max_grad_norm=self.max_grad_norm,
             target_delta=self.target_delta,
             target_epsilon=self.target_epsilon,
@@ -161,7 +160,7 @@ class DynamicPrivacyClient(NumPyClient):
         model = ModelMetaV1.from_address(contract_address, account=None, w3=self.w3)
         round_summary = model.get_last_contributed_round_summary(trainer=client_address)
         if round_summary is None:
-            return None, None, None
+            return -1.0, -1.0, -1
         metrics = cast(RoundMetrics, round_summary.metrics)
         n_trainers, total_contributions = (
             metrics.n_trainers,
@@ -183,7 +182,6 @@ def client_fn(context: Context):
     flwr_client = FlowerClient(
         train_loader=train_loader,
         test_loader=test_loader,
-        noise_multiplier=context.run_config["noise-multiplier"],
         max_grad_norm=context.run_config["max-grad-norm"],
         learning_rate=context.run_config["learning-rate"],
         target_delta=context.run_config["target-delta"],
