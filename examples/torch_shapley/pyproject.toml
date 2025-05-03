@@ -31,6 +31,7 @@ fraction-fit = 0.5
 verbose = false
 fraction-evaluate = 0.5
 num-supernodes = 10
+metrics-storage-path = 'logs'
 
 [tool.flwr.federations]
 default = "local-simulation-gpu"

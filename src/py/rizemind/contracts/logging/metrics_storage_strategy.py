@@ -54,7 +54,7 @@ class MetricsStorageStrategy(Strategy):
         )
         if evaluation is not None:
             self.metrics_storage.write_metrics(
-                server_round, {"aggregate_evaluate": evaluation}
+                server_round, {"loss_aggregated": evaluation}
             )
         self.metrics_storage.write_metrics(server_round, metrics)
         return (evaluation, metrics)
@@ -65,8 +65,6 @@ class MetricsStorageStrategy(Strategy):
         evaluation_result = self.strategy.evaluate(server_round, parameters)
         if evaluation_result is None:
             return None
-        self.metrics_storage.write_metrics(
-            server_round, {"evaluate": evaluation_result[0]}
-        )
+        self.metrics_storage.write_metrics(server_round, {"loss": evaluation_result[0]})
         self.metrics_storage.write_metrics(server_round, evaluation_result[1])
         return evaluation_result

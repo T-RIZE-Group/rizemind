@@ -1,5 +1,6 @@
 import logging
 import statistics
+from pathlib import Path
 from typing import List, Tuple, cast
 
 from flwr.common import Context, Metrics, Scalar, ndarrays_to_parameters
@@ -12,6 +13,8 @@ from rizemind.contracts.compensation.shapley.decentralized.shapley_value_strateg
     DecentralShapleyValueStrategy,
 )
 from rizemind.contracts.compensation.shapley.shapley_value_strategy import Coalition
+from rizemind.contracts.logging.metrics_storage import MetricsStorage
+from rizemind.contracts.logging.metrics_storage_strategy import MetricsStorageStrategy
 from rizemind.contracts.models.model_factory_v1 import (
     ModelFactoryV1,
     ModelFactoryV1Config,
@@ -45,7 +48,7 @@ def aggregate_coalitions(coalitions: list[Coalition]) -> dict[str, Scalar]:
 
 
 def server_fn(context: Context) -> ServerAppComponents:
-    config = TomlConfig("./pyproject.toml")
+    toml_config = TomlConfig("./pyproject.toml")
     ndarrays = get_weights(Net())
     parameters = ndarrays_to_parameters(ndarrays)
 
@@ -58,9 +61,9 @@ def server_fn(context: Context) -> ServerAppComponents:
         fit_metrics_aggregation_fn=average_epsilons,
     )
 
-    config = TomlConfig("./pyproject.toml")
-    auth_config = AccountConfig(**config.get("tool.eth.account"))
-    web3_config = Web3Config(**config.get("tool.web3"))
+    toml_config = TomlConfig("./pyproject.toml")
+    auth_config = AccountConfig(**toml_config.get("tool.eth.account"))
+    web3_config = Web3Config(**toml_config.get("tool.web3"))
 
     num_supernodes = int(context.run_config["num-supernodes"])
     w3 = web3_config.get_web3()
@@ -70,7 +73,7 @@ def server_fn(context: Context) -> ServerAppComponents:
         trainer = auth_config.get_account(i)
         members.append(trainer.address)
 
-    model_v1_config = ModelFactoryV1Config(**config.get("tool.web3.model_v1"))
+    model_v1_config = ModelFactoryV1Config(**toml_config.get("tool.web3.model_v1"))
     contract = ModelFactoryV1(model_v1_config).deploy(account, members, w3)
     authStrategy = EthAccountStrategy(
         DecentralShapleyValueStrategy(
@@ -81,11 +84,17 @@ def server_fn(context: Context) -> ServerAppComponents:
         ),
         contract,
     )
-
     server_config = ServerConfig(
         num_rounds=int(context.run_config["num-server-rounds"])
     )
-    return ServerAppComponents(config=server_config, strategy=authStrategy)
+    metrics_storage = MetricsStorage(
+        Path(str(context.run_config["metrics-storage-path"])),
+        "torch-dyn-diff-privacy-shapley",
+    )
+    metrics_storage.write_config(context.run_config)
+    metrics_storage.write_config(toml_config.data)
+    metrics_strategy = MetricsStorageStrategy(authStrategy, metrics_storage)
+    return ServerAppComponents(config=server_config, strategy=metrics_strategy)
 
 
 app = ServerApp(server_fn=server_fn)

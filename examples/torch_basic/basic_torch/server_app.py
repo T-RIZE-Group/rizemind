@@ -43,7 +43,7 @@ def server_fn(context: Context):
     config = ServerConfig(num_rounds=num_rounds)
 
     metrics_storage = MetricsStorage(
-        Path("/home/mik/Projects/rizemind/logs"), "torch-basic"
+        Path(str(context.run_config["metrics-storage-path"])), "torch-basic"
     )
     metrics_storage.write_config(context.run_config)
     metrics_strategy = MetricsStorageStrategy(strategy, metrics_storage)
