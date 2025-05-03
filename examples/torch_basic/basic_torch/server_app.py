@@ -1,8 +1,11 @@
+from pathlib import Path
 from typing import List, Tuple, cast
 
 from flwr.common import Context, Metrics, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
+from rizemind.contracts.logging.metrics_storage import MetricsStorage
+from rizemind.contracts.logging.metrics_storage_strategy import MetricsStorageStrategy
 
 from .task import Net, get_weights
 
@@ -39,7 +42,12 @@ def server_fn(context: Context):
     )
     config = ServerConfig(num_rounds=num_rounds)
 
-    return ServerAppComponents(strategy=strategy, config=config)
+    metrics_storage = MetricsStorage(
+        Path("/home/mik/Projects/rizemind/logs"), "torch-basic"
+    )
+    metrics_storage.write_config(context.run_config)
+    metrics_strategy = MetricsStorageStrategy(strategy, metrics_storage)
+    return ServerAppComponents(strategy=metrics_strategy, config=config)
 
 
 # Create ServerApp
