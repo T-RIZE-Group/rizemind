@@ -1,4 +1,5 @@
 import statistics
+from pathlib import Path
 
 from flwr.common import Context, Metrics, Scalar, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
@@ -10,6 +11,8 @@ from rizemind.contracts.compensation.shapley.decentralized.shapley_value_strateg
     DecentralShapleyValueStrategy,
 )
 from rizemind.contracts.compensation.shapley.shapley_value_strategy import Coalition
+from rizemind.contracts.logging.metrics_storage import MetricsStorage
+from rizemind.contracts.logging.metrics_storage_strategy import MetricsStorageStrategy
 from rizemind.contracts.models.model_factory_v1 import (
     ModelFactoryV1,
     ModelFactoryV1Config,
@@ -57,9 +60,9 @@ def server_fn(context: Context):
     )
     server_config = ServerConfig(num_rounds=num_rounds)
 
-    config = TomlConfig("./pyproject.toml")
-    auth_config = AccountConfig(**config.get("tool.eth.account"))
-    web3_config = Web3Config(**config.get("tool.web3"))
+    toml_config = TomlConfig("./pyproject.toml")
+    auth_config = AccountConfig(**toml_config.get("tool.eth.account"))
+    web3_config = Web3Config(**toml_config.get("tool.web3"))
 
     num_supernodes = int(context.run_config["num-supernodes"])
     w3 = web3_config.get_web3()
@@ -69,7 +72,7 @@ def server_fn(context: Context):
         trainer = auth_config.get_account(i)
         members.append(trainer.address)
 
-    model_v1_config = ModelFactoryV1Config(**config.get("tool.web3.model_v1"))
+    model_v1_config = ModelFactoryV1Config(**toml_config.get("tool.web3.model_v1"))
     contract = ModelFactoryV1(model_v1_config).deploy(account, members, w3)
     authStrategy = EthAccountStrategy(
         DecentralShapleyValueStrategy(
@@ -80,8 +83,15 @@ def server_fn(context: Context):
         ),
         contract,
     )
+    metrics_storage = MetricsStorage(
+        Path(str(context.run_config["metrics-storage-path"])),
+        "torch-shapley",
+    )
+    metrics_storage.write_config(context.run_config)
+    metrics_storage.write_config(toml_config.data)
+    metrics_strategy = MetricsStorageStrategy(authStrategy, metrics_storage)
 
-    return ServerAppComponents(strategy=authStrategy, config=server_config)
+    return ServerAppComponents(strategy=metrics_strategy, config=server_config)
 
 
 # Create ServerApp
