@@ -36,8 +36,8 @@ def test_model_meta_get_latest_contribution():
     trainer2_latest_contribution = model.get_latest_contribution(trainer2.address)
     assert trainer2_latest_contribution == 3.0
 
-    trainer_3_latest_contritbution = model.get_latest_contribution(trainer3.address)
-    assert trainer_3_latest_contritbution == 4.0
+    trainer_3_latest_contribution = model.get_latest_contribution(trainer3.address)
+    assert trainer_3_latest_contribution == 4.0
 
     trainer4 = Account.from_mnemonic(mnemonic, account_path="m/44'/60'/4'/0/0")
     trainer4_latest_contribution = model.get_latest_contribution(trainer4.address)

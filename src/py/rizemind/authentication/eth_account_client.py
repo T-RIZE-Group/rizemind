@@ -11,7 +11,7 @@ from rizemind.authentication.signature import (
 from rizemind.contracts.models.model_meta_v1 import ModelMetaV1
 
 
-class SigningClient:
+class SigningClient(Client):
     """
     A proxy class that wraps a Flower Client to add signing functionality for trained parameters.
 
