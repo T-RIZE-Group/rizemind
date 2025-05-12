@@ -25,3 +25,4 @@ poetry.lock
 **/*.csv
 repomix-output.xml
 .DS_Store
+.DS_Store
