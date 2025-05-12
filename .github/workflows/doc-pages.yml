@@ -47,3 +47,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: build/html
           force_orphan: true
+          cname: rizemind.t-rize.io

@@ -1,0 +1,53 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tf-centralized-shapely"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "flwr-datasets[vision]>=0.5.0",
+    "flwr[simulation]>=1.17.0",
+    "ray>=2.0.0",
+    "tensorflow-macos>=2.9.1,!=2.11.1 ; sys_platform == 'darwin'",
+    "tensorflow-cpu>=2.9.1,!=2.11.1 ; platform_machine == 'x86_64'",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.flwr.app]
+publisher = "trizelabs"
+
+[tool.flwr.app.components]
+serverapp = "centralized_shapley_value.server_app:app"
+clientapp = "centralized_shapley_value.client_app:app"
+
+[tool.flwr.app.config]
+num-server-rounds = 3
+local-epochs = 1
+batch-size = 32
+learning-rate = 0.005
+fraction-fit = 0.5
+verbose = false
+
+[tool.flwr.federations]
+default = "local-simulation"
+
+[tool.flwr.federations.local-simulation]
+options.num-supernodes = 10
+
+[tool.web3.model_v1]
+name = "test_model"
+local_factory_deployment_path = "../../forge/output/31337/ModelRegistryFactory.json"
+
+[tool.eth.account]
+mnemonic = "test test test test test test test test test test test junk"
+
+[tool.web3]
+url = "http://127.0.0.1:8545"

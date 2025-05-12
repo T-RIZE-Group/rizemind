@@ -12,8 +12,7 @@ from flwr.common.typing import FitIns, Parameters, Scalar
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
-from rizemind.contracts.compensation.compensation_strategy import CompensationStrategy
-from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
+from rizemind.contracts.models.model_meta_v1 import ModelMetaV1
 
 type CoalitionScore = tuple[list[Address], float]
 type PlayerScore = tuple[Address, float]
@@ -48,9 +47,9 @@ class Coalition:
         return default
 
 
-class ShapleyValueStrategy(CompensationStrategy):
+class ShapleyValueStrategy(Strategy):
     strategy: Strategy
-    model: ModelRegistryV1
+    model: ModelMetaV1
     coalitions: dict[str, Coalition]
     coalition_to_score_fn: Optional[Callable[[Coalition], float]] = None
     last_round_parameters: Optional[Parameters]
@@ -61,14 +60,13 @@ class ShapleyValueStrategy(CompensationStrategy):
     def __init__(
         self,
         strategy: Strategy,
-        model: ModelRegistryV1,
+        model: ModelMetaV1,
         coalition_to_score_fn: Optional[Callable[[Coalition], float]] = None,
         aggregate_coalition_metrics_fn: Optional[
             Callable[[list[Coalition]], dict[str, Scalar]]
         ] = None,
     ) -> None:
         log(DEBUG, "ShapleyValueStrategy: initializing")
-        super().__init__(strategy, model)
         self.strategy = strategy
         self.model = model
         self.coalition_to_score_fn = coalition_to_score_fn
@@ -253,6 +251,30 @@ class ShapleyValueStrategy(CompensationStrategy):
             (trainer, max(contribution, 0))
             for trainer, contribution in trainers_and_contributions
         ]
+
+    def close_round(self, round_id: int) -> tuple[float, dict[str, Scalar]]:
+        coalitions = self.get_coalitions()
+        player_scores = self.compute_contributions(coalitions)
+        player_scores = self.normalize_contribution_scores(player_scores)
+        for address, score in player_scores:
+            if score == 0:
+                log(
+                    WARNING,
+                    f"aggregate_evaluate: free rider detected! Trainer address: {address}, Score: {score}",
+                )
+        self.model.distribute(player_scores)
+
+        loss, metrics = self.evaluate_coalitions()
+        next_model = self.select_coalition()
+        score = 0 if next_model is None else self.get_coalition_score(next_model)
+        self.model.next_round(
+            round_id,
+            len(player_scores),
+            score,
+            sum(score[1] for score in player_scores),
+        )
+
+        return loss, metrics
 
     def evaluate_coalitions(self) -> tuple[float, dict[str, Scalar]]:
         log(

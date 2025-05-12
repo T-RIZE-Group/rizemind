@@ -3,7 +3,7 @@ from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
 
 from rizemind.authentication.signature import recover_model_signer
-from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
+from rizemind.contracts.models.model_meta_v1 import ModelMetaV1
 
 
 class CannotTrainException(BaseException):
@@ -36,13 +36,13 @@ class EthAccountStrategy(Strategy):
     """
 
     strat: Strategy
-    model: ModelRegistryV1
+    model: ModelMetaV1
     address: str
 
     def __init__(
         self,
         strat: Strategy,
-        model: ModelRegistryV1,
+        model: ModelMetaV1,
     ):
         super().__init__()
         self.strat = strat
