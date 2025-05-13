@@ -16,7 +16,6 @@ dependencies = [
     "web3>=7.10.0",
     "eth-account>=0.13.6",
     "python-dotenv>=1.1.0",
-    "py-merkle-tree>=1.0.0",
 ]
 
 [tool.hatch.build.targets.wheel]

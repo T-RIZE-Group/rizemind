@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Script.sol";
 import {Deployments} from "./Deployments.sol";
-import {PrivateShapley} from "../../../examples/private_shapley/private_shapley/contracts/src/privateShapley.sol";
+import {PrivateShapley} from "../../src/privateShapley.sol";
 
 contract DeployPrivateShapleyScript is Script, Deployments {
     function run() external {
