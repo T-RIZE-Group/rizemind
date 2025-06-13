@@ -3,19 +3,17 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Script.sol";
 import {Deployments} from "./Deployments.sol";
-import {ModelRegistryV1} from "@rizemind-contracts/models/ModelRegistryV1.sol";
-import {ModelRegistryFactory} from "@rizemind-contracts/models/ModelV1Factory.sol";
+import {ModelMetaV1} from "@rizemind-contracts/models/ModelMetaV1.sol";
+import {ModelFactory} from "@rizemind-contracts/models/ModelFactory.sol";
 
 contract DeployModelFactoryScript is Script, Deployments {
     function run() external {
         vm.startBroadcast();
 
         // Deploy the implementation contract.
-        ModelRegistryV1 modelImpl = new ModelRegistryV1(); // TODO: use shapelyvaluev1 contract
+        ModelMetaV1 modelImpl = new ModelMetaV1();
         // Deploy the factory using the implementation address.
-        ModelRegistryFactory modelFactory = new ModelRegistryFactory(
-            address(modelImpl)
-        );
+        ModelFactory modelFactory = new ModelFactory(address(modelImpl));
 
         vm.stopBroadcast();
 

@@ -8,10 +8,10 @@ from web3 import Web3
 from rizemind.authentication.signature import (
     sign_parameters_model,
 )
-from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
+from rizemind.contracts.models.model_meta_v1 import ModelMetaV1
 
 
-class SigningClient:
+class SigningClient(Client):
     """
     A proxy class that wraps a Flower Client to add signing functionality for trained parameters.
 
@@ -84,7 +84,7 @@ class SigningClient:
         return results
 
     def _sign(self, res: FitRes, round: int, contract_address: str) -> Dict[str, bytes]:
-        model = ModelRegistryV1.from_address(contract_address, account=None, w3=self.w3)  # type: ignore
+        model = ModelMetaV1.from_address(contract_address, account=None, w3=self.w3)  # type: ignore
         eip712_domain = model.get_eip712_domain()
 
         # Output Signer

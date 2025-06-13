@@ -35,7 +35,14 @@ uv sync
 - **ML-specific installation** (includes ML libraries and above):
 
 ```bash
-uv sync --group ml
+uv sync --group ml --group tensorflow --group torch
+```
+
+Some examples use a `tensorflow` version that could not properly run on Windows machines in our experience.
+Therefore, if you only have a Windows machine, or you want to use examples that only use `torch`, then simply run the following instead:
+
+```bash
+uv sync --group ml --group torch
 ```
 
 - **Documentation generation installation** (includes ML and documentation libraries):
@@ -89,7 +96,6 @@ uv run -- pytest path/to/test_example
 ## Linting and Formatting
 
 Project linting and formatting are handled by [Ruff](https://github.com/astral-sh/ruff):
-
 
 ```bash
 uv run -- ruff check --select I --fix
