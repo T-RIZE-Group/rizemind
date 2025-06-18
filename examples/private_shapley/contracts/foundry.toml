@@ -5,6 +5,7 @@ libs = ['lib']
 solc = "0.8.20"
 via_ir = true
 optimizer = true
+gas_limit = "9000000000000000000" # 100 million gas limit
 
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/crates/config

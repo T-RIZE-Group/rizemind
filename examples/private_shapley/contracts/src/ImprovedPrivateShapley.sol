@@ -345,7 +345,7 @@ contract ImprovedPrivateShapley is Ownable, ReentrancyGuard {
         );
 
         for (uint256 i = 0; i < coalitionIndices.length; i++) {
-            require(values[i] <= 100_000000, "value max 100");
+            // require(values[i] <= 100_000000, "value max 100");
             uint256 mask = _idxArrayToMask(coalitionIndices[i]);
 
             if (!roundCoalitionExists[roundId][mask]) {
@@ -425,7 +425,7 @@ contract ImprovedPrivateShapley is Ownable, ReentrancyGuard {
         uint256 trainerBit,
         uint8 nPlayers
     ) private view returns (int256 total) {
-        require(nPlayers <= MAX_SHAPLEY_PLAYERS, ">20 players");
+        // require(nPlayers <= MAX_SHAPLEY_PLAYERS, ">20 players");
 
         // Find which trainer index this bit represents (1-based)
         uint8 trainerIdx = 0;
