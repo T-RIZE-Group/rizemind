@@ -153,6 +153,9 @@ contract ImprovedPrivateShapley is Ownable, ReentrancyGuard {
     event MappingCommitted(uint256 indexed round, bytes32 commitment);
     event MappingRevealed(uint256 indexed round, uint8 nTrainers);
 
+    /**
+     * this is good
+     */
     function commitTrainerMapping(
         uint256 rid,
         bytes32 commitment
@@ -162,6 +165,11 @@ contract ImprovedPrivateShapley is Ownable, ReentrancyGuard {
         emit MappingCommitted(rid, commitment);
     }
 
+    /**
+     * Why the salt option instead of the merkle tree?
+     * You won't even need this transaction, you can
+     * simply reveal the proof to trainers offchain.
+     */
     function revealTrainerMapping(
         uint256 rid,
         address[] calldata addrs,
@@ -215,6 +223,9 @@ contract ImprovedPrivateShapley is Ownable, ReentrancyGuard {
     event CoalitionRevealed(bytes32 id, bytes32 bitfield, bytes32 nonce);
     event ResultPublished(bytes32 id, uint256 score, address tester);
 
+    /**
+     * What's up with this commitments again?
+     */
     function commitCoalitions(
         uint256 roundId,
         bytes32[] calldata ids,
@@ -235,6 +246,9 @@ contract ImprovedPrivateShapley is Ownable, ReentrancyGuard {
         }
     }
 
+    /**
+     * many testers can evaluate the same coalition. The results are averaged.
+     */
     function publishResults(
         uint256 roundId,
         bytes32[] calldata ids,
@@ -278,6 +292,10 @@ contract ImprovedPrivateShapley is Ownable, ReentrancyGuard {
         }
     }
 
+    /**
+     * this seems like potential bottle neck, lots of storage write
+     * Moreover, it does seem unecessary if replaced by a merkle tree
+     */
     function revealCoalitions(
         uint256 roundId,
         bytes32[] calldata ids,
@@ -332,6 +350,7 @@ contract ImprovedPrivateShapley is Ownable, ReentrancyGuard {
         uint256 value
     );
 
+    /** is this just for mocking data for tests? */
     function setShapleyCoalitionValues(
         uint256 roundId,
         uint256[][] calldata coalitionIndices,
@@ -420,6 +439,16 @@ contract ImprovedPrivateShapley is Ownable, ReentrancyGuard {
             int256(PRECISION);
     }
 
+    /**
+     * this looks almost correct.
+     * except this part:
+     * ```solidity
+     *  uint256 valueWith = roundCoalitionValues[roundId][coalitionWith];
+     *  uint256 valueWithout = roundCoalitionValues[roundId][coalitionWithout];
+     * ```
+     *
+     * Those should use Coalition.result
+     */
     function _calcShapleyValue(
         uint256 roundId,
         uint256 trainerBit,
@@ -501,6 +530,10 @@ contract ImprovedPrivateShapley is Ownable, ReentrancyGuard {
         uint256 shapleyMul = uint256(shapley);
         uint256 tot;
 
+        /**
+         * this loop isn't required. `int256 shapley` already considers all
+         * the coalitions. You can simply have a mapping claims[rid][msg.sender] = true
+         */
         for (uint256 k; k < coalitionIds.length; k++) {
             bytes32 cid = coalitionIds[k];
             Coalition storage c = coalitionData[cid];

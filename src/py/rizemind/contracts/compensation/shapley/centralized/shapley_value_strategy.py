@@ -5,14 +5,14 @@ from flwr.server.strategy import Strategy
 from rizemind.contracts.compensation.shapley.shapley_value_strategy import (
     ShapleyValueStrategy,
 )
-from rizemind.contracts.models.model_registry_v1 import ModelRegistryV1
+from rizemind.contracts.models.model_meta_v1 import ModelMetaV1
 
 
 class CentralShapleyValueStrategy(ShapleyValueStrategy):
     def __init__(
         self,
         strategy: Strategy,
-        model: ModelRegistryV1,
+        model: ModelMetaV1,
         **kwargs,
     ) -> None:
         ShapleyValueStrategy.__init__(self, strategy, model, **kwargs)
@@ -44,8 +44,4 @@ class CentralShapleyValueStrategy(ShapleyValueStrategy):
             coalition.loss = loss
             coalition.metrics = metrics
 
-        # Do reward calculation
-        player_scores = self.compute_contributions(coalitions)
-        player_scores = self.normalize_contribution_scores(player_scores)
-        self.model.distribute(player_scores)
-        return self.evaluate_coalitions()
+        return self.close_round(server_round)

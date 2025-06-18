@@ -1,0 +1,47 @@
+[project]
+name = "torch-diff-privacy"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "flwr-datasets[vision]>=0.5.0",
+    "flwr[simulation]>=1.18.0",
+    "opacus>=1.5.3",
+    "torch>=2.7.0",
+    "torchvision>=0.22.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.flwr.app]
+publisher = "trize"
+
+[tool.flwr.app.components]
+serverapp = "src.server_app:app"
+clientapp = "src.client_app:app"
+
+[tool.flwr.app.config]
+fraction-evaluate = 0.4
+fraction-fit = 0.5
+num-server-rounds = 10
+batch-size = 32
+learning-rate = 0.001
+noise-multiplier = 1.01
+target-delta = 1e-6
+max-grad-norm = 1.0
+min-available-clients = 2
+alpha = 1.5
+metrics-storage-path = 'logs'
+
+[tool.flwr.federations]
+default = "local-simulation-gpu"
+
+[tool.flwr.federations.local-simulation]
+options.num-supernodes = 10
+
+[tool.flwr.federations.local-simulation-gpu]
+options.num-supernodes = 10
+options.backend.client-resources.num-cpus = 2 # each ClientApp assumes to use 2CPUs
+options.backend.client-resources.num-gpus = 0.25 # at most 5 ClientApp will run in a given GPU
