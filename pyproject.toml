@@ -22,7 +22,11 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest>=8.3.5", "ruff>=0.11.4"]
+dev = [
+    "mlflow>=3.1.1",
+    "pytest>=8.3.5",
+ "ruff>=0.11.4",
+]
 docs = [
     "myst-parser>=4.0.1",
     "pygments>=2.19.1",
@@ -114,4 +118,5 @@ members = [
     "examples/torch_diff_privacy",
     "examples/torch_dyn_diff_privacy_shapley",
     "examples/torch_shapley",
+    "examples/tabpfn_basic",
 ]
