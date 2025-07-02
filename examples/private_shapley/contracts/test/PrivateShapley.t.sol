@@ -382,7 +382,9 @@ contract ImprovedPrivateShapleyTest is Test {
                 uint256 result,
                 bool isCommitted,
                 bool isRevealed,
-                uint256 revealDeadline
+                uint256 revealDeadline,
+                uint256 sumScores,
+                uint256 numScores
             ) = privateShapley.coalitionData(coalitionIds[i]);
 
             assertEq(commitment, commitments[i]);
@@ -407,7 +409,7 @@ contract ImprovedPrivateShapleyTest is Test {
 
         // Check results
         for (uint256 i = 0; i < coalitionIds.length; i++) {
-            (, , , uint256 result, , , ) = privateShapley.coalitionData(
+            (, , , uint256 result, , , , , ) = privateShapley.coalitionData(
                 coalitionIds[i]
             );
             assertEq(result, scores[i]);
@@ -443,7 +445,9 @@ contract ImprovedPrivateShapleyTest is Test {
                 uint256 result,
                 bool isCommitted,
                 bool isRevealed,
-
+                uint256 revealDeadline,
+                uint256 sumScores,
+                uint256 numScores
             ) = privateShapley.coalitionData(coalitionIds[i]);
 
             assertEq(bitfield, bitfields[i]);
@@ -569,9 +573,7 @@ contract ImprovedPrivateShapleyTest is Test {
         privateShapley.claimRewards(roundId, claimIds, trainerSalts[0]);
 
         // Check claim is marked
-        assertTrue(
-            privateShapley.claimed(roundId, coalitionIds[0], trainers[0])
-        );
+        assertTrue(privateShapley.roundRewardClaimed(roundId, trainers[0]));
     }
 
     function testClaimWithWrongSalt() public {

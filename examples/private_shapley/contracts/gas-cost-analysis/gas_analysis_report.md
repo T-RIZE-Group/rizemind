@@ -1,11 +1,9 @@
 # Gas Analysis Report: ImprovedPrivateShapley Contract
 
-Generated on: Wed Jun 18 12:30:16 EDT 2025
-
 ## Configuration
 
 - Gas Price: 30 gwei
-- ETH Price: $3500 USD
+- Polygon Price: $0.18 USD
 
 ## Table of Contents
 
@@ -24,202 +22,162 @@ Generated on: Wed Jun 18 12:30:16 EDT 2025
 
 ### Claim rewards Cost(testClaimRewardsGasScaling):
 
+#### Old contract
+
 | Trainers | Gas Used  | 2^n loops | Cost (USD) |
 | -------- | --------- | --------- | ---------- |
-| 1        | 78,152    | 2         | $5.86      |
-| 2        | 58,290    | 4         | $4.37      |
-| 3        | 62,468    | 8         | $4.69      |
-| 4        | 71,028    | 16        | $5.33      |
-| 5        | 88,556    | 32        | $6.64      |
-| 6        | 124,428   | 64        | $9.33      |
-| 8        | 347,820   | 256       | $26.09     |
-| 10       | 1,280,556 | 1,024     | $96.04     |
-| 12       | 5,168,172 | 1,048,576 | $387.61    |
+| 1        | 78,152    | 2         | $0.00042   |
+| 2        | 58,290    | 4         | $0.00031   |
+| 3        | 62,468    | 8         | $0.00034   |
+| 4        | 71,028    | 16        | $0.00038   |
+| 5        | 88,556    | 32        | $0.00048   |
+| 6        | 124,428   | 64        | $0.00067   |
+| 8        | 347,820   | 256       | $0.00188   |
+| 10       | 1,280,556 | 1,024     | $0.00692   |
+| 12       | 5,168,172 | 1,048,576 | $0.02791   |
+
+![Claim rewards vs number of players](player_gas_cost.png)
+
+#### Improved Contract
+
+| Players | Gas Used   | Gas/Trainer | 2^n loops | Cost (USD) |
+| ------- | ---------- | ----------- | --------- | ---------- |
+| 1       | 27,133     | 27,133      | 2         | $0.00015   |
+| 2       | 29,454     | 14,727      | 4         | $0.00016   |
+| 3       | 34,180     | 11,393      | 8         | $0.00019   |
+| 4       | 43,800     | 10,950      | 16        | $0.00024   |
+| 5       | 63,376     | 12,675      | 32        | $0.00035   |
+| 6       | 103,200    | 17,200      | 64        | $0.00057   |
+| 8       | 348,864    | 43,608      | 256       | $0.00192   |
+| 9       | 683,584    | 75,953      | 512       | $0.00376   |
+| 10      | 1,363,776  | 136,377     | 1,024     | $0.00750   |
+| 12      | 5,552,448  | 462,704     | 4,096     | $0.03054   |
+| 13      | 11,252,032 | 865,540     | 8,192     | $0.06190   |
+
+_Cost calculated at 30 gwei gas price and $0.18 per MATIC (Polygon)._
+
+![Old vs Improve contract](old_vs_new_contract.png)
 
 ### Trainer Count Scaling
 
 This analysis shows how gas consumption scales with the number of trainers in the system.
 
-| Trainers | SetTrainers | CommitMap | RevealMap | Avg/Trainer | Total Gas | Cost (USD) |
-| -------- | ----------- | --------- | --------- | ----------- | --------- | ---------- |
+| Trainers | SetTrainers | CommitMap | RevealMap  | Avg/Trainer | Total Gas  | Cost (USD) |
+| -------- | ----------- | --------- | ---------- | ----------- | ---------- | ---------- |
+| 5        | 123,937     | 24,756    | 385,616    | 106,861     | 534,309    | $0.00289   |
+| 10       | 246,002     | 24,756    | 723,117    | 99,387      | 993,875    | $0.00537   |
+| 25       | 612,197     | 24,756    | 1,735,622  | 94,903      | 2,372,575  | $0.01281   |
+| 50       | 1,222,522   | 24,756    | 3,423,137  | 93,408      | 4,670,415  | $0.02522   |
+| 100      | 2,443,172   | 24,756    | 6,798,198  | 92,661      | 9,266,126  | $0.05004   |
+| 255      | 6,227,187   | 24,756    | 17,261,136 | 92,208      | 23,513,079 | $0.12704   |
 
-### Coalition Size Scaling
+It shows that scaling doesn't affect the cost but made sure that we can set 256 trainers at once at a minimal cost
+![Trainer Count Scaling](trainer.png)
+
+### Coalition Batch Scaling
 
 This analysis shows how gas consumption scales with coalition size.
 
-| Size | Commit | Publish | Reveal | Claim | Total | Cost (USD) |
-| ---- | ------ | ------- | ------ | ----- | ----- | ---------- |
+| Batch Size | Commit Gas | Publish Gas | Reveal Gas | Total Gas  | Cost (USD) | Avg/Item | Saving % |
+| ---------- | ---------- | ----------- | ---------- | ---------- | ---------- | -------- | -------- |
+| 1          | 70,398     | 137,533     | 72,465     | 280,396    | $0.0294    | 280,396  | 0%       |
+| 5          | 344,130    | 680,497     | 241,530    | 1,266,157  | $0.1327    | 253,231  | 9.7%     |
+| 10         | 686,295    | 1,359,202   | 480,362    | 2,525,859  | $0.2648    | 252,586  | 9.9%     |
+| 15         | 1,028,460  | 2,037,907   | 719,194    | 3,785,561  | $0.3967    | 252,371  | 10.0%    |
+| 20         | 1,370,625  | 2,716,612   | 958,028    | 5,045,265  | $0.5287    | 252,263  | 10.0%    |
+| 30         | 2,054,955  | 4,074,022   | 1,435,698  | 7,564,675  | $0.7930    | 252,156  | 10.1%    |
+| 40         | 2,739,285  | 5,431,432   | 1,913,372  | 10,084,089 | $1.0573    | 252,102  | 10.1%    |
+| 50         | 3,423,615  | 6,788,842   | 2,391,049  | 12,603,506 | $1.3216    | 252,070  | 10.1%    |
+| 60         | 4,107,945  | 8,146,252   | 2,868,729  | 15,122,926 | $1.5859    | 252,049  | 10.1%    |
+| 70         | 4,792,275  | 9,503,662   | 3,346,413  | 17,642,350 | $1.8502    | 252,033  | 10.1%    |
+| 80         | 5,476,605  | 10,861,072  | 3,824,101  | 20,161,778 | $2.1145    | 252,022  | 10.1%    |
+| 90         | 6,160,935  | 12,218,482  | 4,301,792  | 22,681,209 | $2.3788    | 252,013  | 10.1%    |
+| 100        | 6,845,265  | 13,575,892  | 4,779,486  | 25,200,643 | $2.6431    | 252,006  | 10.1%    |
+| 255        | 17,452,380 | 34,615,747  | 12,184,202 | 64,252,329 | $6.7355    | 251,970  | 10.1%    |
 
-## Batch Operation Analysis
+![Coalition Batch Scaling](coalition_batch_scaling_cost.png)
 
-### Batch Size Impact
+![Coalition Gas Usage Breakdown](coalition_gas_usage_breakdown.png)
 
-Shows the efficiency gains from batching operations.
-
-| Batch Size | Commit | Publish | Reveal | BatchClaim | Avg/Item | Savings % |
-| ---------- | ------ | ------- | ------ | ---------- | -------- | --------- |
-
-## Complete Workflow Analysis
-
-### Owner Workflow
-
-Total gas consumption for owner operations in a typical round setup.
-
-| Operation | Gas Used | Cost (USD) |
-| --------- | -------- | ---------- |
-
-### Tester Workflow
-
-Gas consumption for tester operations.
-
-| Operation | Gas Used | Results/Gas |
-| --------- | -------- | ----------- |
-
-### Trainer Workflow
-
-Gas consumption for trainer claiming rewards.
-
-| Pattern | Gas Used | Gas/Coalition | Savings vs Single |
-| ------- | -------- | ------------- | ----------------- |
-
-## Shapley Calculation Analysis
-
-### Computational Complexity by Player Count
-
-Shows how Shapley value calculation scales with the number of players.
-
-| Players | SetValues | GetShapley | ClaimWithShapley | Coalitions | Complexity |
-| ------- | --------- | ---------- | ---------------- | ---------- | ---------- |
-
-### Shapley Gas Growth Rate
-
-Exponential growth analysis for Shapley calculations.
-
-![Shapley Gas Growth](shapley_growth.png)
-
-_Note: Graph shows exponential growth making on-chain calculation impractical beyond 15-18 players_
+![Batch savings](batch_saving.png)
 
 ## Storage Optimization Analysis
 
-### Coalition Storage Patterns
+| Pattern                              | Gas Cost | USD      |
+| ------------------------------------ | -------- | -------- |
+| Minimal coalition commit             | 71,829   | $0.00039 |
+| Publish first tester result          | 95,910   | $0.00052 |
+| Second tester publish (array growth) | 53,580   | $0.00029 |
+| Third tester publish                 | 55,149   | $0.00030 |
 
-Different storage patterns and their gas implications.
-
-| Pattern                      | Gas Cost | Description                     |
-| ---------------------------- | -------- | ------------------------------- |
-| Minimal coalition commit     | 71829    | Basic coalition commitment only |
-| Publish with tester tracking | 95910    | First tester publishes result   |
-| Second tester publish        | 53580    | Second tester adds result       |
-| Third tester publish         | 55149    | Third tester adds result        |
-
-### Batch vs Individual Storage Updates
-
-Efficiency comparison for batch operations.
-
-| Operation Type | Total Gas | Per Item | Efficiency Gain |
-| -------------- | --------- | -------- | --------------- |
-
-## Edge Case Analysis
-
-### Maximum Batch Sizes
-
-Gas consumption at maximum allowed batch sizes.
-
-| Operation | Batch Size | Total Gas | Per Item | Status     |
-| --------- | ---------- | --------- | -------- | ---------- |
-| Commit    | 50         | 3425153   |
-| 68503     | ✓ Success  |
-| Commit    | 51         | N/A       | N/A      | ✗ Reverted |
-
-### Failed Transaction Gas Consumption
-
-Gas consumed by transactions that revert at different stages.
-
-| Failure Type | Gas Consumed | Revert Point | % of Success |
-| ------------ | ------------ | ------------ | ------------ |
+**Take-away:** Storing the running `sumScores`/`numScores` (instead of appending to an array every time) is already very lean; gas per extra tester result stays below **$0.0006**.
 
 ## Cost Summary
 
 ### Operation Cost Breakdown
 
-Estimated costs for typical operations at current gas prices.
+### Operation Cost Breakdown (Polygon main-net)
 
-| Entity  | Operation                    | Gas Range | Cost Range (USD) | Frequency          |
-| ------- | ---------------------------- | --------- | ---------------- | ------------------ |
-| Owner   | Initial Setup (50 trainers)  | 800k-1M   | $84-105          | Once per round     |
-| Owner   | Commit Coalitions (batch 20) | 300k-400k | $31-42           | Multiple per round |
-| Owner   | Reveal Coalitions (batch 20) | 350k-450k | $37-47           | Multiple per round |
-| Tester  | Publish Results (batch 10)   | 250k-350k | $26-37           | Multiple per round |
-| Trainer | Claim Rewards (batch 10)     | 200k-300k | $21-31           | Once per round     |
+| Actor   | Typical Operation (50-trainer round)                         | Gas Range     | USD Range         | Notes                     |
+| ------- | ------------------------------------------------------------ | ------------- | ----------------- | ------------------------- |
+| Owner   | Initial setup – set trainers + mapping reveal + Shapley seed | 4.6M – 5.2M   | $0.025 – $0.028   | once per round            |
+| Owner   | Commit coalition batch (≈20 ids)                             | 1.3M – 1.4M   | $0.007 – $0.008   | 2–5× per round            |
+| Owner   | Reveal same batch                                            | 0.9M – 1.0M   | $0.005 – $0.006   | 2–5× per round            |
+| Tester  | Publish results (batch 10)                                   | 0.25M – 0.35M | $0.0014 – $0.0019 | each tester, many batches |
+| Trainer | Claim rewards (batch 10 coalitions)                          | 0.20M – 0.30M | $0.0011 – $0.0016 | once per round            |
+
+> **Perspective:** Every listed action costs fractions of a cent; even the owner’s heaviest one-off setup comes in under three cents.
 
 ### Monthly Cost Projections
 
-Assuming daily rounds with moderate activity:
-
-| Role           | Daily Operations          | Daily Cost | Monthly Cost |
-| -------------- | ------------------------- | ---------- | ------------ |
-| Owner          | 1 round setup + 5 batches | ~$250      | ~$7,500      |
-| Tester (each)  | 20 result batches         | ~$60       | ~$1,800      |
-| Trainer (each) | 2 claim batches           | ~$40       | ~$1,200      |
+| Role         | Daily Actions (avg)                     | Daily Cost | Monthly Cost |
+| ------------ | --------------------------------------- | ---------- | ------------ |
+| Owner        | 1 round setup + 5 commit+reveal batches | $0.05      | $1.50        |
+| Tester (×1)  | 20 result batches                       | $0.04      | $1.20        |
+| Trainer (×1) | 2 reward-claim batches                  | $0.003     | $0.09        |
 
 ## Optimization Recommendations
 
 ### 1. Batch Size Optimization
 
-- **Optimal batch size**: 10-20 items for most operations
-- **Maximum efficiency**: Batch 15-20 coalitions for commit/reveal
-- **Claiming strategy**: Trainers should accumulate 10+ coalitions before claiming
+| Operation                      | Optimal Batch size       | Why it matters                                                  |
+| ------------------------------ | ------------------------ | --------------------------------------------------------------- |
+| **Commit / reveal coalitions** | **15 – 20 items**        | 10 %+ gas saved per coalition without hitting block-gas limits  |
+| **Result publishing**          | **10 – 20 items**        | Keeps calldata small; testers still get fast feedback           |
+| **Reward claiming (trainers)** | **≥ 10 coalitions < 12** | Amortises fixed Shapley cost; \~90 % cheaper than single claims |
 
 ### 2. Shapley Value Constraints
 
-- **Practical limit**: 15-18 players for on-chain calculation
-- **Gas explosion**: >20 players requires 1M+ coalitions (2^20)
-- **Recommendation**: Use off-chain calculation with on-chain verification for >15 players
+| Player Count     | Recommendation | Notes                                 |
+| ---------------- | -------------- | ------------------------------------- |
+| **≤ 12 players** | Safe on-chain  | Gas grows ≈ 2ⁿ, but remains practical |
+| **> 13 **        | Not feasible   | Gas Cost exceed total block size      |
 
 ### 3. Storage Optimization
 
-- **Minimize tester array growth**: Limit to 3-5 testers per coalition
-- **Reuse round mappings**: When trainer set is stable
-- **Coalition ID strategy**: Use deterministic IDs to enable caching
-
-### 4. Gas-Saving Patterns
-
-```solidity
-// ❌ Avoid: Multiple single operations
-for (uint i = 0; i < 10; i++) {
-    commitCoalition(ids[i], commitments[i]);
-}
-
-// ✅ Prefer: Batch operations
-commitCoalitions(ids, commitments);
-```
-
-### 5. Failure Mitigation
-
-- **Pre-validation**: Check trainer membership before attempting claims
-- **Salt management**: Store salts securely to avoid failed claims
-- **Batch validation**: Validate all items in batch before submission
+TODO
 
 ### 6. Architectural Improvements
 
 1. **Lazy Shapley calculation**: Calculate only when claiming, not storing all values
 2. **Merkle tree commitments**: For very large trainer sets (>100)
 3. **Layer 2 deployment**: Consider Arbitrum/Optimism for 10-100x cost reduction
-4. **Hybrid approach**: Critical operations on-chain, calculations off-chain
+4. **Hybrid model**: critical state on-chain, heavy maths (Shapley > 15) done off-chain with on-chain attestation.
 
 ## Conclusion
 
-The ImprovedPrivateShapley contract shows good gas efficiency for moderate scale operations (up to 50 trainers, 20 players for Shapley). Key optimizations include:
+**Key Takeaways: ImprovedPrivateShapley Gas Efficiency**
 
-1. Always batch operations (10-20 items optimal)
-2. Limit Shapley calculations to ≤15 players
-3. Minimize storage updates through careful design
-4. Consider L2 deployment for production use
+- **Cent-level cost on Polygon** for:
+  - **≤ 50 trainers per round**
+  - **≤ 12 players in any Shapley calculation**
+  - **Batched operations of 10–20 items**
 
-For large-scale deployments (>100 trainers or >20 Shapley players), architectural changes are recommended to maintain reasonable gas costs.
+**Best Practices for Scaling:**
 
----
+- **Batch aggressively** to amortize fixed costs.
+- **Stay within the 15-player Shapley window** for predictable gas.
+- **Minimize storage writes** wherever possible.
 
-_Report generated by PrivateShapley Gas Analysis Suite_
-_Contract Version: 1.0.0_
-_Analysis Date: $(date)_
+> For very large federations (**> 100 trainers** or **> 20 Shapley players**):  
+> Move heavy math off-chain or to a Layer 2, and anchor only proofs on mainnet.

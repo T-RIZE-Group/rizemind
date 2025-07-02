@@ -193,7 +193,7 @@ contract PrivateShapleyGasAnalysis is Test {
         console.log("-----|--------|---------|--------|-------|-------");
 
         // Setup with max trainers for comprehensive test
-        setupRoundWithTrainers(20);
+        setupRoundWithTrainers(20, 1);
 
         uint256[] memory sizes = new uint256[](6);
         sizes[0] = 1;
@@ -329,7 +329,7 @@ contract PrivateShapleyGasAnalysis is Test {
             "------|--------|---------|--------|------------|----------"
         );
 
-        setupRoundWithTrainers(10);
+        setupRoundWithTrainers(10, 1);
         setupShapleyValuesForSize(10);
 
         uint256[] memory batchSizes = new uint256[](6);
@@ -591,7 +591,7 @@ contract PrivateShapleyGasAnalysis is Test {
         console.log("\n--- Tester Workflow ---");
 
         // Assume setup is done
-        setupRoundWithTrainers(10);
+        setupRoundWithTrainers(10, 1);
 
         // Commit some coalitions
         bytes32[] memory ids = new bytes32[](20);
@@ -771,7 +771,7 @@ contract PrivateShapleyGasAnalysis is Test {
     function testShapleyForNPlayers(uint256 n) private {
         // Setup round with n trainers
         uint256 testRound = 100 + n;
-        setupRoundWithTrainers(n);
+        setupRoundWithTrainers(n, 1);
 
         // Generate all coalition values (2^n coalitions)
         uint256 numCoalitions = 1 << n;
@@ -882,7 +882,7 @@ contract PrivateShapleyGasAnalysis is Test {
     function testCoalitionStoragePatterns() private {
         console.log("\n--- Coalition Storage Patterns ---");
 
-        setupRoundWithTrainers(10);
+        setupRoundWithTrainers(10, 1);
 
         // Pattern 1: Store minimal data
         bytes32 id1 = keccak256("minimal");
@@ -999,7 +999,7 @@ contract PrivateShapleyGasAnalysis is Test {
     function testBatchVsIndividualStorage() private {
         console.log("\n--- Batch vs Individual Storage Updates ---");
 
-        setupRoundWithTrainers(10);
+        setupRoundWithTrainers(10, 1);
 
         // Individual updates
         uint256 totalIndividual = 0;
@@ -1067,7 +1067,7 @@ contract PrivateShapleyGasAnalysis is Test {
     function testMaxBatchSizes() private {
         console.log("\n--- Maximum Batch Size Operations ---");
 
-        setupRoundWithTrainers(50);
+        setupRoundWithTrainers(50, 1);
 
         // Max batch commit (50)
         bytes32[] memory ids = new bytes32[](50);
@@ -1110,7 +1110,7 @@ contract PrivateShapleyGasAnalysis is Test {
         console.log("\n--- Worst-Case Shapley Calculations ---");
 
         // Test with maximum players (20) and all coalitions
-        setupRoundWithTrainers(20);
+        setupRoundWithTrainers(20, 1);
 
         // Set all 2^20 coalition values
         uint256 numCoalitions = 1 << 20;
@@ -1169,7 +1169,7 @@ contract PrivateShapleyGasAnalysis is Test {
     function testFailedTransactionGas() private {
         console.log("\n--- Failed Transaction Gas Consumption ---");
 
-        setupRoundWithTrainers(10);
+        setupRoundWithTrainers(10, 1);
         setupShapleyValuesForSize(10);
 
         // Setup a revealed coalition
@@ -1264,7 +1264,7 @@ contract PrivateShapleyGasAnalysis is Test {
       ║                         HELPER FUNCTIONS                         ║
       ╚══════════════════════════════════════════════════════════════════╝*/
 
-    function setupRoundWithTrainers(uint256 n) private {
+    function setupRoundWithTrainers(uint256 n, uint256 rid) private {
         address[] memory trainers = new address[](n);
         bytes32[] memory salts = new bytes32[](n);
         bool[] memory flags = new bool[](n);
@@ -1286,11 +1286,11 @@ contract PrivateShapleyGasAnalysis is Test {
         }
         privateShapley.setTesters(testerAddrs, testerFlags);
 
-        privateShapley.createRound(1, block.timestamp, block.timestamp + DAY);
+        privateShapley.createRound(rid, block.timestamp, block.timestamp + DAY);
 
         bytes32 commitment = keccak256(abi.encodePacked(trainers, salts));
-        privateShapley.commitTrainerMapping(1, commitment);
-        privateShapley.revealTrainerMapping(1, trainers, salts);
+        privateShapley.commitTrainerMapping(rid, commitment);
+        privateShapley.revealTrainerMapping(rid, trainers, salts);
     }
 
     function setupShapleyValuesForSize(uint256 n) private {
@@ -1322,7 +1322,7 @@ contract PrivateShapleyGasAnalysis is Test {
     }
 
     function setupCompleteScenario() private {
-        setupRoundWithTrainers(10);
+        setupRoundWithTrainers(10, 1);
         setupShapleyValuesForSize(10);
 
         // Create and reveal multiple coalitions
@@ -1407,14 +1407,14 @@ contract PrivateShapleyGasAnalysis is Test {
         console.log("Players | GasUsed | Gas/Trainer | 2^n loops");
         console.log("--------|---------|-------------|-----------");
 
-        uint8[11] memory cases = [1, 2, 3, 4, 5, 6, 8, 10, 12, 13, 20];
+        uint8[12] memory cases = [1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 13, 20];
 
         for (uint256 i = 0; i < cases.length; i++) {
             uint8 n = cases[i];
 
             // ── 1) create a fresh round with `n` trainers ──────────────────────
             privateShapley = new ImprovedPrivateShapley(address(mockToken));
-            setupRoundWithTrainers(n); // registers + mapping reveal
+            setupRoundWithTrainers(n, 1); // registers + mapping reveal
             setupShapleyValuesForSize(n); // sets 2^n coalition values
 
             // ── 2) commit-publish-reveal one coalition containing *all* trainers
@@ -1424,7 +1424,7 @@ contract PrivateShapleyGasAnalysis is Test {
             bytes32 comm = keccak256(abi.encodePacked(bitfield, nonce));
             privateShapley.commitCoalitions(1, toArray(cid), toArray(comm));
 
-            uint256[] memory scores = toArray(10_000);
+            uint256[] memory scores = toArray(10_000000);
             vm.prank(testers[0]);
             privateShapley.publishResults(1, toArray(cid), scores);
             privateShapley.revealCoalitions(
@@ -1451,6 +1451,246 @@ contract PrivateShapleyGasAnalysis is Test {
             console.log("Gas Used: %s", gasUsed);
             console.log("Gas per Trainer: %s", gasUsed / n);
             console.log("2^n loops: %s", 1 << n);
+        }
+    }
+
+    /*───────────────────────────────────────────────────────────────────
+   1.  Trainer-count scaling table  (Set + Commit + Reveal)
+───────────────────────────────────────────────────────────────────*/
+    function testTrainerCountGasScaling() public {
+        console.log("\n=== Trainer-count Gas ===");
+        console.log("Trainers | Set | Commit | Reveal | Avg/Trainer | Total");
+        console.log("---------|-----|--------|--------|-------------|-------");
+        uint256[6] memory cases = [uint256(5), 10, 25, 50, 100, 255];
+
+        for (uint256 k; k < cases.length; ++k) {
+            uint256 n = cases[k];
+
+            // fresh contract each run
+            privateShapley = new ImprovedPrivateShapley(address(mockToken));
+
+            // build trainer arrays
+            address[] memory tr = new address[](n);
+            bool[] memory fl = new bool[](n);
+            bytes32[] memory sl = new bytes32[](n);
+            for (uint256 i; i < n; ++i) {
+                tr[i] = allTrainers[i];
+                fl[i] = true;
+                sl[i] = keccak256(abi.encodePacked("salt", i));
+            }
+
+            uint256 gasSet = measureGas(
+                address(privateShapley),
+                abi.encodeWithSelector(
+                    privateShapley.setTrainers.selector,
+                    tr,
+                    fl
+                )
+            );
+
+            privateShapley.createRound(
+                1,
+                block.timestamp,
+                block.timestamp + DAY
+            );
+
+            bytes32 commit = keccak256(abi.encodePacked(tr, sl));
+            uint256 gasCommit = measureGas(
+                address(privateShapley),
+                abi.encodeWithSelector(
+                    privateShapley.commitTrainerMapping.selector,
+                    1,
+                    commit
+                )
+            );
+            uint256 gasReveal = measureGas(
+                address(privateShapley),
+                abi.encodeWithSelector(
+                    privateShapley.revealTrainerMapping.selector,
+                    1,
+                    tr,
+                    sl
+                )
+            );
+
+            uint256 total = gasSet + gasCommit + gasReveal;
+            console.log("Trainers: %s", n);
+            console.log("SetTrainers Gas: %s", gasSet);
+            console.log("CommitMap Gas: %s", gasCommit);
+            console.log("RevealMap Gas: %s", gasReveal);
+            console.log("Avg/Trainer: %s", total / n);
+            console.log("Total Gas: %s", total);
+        }
+    }
+
+    /*╔══════════════════════════════════════════════════════════╗
+  ║       ➋ COALITION-SIZE SCALING  (commit→publish→reveal)
+  ╚══════════════════════════════════════════════════════════╝*/
+    // function testCoalitionSizeGasScaling() public {
+    //     console.log("\n=== Coalition-size Gas ===");
+    //     console.log("Size | Commit | Publish | Reveal  | Total");
+    //     console.log("-----|--------|---------|--------|------");
+
+    //     uint256[14] memory sizes = [
+    //         uint256(1),
+    //         5,
+    //         10,
+    //         15,
+    //         20,
+    //         30,
+    //         40,
+    //         50,
+    //         60,
+    //         70,
+    //         80,
+    //         90,
+    //         100,
+    //         255
+    //     ];
+    //     uint256 count = 1;
+    //     for (uint256 s; s < sizes.length; ++s) {
+    //         uint256 size = sizes[s];
+    //         setupRoundWithTrainers(size, count);
+    //         count++;
+
+    //         bytes32 cid = keccak256(abi.encodePacked("S", size));
+    //         bytes32 bf = bytes32((1 << size) - 1);
+    //         bytes32 nc = keccak256("nc");
+    //         bytes32 comm = keccak256(abi.encodePacked(bf, nc));
+
+    //         uint256 gCommit = measureGas(
+    //             address(privateShapley),
+    //             abi.encodeWithSelector(
+    //                 privateShapley.commitCoalitions.selector,
+    //                 1,
+    //                 toArray(cid),
+    //                 toArray(comm)
+    //             )
+    //         );
+
+    //         vm.prank(testers[0]);
+    //         uint256 gPublish = measureGas(
+    //             address(privateShapley),
+    //             abi.encodeWithSelector(
+    //                 privateShapley.publishResults.selector,
+    //                 1,
+    //                 toArray(cid),
+    //                 toArray(uint256(1000))
+    //             )
+    //         );
+
+    //         uint256 gReveal = measureGas(
+    //             address(privateShapley),
+    //             abi.encodeWithSelector(
+    //                 privateShapley.revealCoalitions.selector,
+    //                 1,
+    //                 toArray(cid),
+    //                 toArray(bf),
+    //                 toArray(nc)
+    //             )
+    //         );
+
+    //         mockToken.mint(address(privateShapley), 1e24);
+    //         bytes32 salt = keccak256(abi.encodePacked("salt", uint256(0)));
+    //         vm.prank(allTrainers[0]);
+
+    //         uint256 total = gCommit + gPublish + gReveal;
+    //         console.log("Size: %s", size);
+    //         console.log("Commit Gas: %s", gCommit);
+    //         console.log("Publish Gas: %s", gPublish);
+    //         console.log("Reveal Gas: %s", gReveal);
+    //         console.log("Total Gas: %s", total);
+    //     }
+    // }
+
+    /*╔══════════════════════════════════════════════════════════╗
+  ║         COALITION-BATCH GAS SCALING  (fixed trainers)    ║
+  ╚══════════════════════════════════════════════════════════╝*/
+    function testCoalitionBatchGasScaling() public {
+        console.log("\n=== Coalition-batch Gas ===");
+        console.log("Batch | Commit | Publish | Reveal | Total");
+        console.log("----- | ------ | ------- | ------ | -----");
+
+        // always 10 trainers mapped for every round
+
+        uint256[14] memory batches = [
+            uint256(1),
+            5,
+            10,
+            15,
+            20,
+            30,
+            40,
+            50,
+            60,
+            70,
+            80,
+            90,
+            100,
+            255
+        ];
+        uint256 count = 1;
+        for (uint256 b; b < batches.length; ++b) {
+            uint256 batch = batches[b];
+            setupRoundWithTrainers(batch, count);
+            count++;
+
+            // ── build arrays of length = batch ─────────────────────────────
+            bytes32[] memory ids = new bytes32[](batch);
+            bytes32[] memory coms = new bytes32[](batch);
+            bytes32[] memory bfs = new bytes32[](batch);
+            bytes32[] memory ncs = new bytes32[](batch);
+            uint256[] memory scrs = new uint256[](batch);
+
+            for (uint256 i; i < batch; ++i) {
+                ids[i] = keccak256(abi.encodePacked("CID", batch, "_", i));
+                bfs[i] = bytes32(uint256(0x3)); // trainers 0 & 1
+                ncs[i] = keccak256(abi.encodePacked("nc", i));
+                coms[i] = keccak256(abi.encodePacked(bfs[i], ncs[i]));
+                scrs[i] = 1_000 + i; // dummy score
+            }
+
+            // ── Commit whole batch ─────────────────────────────────────────
+            uint256 gCommit = measureGas(
+                address(privateShapley),
+                abi.encodeWithSelector(
+                    privateShapley.commitCoalitions.selector,
+                    1,
+                    ids,
+                    coms
+                )
+            );
+
+            // ── Publish results (first tester) ────────────────────────────
+            vm.prank(testers[0]);
+            uint256 gPublish = measureGas(
+                address(privateShapley),
+                abi.encodeWithSelector(
+                    privateShapley.publishResults.selector,
+                    1,
+                    ids,
+                    scrs
+                )
+            );
+
+            // ── Reveal whole batch ────────────────────────────────────────
+            uint256 gReveal = measureGas(
+                address(privateShapley),
+                abi.encodeWithSelector(
+                    privateShapley.revealCoalitions.selector,
+                    1,
+                    ids,
+                    bfs,
+                    ncs
+                )
+            );
+
+            uint256 total = gCommit + gPublish + gReveal;
+            console.log("Batch size: %s", batch);
+            console.log("Commit gas: %s", gCommit);
+            console.log("Publish gas: %s", gPublish);
+            console.log("Reveal gas: %s", gReveal);
+            console.log("Total gas: %s", total);
         }
     }
 }

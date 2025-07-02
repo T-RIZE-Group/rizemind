@@ -19,7 +19,7 @@ contract ImprovedPrivateShapley is Ownable, ReentrancyGuard {
     uint8 public constant MAX_TRAINERS = 255;
     uint8 public constant MAX_SHAPLEY_PLAYERS = 20;
     uint256 public constant PRECISION = 1e6;
-    uint256 public constant MAX_BATCH_SIZE = 50;
+    uint256 public constant MAX_BATCH_SIZE = 256;
     uint256 public constant COMMIT_REVEAL_WINDOW = 7 days;
     uint256 public constant MIN_RESULT_THRESHOLD = 1;
 
@@ -149,6 +149,7 @@ contract ImprovedPrivateShapley is Ownable, ReentrancyGuard {
     mapping(uint256 => mapping(uint8 => address)) public roundIdxToAddr;
     mapping(uint256 => mapping(address => bytes32)) private roundAddrSalt;
     mapping(uint256 => uint8) public roundTrainerCount;
+    mapping(uint256 => mapping(uint256 => bytes32)) private roundMaskToCid;
 
     event MappingCommitted(uint256 indexed round, bytes32 commitment);
     event MappingRevealed(uint256 indexed round, uint8 nTrainers);
@@ -198,34 +199,6 @@ contract ImprovedPrivateShapley is Ownable, ReentrancyGuard {
         emit MappingRevealed(rid, uint8(addrs.length));
     }
 
-    /*──────────────────────────────────────────────────────────────────
-                         2.  COALITIONS (commit-reveal)
-    ──────────────────────────────────────────────────────────────────*/
-    struct Coalition {
-        bytes32 commitment;
-        bytes32 bitfield;
-        bytes32 nonce;
-        uint256 result;
-        bool committed;
-        bool revealed;
-        uint256 revealDeadline;
-    }
-
-    mapping(bytes32 => Coalition) public coalitionData;
-    mapping(bytes32 => mapping(address => uint256)) public testerResults;
-    mapping(bytes32 => address[]) public coalitionTesters;
-
-    event CoalitionCommitted(
-        bytes32 id,
-        bytes32 commitment,
-        uint256 revealDeadline
-    );
-    event CoalitionRevealed(bytes32 id, bytes32 bitfield, bytes32 nonce);
-    event ResultPublished(bytes32 id, uint256 score, address tester);
-
-    /**
-     * What's up with this commitments again?
-     */
     function commitCoalitions(
         uint256 roundId,
         bytes32[] calldata ids,
@@ -246,56 +219,6 @@ contract ImprovedPrivateShapley is Ownable, ReentrancyGuard {
         }
     }
 
-    /**
-     * many testers can evaluate the same coalition. The results are averaged.
-     */
-    function publishResults(
-        uint256 roundId,
-        bytes32[] calldata ids,
-        uint256[] calldata scores
-    ) external onlyTester onlyActiveRound(roundId) maxBatchSize(ids.length) {
-        require(ids.length == scores.length, "Array lengths must match");
-
-        for (uint256 i = 0; i < ids.length; ++i) {
-            bytes32 id = ids[i];
-            uint256 score = scores[i];
-
-            require(
-                score >= MIN_RESULT_THRESHOLD,
-                "Score below minimum threshold"
-            );
-
-            Coalition storage c = coalitionData[id];
-            require(c.committed, "Coalition not committed");
-
-            testerResults[id][msg.sender] = score;
-
-            bool testerFound = false;
-            for (uint256 j = 0; j < coalitionTesters[id].length; j++) {
-                if (coalitionTesters[id][j] == msg.sender) {
-                    testerFound = true;
-                    break;
-                }
-            }
-
-            if (!testerFound) {
-                coalitionTesters[id].push(msg.sender);
-            }
-
-            uint256 totalScore = 0;
-            for (uint256 j = 0; j < coalitionTesters[id].length; j++) {
-                totalScore += testerResults[id][coalitionTesters[id][j]];
-            }
-
-            c.result = totalScore / coalitionTesters[id].length;
-            emit ResultPublished(id, score, msg.sender);
-        }
-    }
-
-    /**
-     * this seems like potential bottle neck, lots of storage write
-     * Moreover, it does seem unecessary if replaced by a merkle tree
-     */
     function revealCoalitions(
         uint256 roundId,
         bytes32[] calldata ids,
@@ -331,9 +254,73 @@ contract ImprovedPrivateShapley is Ownable, ReentrancyGuard {
             );
 
             c.bitfield = bitfields[i];
+            roundMaskToCid[roundId][uint256(c.bitfield)] = ids[i];
             c.nonce = nonces[i];
             c.revealed = true;
             emit CoalitionRevealed(ids[i], bitfields[i], nonces[i]);
+        }
+    }
+
+    /*──────────────────────────────────────────────────────────────────
+                         2.  COALITIONS (commit-reveal)
+    ──────────────────────────────────────────────────────────────────*/
+    struct Coalition {
+        bytes32 commitment;
+        bytes32 bitfield;
+        bytes32 nonce;
+        uint256 result;
+        bool committed;
+        bool revealed;
+        uint256 revealDeadline;
+        uint256 sumScores;
+        uint256 numScores;
+    }
+
+    mapping(bytes32 => Coalition) public coalitionData;
+    mapping(bytes32 => mapping(address => uint256)) public testerResults;
+    mapping(bytes32 => address[]) public coalitionTesters;
+
+    event CoalitionCommitted(
+        bytes32 id,
+        bytes32 commitment,
+        uint256 revealDeadline
+    );
+    event CoalitionRevealed(bytes32 id, bytes32 bitfield, bytes32 nonce);
+    event ResultPublished(bytes32 id, uint256 score, address tester);
+
+    function publishResults(
+        uint256 roundId,
+        bytes32[] calldata ids,
+        uint256[] calldata scores
+    ) external onlyTester onlyActiveRound(roundId) maxBatchSize(ids.length) {
+        require(ids.length == scores.length, "Array lengths must match");
+
+        for (uint256 i = 0; i < ids.length; ++i) {
+            require(
+                testerResults[ids[i]][msg.sender] == 0,
+                "Tester has already submitted"
+            );
+
+            bytes32 cid = ids[i];
+            uint256 score = scores[i];
+
+            require(
+                score >= MIN_RESULT_THRESHOLD,
+                "Score below minimum threshold"
+            );
+
+            Coalition storage c = coalitionData[cid];
+            require(c.committed, "Coalition not committed");
+
+            c.sumScores += score;
+            c.numScores += 1;
+            coalitionTesters[cid].push(msg.sender);
+
+            testerResults[cid][msg.sender] = score;
+
+            c.result = c.sumScores / c.numScores;
+
+            emit ResultPublished(cid, score, msg.sender);
         }
     }
 
@@ -349,32 +336,6 @@ contract ImprovedPrivateShapley is Ownable, ReentrancyGuard {
         uint256 mask,
         uint256 value
     );
-
-    /** is this just for mocking data for tests? */
-    function setShapleyCoalitionValues(
-        uint256 roundId,
-        uint256[][] calldata coalitionIndices,
-        uint256[] calldata values
-    ) external onlyOwner {
-        require(coalitionIndices.length == values.length, "Length mismatch");
-        require(roundTrainerCount[roundId] > 0, "Round mapping not revealed");
-        require(
-            roundTrainerCount[roundId] <= MAX_SHAPLEY_PLAYERS,
-            "Too many trainers for Shapley"
-        );
-
-        for (uint256 i = 0; i < coalitionIndices.length; i++) {
-            // require(values[i] <= 100_000000, "value max 100");
-            uint256 mask = _idxArrayToMask(coalitionIndices[i]);
-
-            if (!roundCoalitionExists[roundId][mask]) {
-                roundCoalitionExists[roundId][mask] = true;
-                roundAllCoalitions[roundId].push(mask);
-            }
-            roundCoalitionValues[roundId][mask] = values[i];
-            emit ShapleyCoalitionValueSet(roundId, mask, values[i]);
-        }
-    }
 
     uint256[21] private _factorial = [
         1,
@@ -409,46 +370,6 @@ contract ImprovedPrivateShapley is Ownable, ReentrancyGuard {
         }
     }
 
-    function _idxArrayToMask(
-        uint256[] calldata idxs
-    ) private pure returns (uint256 m) {
-        for (uint256 i; i < idxs.length; i++) {
-            require(idxs[i] > 0 && idxs[i] <= 255, "idx out");
-            uint256 bit = 1 << (idxs[i] - 1);
-            require(m & bit == 0, "dup");
-            m |= bit;
-        }
-    }
-
-    function _shapleyMarginal(
-        uint256 roundId,
-        uint256 coalitionMask,
-        uint256 trainerBit,
-        uint8 n
-    ) private view returns (int256) {
-        uint8 sizeS = _popcnt(coalitionMask);
-        uint256 with = roundCoalitionValues[roundId][coalitionMask];
-        uint256 wout = roundCoalitionValues[roundId][
-            coalitionMask & ~trainerBit
-        ];
-        uint256 weight = (_factorial[sizeS - 1] *
-            _factorial[n - sizeS] *
-            PRECISION) / _factorial[n];
-        return
-            ((int256(with) - int256(wout)) * int256(weight)) /
-            int256(PRECISION);
-    }
-
-    /**
-     * this looks almost correct.
-     * except this part:
-     * ```solidity
-     *  uint256 valueWith = roundCoalitionValues[roundId][coalitionWith];
-     *  uint256 valueWithout = roundCoalitionValues[roundId][coalitionWithout];
-     * ```
-     *
-     * Those should use Coalition.result
-     */
     function _calcShapleyValue(
         uint256 roundId,
         uint256 trainerBit,
@@ -477,10 +398,11 @@ contract ImprovedPrivateShapley is Ownable, ReentrancyGuard {
             uint256 coalitionWith = mask;
             uint256 coalitionWithout = mask & ~trainerBit;
 
-            uint256 valueWith = roundCoalitionValues[roundId][coalitionWith];
-            uint256 valueWithout = roundCoalitionValues[roundId][
-                coalitionWithout
-            ];
+            bytes32 cidWith = roundMaskToCid[roundId][coalitionWith];
+            bytes32 cidWithout = roundMaskToCid[roundId][coalitionWithout];
+
+            uint256 valueWith = coalitionData[cidWith].result;
+            uint256 valueWithout = coalitionData[cidWithout].result;
 
             // Calculate the size of the coalition S (including the trainer)
             uint8 sizeS = _popcnt(coalitionWith);
@@ -499,9 +421,7 @@ contract ImprovedPrivateShapley is Ownable, ReentrancyGuard {
     /*──────────────────────────────────────────────────────────────────
                               4.  CLAIM REWARDS
     ──────────────────────────────────────────────────────────────────*/
-    mapping(uint256 => mapping(bytes32 => mapping(address => bool)))
-        public claimed;
-    mapping(uint256 => mapping(bytes32 => bool)) public nonceUsed;
+    mapping(uint256 => mapping(address => bool)) public roundRewardClaimed; // round ⇒ trainer ⇒ claimed?
 
     event RewardClaimed(address trainer, bytes32 coalition, uint256 amount);
 
@@ -525,35 +445,17 @@ contract ImprovedPrivateShapley is Ownable, ReentrancyGuard {
         );
 
         int256 shapley = _calcShapleyValue(rid, idxMask, nPlayers);
-        require(shapley > 0, "Non-positive Shapley value");
+        require(shapley >= 0, "Non-positive Shapley value");
 
         uint256 shapleyMul = uint256(shapley);
         uint256 tot;
 
-        /**
-         * this loop isn't required. `int256 shapley` already considers all
-         * the coalitions. You can simply have a mapping claims[rid][msg.sender] = true
-         */
-        for (uint256 k; k < coalitionIds.length; k++) {
-            bytes32 cid = coalitionIds[k];
-            Coalition storage c = coalitionData[cid];
+        roundRewardClaimed[rid][msg.sender] = true;
 
-            require(c.revealed, "Coalition not revealed");
-            require(!claimed[rid][cid][msg.sender], "Already claimed");
-            require(!nonceUsed[rid][c.nonce], "Nonce already used");
-            require(uint256(c.bitfield) & idxMask != 0, "Not member");
-            require(c.result >= MIN_RESULT_THRESHOLD, "No valid result");
-
-            claimed[rid][cid][msg.sender] = true;
-            nonceUsed[rid][c.nonce] = true;
-
-            uint256 reward = (c.result * shapleyMul) / PRECISION;
-            tot += reward;
-            emit RewardClaimed(msg.sender, cid, reward);
-        }
-
-        require(tot > 0, "No rewards to claim");
-        rewardToken.safeTransfer(msg.sender, tot);
+        // TODO: decide how to handle the reward.
+        //     uint256 reward = (c.result * shapleyMul) / PRECISION;
+        //     tot += reward;
+        //     emit RewardClaimed(msg.sender, cid, reward);
     }
 
     /*──────────────────────────────────────────────────────────────────
@@ -600,5 +502,55 @@ contract ImprovedPrivateShapley is Ownable, ReentrancyGuard {
 
     function recoverERC20(address token, uint256 amount) external onlyOwner {
         IERC20(token).safeTransfer(owner(), amount);
+    }
+
+    /** TODO: remove this: only for testing purposes */
+    function setShapleyCoalitionValues(
+        uint256 roundId,
+        uint256[][] calldata coalitionIndices,
+        uint256[] calldata values
+    ) external onlyOwner {
+        require(coalitionIndices.length == values.length, "Length mismatch");
+
+        uint8 n = roundTrainerCount[roundId];
+        require(n > 0, "Round mapping not revealed");
+        require(n <= MAX_SHAPLEY_PLAYERS, "Too many trainers");
+
+        for (uint256 i = 0; i < coalitionIndices.length; ++i) {
+            uint256 mask = _idxArrayToMask(coalitionIndices[i]);
+
+            bytes32 cid = keccak256(abi.encodePacked(roundId, mask));
+
+            Coalition storage c = coalitionData[cid];
+
+            if (!c.committed) {
+                c.committed = true;
+                c.revealed = true;
+                c.bitfield = bytes32(mask);
+                c.nonce = bytes32(0);
+                c.numScores = 0;
+                c.sumScores = 0;
+                roundMaskToCid[roundId][mask] = cid;
+                roundCoalitionExists[roundId][mask] = true;
+                roundAllCoalitions[roundId].push(mask);
+            }
+
+            c.result = values[i];
+
+            roundCoalitionValues[roundId][mask] = values[i];
+
+            emit ShapleyCoalitionValueSet(roundId, mask, values[i]);
+        }
+    }
+
+    function _idxArrayToMask(
+        uint256[] calldata idxs
+    ) private pure returns (uint256 m) {
+        for (uint256 i; i < idxs.length; i++) {
+            require(idxs[i] > 0 && idxs[i] <= 255, "idx out");
+            uint256 bit = 1 << (idxs[i] - 1);
+            require(m & bit == 0, "dup");
+            m |= bit;
+        }
     }
 }
