@@ -1,5 +1,7 @@
 from pathlib import Path
 from typing import cast
+
+import torch
 from flwr.common import (
     EvaluateIns,
     EvaluateRes,
@@ -12,11 +14,9 @@ from flwr.server import ClientManager
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
 from tabpfn.model.loading import load_model
-
 from tabpfn_centralized.tabpfn_training.client_app import (
     load_weights_into_model,
 )
-import torch
 
 
 class SimpleTabPFNRegressorStrategy(Strategy):

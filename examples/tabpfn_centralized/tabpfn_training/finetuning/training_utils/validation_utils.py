@@ -95,7 +95,6 @@ def validate_tabpfn(
                 f"model_for_validation must be TabPFNClassifier but is: {type(model_for_validation)}"
             )
 
-
         X_val = X_val.cpu().detach().numpy()[:, 0, :]
         y_true = y_val.flatten().cpu().detach().numpy()
 
