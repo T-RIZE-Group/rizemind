@@ -18,7 +18,7 @@ import sklearn.metrics
 
 try:
     from sklearn.metrics._classification import type_of_target
-except:
+except Exception:
     from sklearn.metrics.classification import type_of_target
 
 from finetuning.constant_utils import TaskType

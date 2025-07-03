@@ -17,7 +17,7 @@ from sklearn.utils.multiclass import unique_labels
 
 try:
     from sklearn.metrics._classification import _check_targets, type_of_target
-except:
+except Exception:
     from sklearn.metrics.classification import _check_targets, type_of_target
 
 logger = logging.getLogger(__name__)
