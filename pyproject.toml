@@ -119,5 +119,5 @@ members = [
     "examples/torch_diff_privacy",
     "examples/torch_dyn_diff_privacy_shapley",
     "examples/torch_shapley",
-    "examples/tabpfn_basic",
+    "examples/tabpfn_centralized",
 ]
