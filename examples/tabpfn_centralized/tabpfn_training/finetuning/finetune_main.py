@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-import logging
 import random
 import time
-import warnings
 from collections.abc import Callable
 from copy import deepcopy
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, Union, Sequence
+from typing import TYPE_CHECKING, Any, Literal, Union, Sequence
 
 import numpy as np
 import pandas as pd
@@ -40,14 +38,14 @@ if TYPE_CHECKING:
     from torch.nn.modules.loss import _Loss
     from torch.optim.optimizer import Optimizer
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
-warnings.filterwarnings("ignore", category=FutureWarning)
-warnings.filterwarnings(
-    "ignore",
-    category=UserWarning,
-    message=".*input value tensor is non-contiguous.*",
-)
+# warnings.filterwarnings("ignore", category=FutureWarning)
+# warnings.filterwarnings(
+#     "ignore",
+#     category=UserWarning,
+#     message=".*input value tensor is non-contiguous.*",
+# )
 
 
 def fine_tune_tabpfn(
@@ -147,7 +145,7 @@ def fine_tune_tabpfn(
         y_val = pd.Series(y_val)
 
     # Control logging
-    logger.setLevel(logger_level)
+    # logger.setLevel(logger_level)
     disable_progress_bar = logger_level >= 20
 
     # Control randomness
@@ -215,7 +213,7 @@ def fine_tune_tabpfn(
         \tVal Samples: {len(X_val) if X_val is not None else 0} | Total Samples: {n_samples}
         \tModel #parameter: {sum(p.numel() for p in model.parameters())}
     """
-    logger.debug(val_report)
+    # logger.debug(val_report)
 
     # Setup learning HPs
     fts = _setup_tuning(
@@ -225,7 +223,7 @@ def fine_tune_tabpfn(
         is_classification=is_classification,
         is_data_parallel=is_data_parallel,
     )
-    logger.debug(fts.report_str)
+    # logger.debug(fts.report_str)
 
     # Setup Forward Pass Function
     categorical_features_index = (
@@ -316,7 +314,7 @@ def fine_tune_tabpfn(
         ),
         str(save_path_to_fine_tuned_model),
     )
-    logger.debug(f"Initial validation loss: {best_validation_loss}")
+    # logger.debug(f"Initial validation loss: {best_validation_loss}")
 
     # Setup data loader
     data_loader = get_data_loader(
@@ -369,7 +367,7 @@ def fine_tune_tabpfn(
         )
 
         if step_results.optimizer_step_skipped:
-            logger.info("\nOptimizer step skipped due to NaNs/infs in grad scaling.")
+            # logger.info("\nOptimizer step skipped due to NaNs/infs in grad scaling.")
             validate_now = False
             skipped_steps += 1
 
@@ -441,7 +439,7 @@ def fine_tune_tabpfn(
         if early_stop_no_imp or early_stop_no_time:
             break
 
-    _tore_down_tuning(
+    _tore_down_tuning_with_return_metrics(
         task_type=task_type,
         step_results_over_time=step_results_over_time,
         fts=fts,
@@ -719,7 +717,8 @@ def _tore_down_tuning(
     if early_stop_no_time:
         es_reason = "Early stopping due no time."
     if es_reason is not None:
-        logger.log(10, es_reason)
+        # logger.log(10, es_reason)
+        pass
 
     # -- Final Report
     best_step = np.argmin([x.validation_loss for x in step_results_over_time])
@@ -733,7 +732,7 @@ def _tore_down_tuning(
         \tAvg. Time per Step: {(time.time() - st_time) / len(step_results_over_time)}
         \tAvg. Device Utilization: {np.mean([step.device_utilization for step in step_results_over_time])}
         """
-    logger.info(fine_tuning_report)
+    # logger.info(fine_tuning_report)
 
     if show_training_curve:
         # --- Short Plot Hack
@@ -801,3 +800,34 @@ def _tore_down_tuning(
 
         plt.savefig(f"fine_tuning_loss_plot_{task_type}.png")
         plt.show()
+
+
+def _tore_down_tuning_with_return_metrics(
+    *,
+    early_stop_no_imp: bool,
+    early_stop_no_time: bool,
+    show_training_curve: bool,
+    st_time: float,
+    step_results_over_time: list[FineTuneStepResults],
+    fts: FineTuneSetup,
+    task_type: TaskType,
+) -> dict[str, Any]:
+    best_step = np.argmin([x.validation_loss for x in step_results_over_time])
+    es_reason = None
+    if early_stop_no_imp:
+        es_reason = "Early stopping due to no improvement (AdaptiveES)."
+    if early_stop_no_time:
+        es_reason = "Early stopping due no time."
+    return {
+        "time_spent": time.time() - st_time,
+        "initial_validation_loss": step_results_over_time[0].validation_loss,
+        "best_validation_loss": step_results_over_time[-1].best_validation_loss,
+        "total_steps": len(step_results_over_time),
+        "best_step": best_step,
+        "early_stopping": True if es_reason is not None else False,
+        "early_stopping_reason": es_reason,
+        "avg_time_per_step": (time.time() - st_time) / len(step_results_over_time),
+        "avg_device_utilization": np.mean(
+            [step.device_utilization for step in step_results_over_time]
+        ),
+    }
