@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from enum import Enum
 
+from pydantic import BaseModel
+
 
 class TaskType(str, Enum):
     """Task type of the data for fine-tuning."""
@@ -30,3 +32,15 @@ class SupportedDevice(str, Enum):
 
     CPU = "cpu"
     GPU = "cuda"
+
+
+class Metrics(BaseModel):
+    time_spent: int
+    initial_validation_loss: float
+    best_validation_loss: float
+    total_steps: int
+    best_step: int
+    early_stopping: bool
+    early_stopping_reason: str | None
+    avg_time_per_step: float
+    avg_device_utilization: float

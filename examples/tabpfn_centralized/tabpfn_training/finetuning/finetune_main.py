@@ -14,6 +14,7 @@ import torch
 import wandb
 
 from finetuning.constant_utils import (
+    Metrics,
     SupportedDevice,
     SupportedValidationMetric,
     TaskType,
@@ -811,23 +812,25 @@ def _tore_down_tuning_with_return_metrics(
     step_results_over_time: list[FineTuneStepResults],
     fts: FineTuneSetup,
     task_type: TaskType,
-) -> dict[str, Any]:
+) -> Metrics:
     best_step = np.argmin([x.validation_loss for x in step_results_over_time])
     es_reason = None
     if early_stop_no_imp:
         es_reason = "Early stopping due to no improvement (AdaptiveES)."
     if early_stop_no_time:
         es_reason = "Early stopping due no time."
-    return {
-        "time_spent": time.time() - st_time,
-        "initial_validation_loss": step_results_over_time[0].validation_loss,
-        "best_validation_loss": step_results_over_time[-1].best_validation_loss,
-        "total_steps": len(step_results_over_time),
-        "best_step": best_step,
-        "early_stopping": True if es_reason is not None else False,
-        "early_stopping_reason": es_reason,
-        "avg_time_per_step": (time.time() - st_time) / len(step_results_over_time),
-        "avg_device_utilization": np.mean(
-            [step.device_utilization for step in step_results_over_time]
-        ),
-    }
+    return Metrics.model_validate(
+        {
+            "time_spent": time.time() - st_time,
+            "initial_validation_loss": step_results_over_time[0].validation_loss,
+            "best_validation_loss": step_results_over_time[-1].best_validation_loss,
+            "total_steps": len(step_results_over_time),
+            "best_step": best_step,
+            "early_stopping": True if es_reason is not None else False,
+            "early_stopping_reason": es_reason,
+            "avg_time_per_step": (time.time() - st_time) / len(step_results_over_time),
+            "avg_device_utilization": np.mean(
+                [step.device_utilization for step in step_results_over_time]
+            ),
+        }
+    )
