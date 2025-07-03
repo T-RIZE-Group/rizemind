@@ -11,8 +11,8 @@ if TYPE_CHECKING:
     import numpy as np
     import pandas as pd
     from finetuning.metric_utils.ag_metrics import Scorer
-    from tabpfn.model.transformer import PerFeatureTransformer
     from tabpfn import TabPFNClassifier, TabPFNRegressor
+    from tabpfn.model.transformer import PerFeatureTransformer
 
 
 def create_val_data(
@@ -70,15 +70,15 @@ def validate_tabpfn(
     if use_sklearn_interface_for_validation:
         if model_for_validation is None:
             raise ValueError(
-                f"Model for validation is required when validating with full TabPFN preprocessing."
+                "Model for validation is required when validating with full TabPFN preprocessing."
             )
         if not model_for_validation.fit_mode == "fit_preprocessors":
             raise ValueError(
-                f"fit_mode for model_for_validation must be 'fit_preprocessors' when validating with full TabPFN preprocessing."
+                "fit_mode for model_for_validation must be 'fit_preprocessors' when validating with full TabPFN preprocessing."
             )
         if model_for_validation.memory_saving_mode:
             raise ValueError(
-                f"memory_saving_mode for model_for_validation must be False when validating with full TabPFN preprocessing."
+                "memory_saving_mode for model_for_validation must be False when validating with full TabPFN preprocessing."
             )
 
         estimator_type = model_for_validation.__sklearn_tags__().estimator_type
@@ -95,7 +95,6 @@ def validate_tabpfn(
                 f"model_for_validation must be TabPFNClassifier but is: {type(model_for_validation)}"
             )
 
-        from tabpfn import TabPFNClassifier, TabPFNRegressor
 
         X_val = X_val.cpu().detach().numpy()[:, 0, :]
         y_true = y_val.flatten().cpu().detach().numpy()

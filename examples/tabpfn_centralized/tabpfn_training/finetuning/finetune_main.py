@@ -6,13 +6,12 @@ from collections.abc import Callable
 from copy import deepcopy
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Union, Sequence
+from typing import TYPE_CHECKING, Literal, Sequence, Union
 
 import numpy as np
 import pandas as pd
 import torch
 import wandb
-
 from finetuning.constant_utils import (
     Metrics,
     SupportedDevice,
@@ -23,7 +22,6 @@ from finetuning.data_classes import FineTuneSetup, FineTuneStepResults
 from finetuning.metric_utils.ag_metrics import get_metric
 from finetuning.training_utils.ag_early_stopping import AdaptiveES
 from finetuning.training_utils.data_utils import get_data_loader
-from finetuning.training_utils.model_utils import save_model
 from finetuning.training_utils.training_loss import compute_loss, get_loss
 from finetuning.training_utils.validation_utils import validate_tabpfn
 from schedulefree import AdamWScheduleFree
@@ -207,7 +205,7 @@ def fine_tune_tabpfn(
             n_samples=n_samples,
             is_classification=is_classification,
         )
-    val_report = f"""
+    f"""
     === Basic / Validation State ===
         \tTime Limit: {time_limit}
         \tEarly Stopping Metric: {validation_metric}
@@ -251,7 +249,7 @@ def fine_tune_tabpfn(
     if use_sklearn_interface_for_validation:
         if model_for_validation is not None:
             if hasattr(model_for_validation, "executor_"):
-                raise ValueError(f"model_for_validation must NOT be fitted")
+                raise ValueError("model_for_validation must NOT be fitted")
         else:
             model_for_validation = (
                 TabPFNRegressor()
@@ -723,7 +721,7 @@ def _tore_down_tuning(
 
     # -- Final Report
     best_step = np.argmin([x.validation_loss for x in step_results_over_time])
-    fine_tuning_report = f"""=== Fine-Tuning Report for TabPFN ===
+    f"""=== Fine-Tuning Report for TabPFN ===
         \tTotal Time Spent: {time.time() - st_time}
         \tInitial Validation Loss: \t {step_results_over_time[0].validation_loss}
         \tBest Validation Loss: \t {step_results_over_time[-1].best_validation_loss}
