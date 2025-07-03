@@ -73,7 +73,7 @@ def fine_tune_tabpfn(
     use_wandb: bool = False,
     use_sklearn_interface_for_validation: bool = False,
     model_for_validation: TabPFNClassifier | TabPFNRegressor = None,
-) -> None:
+):
     """Fine-tune a TabPFN model.
 
     Run a simple fine-tuning loop for a TabPFN model on one dataset.
@@ -439,7 +439,7 @@ def fine_tune_tabpfn(
         if early_stop_no_imp or early_stop_no_time:
             break
 
-    _tore_down_tuning_with_return_metrics(
+    return _tore_down_tuning_with_return_metrics(
         task_type=task_type,
         step_results_over_time=step_results_over_time,
         fts=fts,
