@@ -1,6 +1,7 @@
 from getpass import getpass
 from typing import Annotated
 
+from rizemind.cli.account.loader import account_config_loader
 from rizemind.mnemonic.store import MnemonicStore
 import typer
 from eth_account import Account
@@ -81,20 +82,14 @@ def load_account(
     Decrypt the stored mnemonic for *ACCOUNT_NAME* and show the first 10
     derived Ethereum addresses.
     """
-    passphrase = getpass("Passphrase: ")
+    account_config = account_config_loader(account_name=account_name)
 
-    try:
-        mnemonic = mnemonic_store.load(account_name, passphrase)
-    except (FileNotFoundError, ValueError) as err:
-        typer.echo(f"❌  {err}", err=True)
-        raise typer.Exit(code=1)
-
-    typer.echo(f'\n🔑  Mnemonic:\n"{mnemonic}"\n')
+    typer.echo(f'\n🔑  Mnemonic:\n"{account_config.mnemonic}"\n')
 
     # Derive and display the first 10 HD-wallet accounts
     typer.echo("📜  First 10 derived addresses:")
     for i in range(10):
-        acct = Account.from_mnemonic(mnemonic, account_path=f"m/44'/60'/0'/0/{i}")
+        acct = account_config.get_account(i)
         typer.echo(f"  {i:>2}: {acct.address}")
 
 

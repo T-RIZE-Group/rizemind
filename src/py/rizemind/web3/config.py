@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel, Field, HttpUrl
 from rizemind.web3.chains import RIZENET_TESTNET_CHAINID
 from web3 import HTTPProvider, Web3
@@ -9,7 +7,7 @@ poaChains = [RIZENET_TESTNET_CHAINID]
 
 
 class Web3Config(BaseModel):
-    url: Optional[HttpUrl] = Field(..., description="The HTTP provider URL")
+    url: HttpUrl | None = Field(..., description="The HTTP provider URL")
 
     def get_web3(self) -> Web3:
         w3 = Web3(self.web3_provider())

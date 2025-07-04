@@ -92,6 +92,9 @@ class ModelMetaV1(FlAccessControl, ModelMeta):
         assert tx_receipt["status"] != 0, "nextRound returned an error"
         return tx_hash
 
+    def get_address(self):
+        return self.model.address
+
     @staticmethod
     def from_address(
         address: str, w3: Web3, account: Optional[BaseAccount] = None

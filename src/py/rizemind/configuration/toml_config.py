@@ -45,7 +45,7 @@ class TomlConfig:
     :type path: str
     """
 
-    def __init__(self, path: str):
+    def __init__(self, path: str | Path):
         """
         Initialize the TomlConfig instance.
 
