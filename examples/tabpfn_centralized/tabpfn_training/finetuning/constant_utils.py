@@ -35,7 +35,7 @@ class SupportedDevice(str, Enum):
 
 
 class Metrics(BaseModel):
-    time_spent: int
+    time_spent: float
     initial_validation_loss: float
     best_validation_loss: float
     total_steps: int
