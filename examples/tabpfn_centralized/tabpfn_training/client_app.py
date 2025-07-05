@@ -9,11 +9,9 @@ from flwr.common import (
     NDArrays,
     Scalar,
 )
+from sklearn.model_selection import train_test_split
 from tabpfn.model.loading import load_model_criterion_config
 from tabpfn.regressor import TabPFNRegressor
-from examples.tabpfn_centralized.tabpfn_training.finetuning.constant_utils import (
-    Metrics,
-)
 from tabpfn_centralized.tabpfn_training.finetuning.constant_utils import (
     SupportedDevice,
     SupportedValidationMetric,
@@ -29,7 +27,10 @@ from tabpfn_centralized.tabpfn_training.task import (
     load_weights_into_model,
     set_weights,
 )
-from sklearn.model_selection import train_test_split
+
+from examples.tabpfn_centralized.tabpfn_training.finetuning.constant_utils import (
+    Metrics,
+)
 
 
 class FlowerClient(NumPyClient):
