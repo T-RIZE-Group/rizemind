@@ -72,7 +72,7 @@ def fine_tune_tabpfn(
     use_wandb: bool = False,
     use_sklearn_interface_for_validation: bool = False,
     model_for_validation: TabPFNClassifier | TabPFNRegressor = None,
-):
+) -> Metrics:
     """Fine-tune a TabPFN model.
 
     Run a simple fine-tuning loop for a TabPFN model on one dataset.
