@@ -3,7 +3,7 @@ from flwr.server import ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
 from tabpfn.regressor import TabPFNRegressor
 from tabpfn_centralized.tabpfn_training.strategy import SimpleTabPFNRegressorStrategy
-from tabpfn_centralized.tabpfn_training.task import get_weights
+from tabpfn_centralized.tabpfn_training.task import get_weights, load_data
 
 
 def weighted_average(metrics: list[tuple[int, Metrics]]) -> Metrics:
@@ -16,7 +16,13 @@ def server_fn(context: Context):
     num_rounds = int(context.run_config["num-server-rounds"])
 
     model_path = str(context.run_config["initial-model-path"])
-    ndarrays = get_weights(TabPFNRegressor(model_path=model_path).model_)
+    train_data, _ = load_data(partition_id=0, num_partitions=1)
+    Xy_sample = train_data.sample(10)
+    ndarrays = get_weights(
+        TabPFNRegressor(model_path=model_path)
+        .fit(X=Xy_sample.drop(["target"], axis=1), y=Xy_sample["target"])
+        .model_
+    )
     parameters = ndarrays_to_parameters(ndarrays)
 
     config = ServerConfig(num_rounds)

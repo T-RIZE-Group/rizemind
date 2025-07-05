@@ -9,8 +9,11 @@ from flwr.common import (
     NDArrays,
     Scalar,
 )
-from tabpfn.model.loading import load_model
+from tabpfn.model.loading import load_model_criterion_config
 from tabpfn.regressor import TabPFNRegressor
+from examples.tabpfn_centralized.tabpfn_training.finetuning.constant_utils import (
+    Metrics,
+)
 from tabpfn_centralized.tabpfn_training.finetuning.constant_utils import (
     SupportedDevice,
     SupportedValidationMetric,
@@ -45,29 +48,36 @@ class FlowerClient(NumPyClient):
         self.batch_size = batch_size
 
     def fit(self, parameters: NDArrays, config: dict[str, Scalar]):
-        model, _, checkpoint_config = load_model(
-            path=Path(self.base_model_path), model_seed=42
+        model, criterion, checkpoint_config = load_model_criterion_config(
+            model_path=self.base_model_path,
+            check_bar_distribution_criterion=True,
+            cache_trainset_representation=False,
+            which="regressor",
+            version="v2",
+            download=True,
+            model_seed=42,
         )
         model = load_weights_into_model(
             model=model, parameters=parameters, config=config
         )
+        model.criterion = criterion
         torch.save(
             dict(
-                model.state_dict(),
-                config=checkpoint_config,
+                state_dict=model.state_dict(),
+                config=checkpoint_config.__dict__,
             ),
             str(self.model_path),
         )
-        metrics = fine_tune_tabpfn(
+        metrics: Metrics = fine_tune_tabpfn(
             path_to_base_model=Path(self.model_path),
             save_path_to_fine_tuned_model=Path(self.model_path),
             time_limit=60,
             random_seed=42,
             finetuning_config={"learning_rate": 0.00001, "batch_size": self.batch_size},
             validation_metric=SupportedValidationMetric.R2,
-            X_train=self.train_dataset.drop("target", inplace=False),
+            X_train=self.train_dataset.drop("target", axis=1, inplace=False),
             y_train=self.train_dataset["target"],
-            X_val=self.test_dataset.drop("target", inplace=False),
+            X_val=self.test_dataset.drop("target", axis=1, inplace=False),
             y_val=self.test_dataset["target"],
             categorical_features_index=None,
             device=SupportedDevice.GPU,
@@ -76,7 +86,15 @@ class FlowerClient(NumPyClient):
             logger_level=21,
             use_wandb=False,
         )
-        model, _, _ = load_model(path=Path(self.base_model_path), model_seed=42)
+        model, _, _ = load_model_criterion_config(
+            model_path=self.base_model_path,
+            check_bar_distribution_criterion=True,
+            cache_trainset_representation=False,
+            which="regressor",
+            version="v2",
+            download=True,
+            model_seed=42,
+        )
         return (
             get_weights(model),
             self.train_dataset.shape[0],

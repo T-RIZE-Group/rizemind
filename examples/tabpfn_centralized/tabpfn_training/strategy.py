@@ -39,17 +39,18 @@ class SimpleTabPFNRegressorStrategy(Strategy):
         self, server_round, results, failures
     ) -> tuple[Parameters | None, dict[str, Scalar]]:
         parameters, res = self.strategy.aggregate_fit(server_round, results, failures)
-        model, _, checkpoint_config = load_model(
+        model, criterion, checkpoint_config = load_model(
             path=Path(self.base_model_path), model_seed=42
         )
+        model.criterion = criterion
         np_parameters = parameters_to_ndarrays(cast(Parameters, parameters))
         model = load_weights_into_model(
             model=model, parameters=np_parameters, config={}
         )
         torch.save(
             dict(
-                model.state_dict(),
-                config=checkpoint_config,
+                state_dict=model.state_dict(),
+                config=checkpoint_config.__dict__,
             ),
             str(self.base_model_path),
         )
