@@ -7,7 +7,7 @@ from flwr.common import NDArrays, Scalar
 from flwr_datasets import FederatedDataset
 from flwr_datasets.partitioner import IidPartitioner
 from tabpfn import TabPFNRegressor
-from tabpfn.base import PerFeatureTransformer
+from tabpfn.model.transformer import PerFeatureTransformer
 
 
 def get_weights(net: nn.Module) -> NDArrays:
