@@ -126,7 +126,8 @@ def client_fn(context: Context):
     )
 
     base_model_path = str(context.node_config["base-model-path"])
-    unique_model_path = f"{base_model_path}-{partition_id}.ckpt"
+    base_model_file_name = base_model_path.removesuffix(".ckpt")
+    unique_model_path = f"{base_model_file_name}-{partition_id}.ckpt"
     batch_size = int(context.run_config["batch-size"])
 
     return FlowerClient(
