@@ -29,6 +29,7 @@ from tabpfn_centralized.tabpfn_training.task import (
     load_weights_into_model,
     set_weights,
 )
+from sklearn.model_selection import train_test_split
 
 
 class FlowerClient(NumPyClient):
@@ -103,12 +104,15 @@ class FlowerClient(NumPyClient):
 
     def evaluate(self, parameters: NDArrays, config: dict[str, Scalar]):
         model = TabPFNRegressor(model_path=self.model_path)
+        Xy_train, Xy_test = train_test_split(self.test_dataset, train_size=0.1)
+        # Model must be initialized before calling predict
+        model.fit(Xy_train.drop("target", axis=1, inplace=False), Xy_train["target"])
         model = set_weights(model=model, parameters=parameters)
-        y_pred = model.predict(self.test_dataset.drop("target", inplace=False))
+        y_pred = model.predict(Xy_test.drop("target", axis=1, inplace=False))
         validation_metric = get_metric(
             metric=SupportedValidationMetric.R2, problem_type=TaskType.REGRESSION
         )
-        r2 = validation_metric(self.test_dataset["target"].to_numpy(), y_pred)
+        r2 = validation_metric(Xy_test["target"], y_pred)
         loss = validation_metric.convert_score_to_error(r2)
         return loss, self.test_dataset.shape[0], {"r2": cast(Scalar, r2)}
 
