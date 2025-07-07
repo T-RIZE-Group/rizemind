@@ -70,7 +70,11 @@ Examples:
 - **Run Ruff formatter:**
 
 ```bash
- uv run -- ruff check --select I --fix
+ uv run -- ruff check .
+```
+
+```bash
+ uv run -- ruff check --fix .
 ```
 
 - **Run Flower:**
