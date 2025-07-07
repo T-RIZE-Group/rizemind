@@ -1,7 +1,6 @@
 import pytest
 from eth_account import Account
 from eth_account.datastructures import SignedMessage
-
 from rizemind.authentication.signature import (
     Parameters,
     hash_parameters,

@@ -88,13 +88,16 @@ exclude = [
 line-length = 88
 indent-width = 4
 target-version = "py312"
+preview = false
 
 [tool.ruff.lint]
-select = ["E4", "E7", "E9", "F"]
+select = ["E4", "E7", "E9", "F", "I", "RUF001", "RUF002", "RUF003"]
 ignore = []
+allowed-confusables = []
 fixable = ["ALL"]
 unfixable = []
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+explicit-preview-rules = true
 
 [tool.ruff.format]
 quote-style = "double"

@@ -1,15 +1,14 @@
+import base64
 import json
 import os
 from pathlib import Path
-import base64
-
-from eth_account.hdaccount import generate_mnemonic
-from rizemind.constants import RIZEMIND_HOME
+from unicodedata import normalize
 
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
-from unicodedata import normalize
+from eth_account.hdaccount import generate_mnemonic
+from rizemind.constants import RIZEMIND_HOME
 
 
 class MnemonicStore:

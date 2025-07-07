@@ -6,6 +6,8 @@ from rizemind.mnemonic.store import MnemonicStore
 import typer
 from eth_account import Account
 
+from rizemind.mnemonic.store import MnemonicStore
+
 Account.enable_unaudited_hdwallet_features()
 
 account = typer.Typer(help="Account management commands")
@@ -35,13 +37,13 @@ def generate(
     """Generate a mnemonic, encrypt it, and save a keystore file."""
 
     if words not in (12, 24):
-        typer.echo("⚠️  --words must be 12 or 24.", err=True)
+        typer.echo("--words must be 12 or 24.", err=True)
         raise typer.Exit(code=1)
 
     pwd1 = getpass("Passphrase: ")
     pwd2 = getpass("Confirm passphrase: ")
     if pwd1 != pwd2:
-        typer.echo("🔒 Passphrases do not match.", err=True)
+        typer.echo("Passphrases do not match.", err=True)
         raise typer.Exit(1)
 
     account = mnemonic_store.generate(words=words)
@@ -51,7 +53,7 @@ def generate(
 
     file_path = mnemonic_store.save(account_name, pwd1, account)
 
-    typer.echo(f"✅  Saved encrypted mnemonic: {file_path}")
+    typer.echo(f"Saved encrypted mnemonic: {file_path}")
 
 
 @account.command("list")
@@ -60,10 +62,10 @@ def list_accounts() -> None:
     names = mnemonic_store.list_accounts()
 
     if not names:
-        typer.echo("ℹ️  No accounts found.")
+        typer.echo("No accounts found.")
         return
 
-    typer.echo("📚  Stored accounts:")
+    typer.echo("Stored accounts:")
     for name in names:
         typer.echo(f"- {name}")
 
@@ -84,10 +86,10 @@ def load_account(
     """
     account_config = account_config_loader(account_name=account_name)
 
-    typer.echo(f'\n🔑  Mnemonic:\n"{account_config.mnemonic}"\n')
+    typer.echo(f'Mnemonic:\n"{account_config.mnemonic}"\n')
 
     # Derive and display the first 10 HD-wallet accounts
-    typer.echo("📜  First 10 derived addresses:")
+    typer.echo("First 10 derived addresses:")
     for i in range(10):
         acct = account_config.get_account(i)
         typer.echo(f"  {i:>2}: {acct.address}")
