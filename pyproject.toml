@@ -91,7 +91,7 @@ target-version = "py312"
 preview = false
 
 [tool.ruff.lint]
-select = ["E4", "E7", "E9", "F", "RUF001", "RUF002", "RUF003"]
+select = ["E4", "E7", "E9", "F", "I", "RUF001", "RUF002", "RUF003"]
 ignore = []
 allowed-confusables = []
 fixable = ["ALL"]

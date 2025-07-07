@@ -12,7 +12,7 @@ INVALID_MNEMONIC = "foo bar baz qux"
 
 
 def _derive_address(mnemonic: str, index: int) -> str:
-    """Utility that derives an address directly via eth‑account.
+    """Utility that derives an address directly via eth-account.
 
     This replicates the logic in `AccountConfig.get_account` so that we can
     assert the method is deterministic and correct without relying on the
@@ -24,9 +24,9 @@ def _derive_address(mnemonic: str, index: int) -> str:
 
 
 class TestAccountConfig:
-    """Unit‑tests for :class:`AccountConfig`."""
+    """Unit-tests for :class:`AccountConfig`."""
 
-    # ‑‑‑ Validators ---------------------------------------------------------
+    # --- Validators ---------------------------------------------------------
     def test_accepts_valid_mnemonic(self):
         cfg = AccountConfig(mnemonic=VALID_MNEMONIC)
         assert cfg.mnemonic == VALID_MNEMONIC
@@ -35,7 +35,7 @@ class TestAccountConfig:
         with pytest.raises(ValidationError):
             AccountConfig(mnemonic=INVALID_MNEMONIC)
 
-    # ‑‑‑ get_account() ------------------------------------------------------
+    # --- get_account() ------------------------------------------------------
     @pytest.mark.parametrize("index", [0, 1, 2, 10])
     def test_get_account_returns_correct_account(self, index):
         cfg = AccountConfig(mnemonic=VALID_MNEMONIC)
