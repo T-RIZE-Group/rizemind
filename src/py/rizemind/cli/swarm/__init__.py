@@ -1,7 +1,8 @@
-from getpass import getpass
 from typing import Annotated, List
 
+import typer
 from pydantic import HttpUrl
+
 from rizemind.cli.account.loader import account_config_loader
 from rizemind.cli.account.options import AccountNameOption, MnemonicOption
 from rizemind.contracts.models.model_factory_v1 import (
@@ -9,8 +10,6 @@ from rizemind.contracts.models.model_factory_v1 import (
     ModelFactoryV1Config,
 )
 from rizemind.web3.config import Web3Config
-import typer
-
 
 swarm = typer.Typer(help="Federation management commands")
 

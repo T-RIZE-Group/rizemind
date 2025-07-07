@@ -1,3 +1,4 @@
+from eth_account.signers.base import BaseAccount
 from pydantic import BaseModel, Field, model_validator
 from rizemind.configuration.validators.eth_address import EthereumAddress
 from rizemind.contracts.models.model_factory_v1 import (
@@ -5,8 +6,6 @@ from rizemind.contracts.models.model_factory_v1 import (
     ModelFactoryV1Config,
 )
 from rizemind.contracts.models.model_meta_v1 import ModelMetaV1
-
-from eth_account.signers.base import BaseAccount
 from web3 import Web3
 
 

@@ -2,7 +2,6 @@ from typing import Annotated, Optional
 
 import typer
 
-
 AccountNameOption = Annotated[
     Optional[str],
     typer.Option(

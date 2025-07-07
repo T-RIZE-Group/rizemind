@@ -1,13 +1,14 @@
-from eth_typing import ChecksumAddress
-from web3 import Web3
-from pydantic.functional_validators import AfterValidator
 from typing import Annotated
+
+from eth_typing import ChecksumAddress
+from pydantic.functional_validators import AfterValidator
+from web3 import Web3
 
 
 def _validate_eth_address(addr: str) -> ChecksumAddress:
     """
     Ensure `addr` is a valid Ethereum address and
-    always return it in EIP‑55 checksum form.
+    always return it in EIP-55 checksum form.
     """
     if not isinstance(addr, str):
         raise TypeError("Address must be a string")
