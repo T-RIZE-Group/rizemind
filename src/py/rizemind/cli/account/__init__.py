@@ -56,7 +56,7 @@ def generate(
 
 @account.command("list")
 def list_accounts() -> None:
-    """Show all stored account names (taken from ~/.rzmnd/keystore)."""
+    """Show all stored account names."""
     names = mnemonic_store.list_accounts()
 
     if not names:
@@ -79,7 +79,7 @@ def load_account(
     ],
 ) -> None:
     """
-    Decrypt the stored mnemonic for *ACCOUNT_NAME* and show the first 10
+    Display the stored mnemonic for *ACCOUNT_NAME* and show the first 10
     derived Ethereum addresses.
     """
     account_config = account_config_loader(account_name=account_name)

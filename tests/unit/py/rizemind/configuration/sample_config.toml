@@ -1,0 +1,4 @@
+[tool.web3.account]
+mnemonic = "test test test test test test test test test test test junk"
+
+env_var = "$TEST"

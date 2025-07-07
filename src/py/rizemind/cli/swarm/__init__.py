@@ -12,7 +12,7 @@ from rizemind.web3.config import Web3Config
 import typer
 
 
-federation = typer.Typer(help="Federation management commands")
+swarm = typer.Typer(help="Federation management commands")
 
 
 def csv_to_list(
@@ -26,7 +26,7 @@ def csv_to_list(
     return [addr.strip() for addr in value[0].split(",") if addr.strip()]
 
 
-@federation.command("new")
+@swarm.command("new")
 def deploy_new(
     ticker: str,
     name: str,
