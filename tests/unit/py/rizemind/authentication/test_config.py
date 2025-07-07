@@ -1,14 +1,11 @@
 import pytest
-
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
 from pydantic import ValidationError
-
 from rizemind.authentication.config import (
     AccountConfig,
     MnemonicStoreConfig,
 )
-
 
 VALID_MNEMONIC = "test test test test test test test test test test test junk"
 INVALID_MNEMONIC = "foo bar baz qux"

@@ -21,7 +21,6 @@ import os
 from pathlib import Path
 
 import pytest
-
 from rizemind.mnemonic.store import MnemonicStore
 
 
