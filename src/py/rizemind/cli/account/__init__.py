@@ -1,9 +1,10 @@
 from getpass import getpass
 from typing import Annotated
 
-from rizemind.mnemonic.store import MnemonicStore
 import typer
 from eth_account import Account
+
+from rizemind.mnemonic.store import MnemonicStore
 
 Account.enable_unaudited_hdwallet_features()
 

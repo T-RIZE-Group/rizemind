@@ -1,4 +1,5 @@
 import typer
+
 from .account import account
 
 rzmnd = typer.Typer(context_settings={"help_option_names": ["-h", "--help"]})
