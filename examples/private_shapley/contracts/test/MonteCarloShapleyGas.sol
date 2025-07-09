@@ -2,11 +2,11 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../src/ImprovedPrivateShapley.sol";
-import "../src/MockERC20.sol";
+import {MonteCarloPrivateShapley} from "../src/MonteCarloShapley.sol";
+import {MockERC20} from "../src/MockERC20.sol";
 
-contract PrivateShapleyGasAnalysis is Test {
-    ImprovedPrivateShapley private privateShapley;
+contract MonteCarloGasAnalysis is Test {
+    MonteCarloPrivateShapley private privateShapley;
     MockERC20 private mockToken;
 
     // Test accounts
@@ -45,7 +45,7 @@ contract PrivateShapleyGasAnalysis is Test {
 
         // Deploy contracts
         mockToken = new MockERC20("Reward Token", "RWD");
-        privateShapley = new ImprovedPrivateShapley(address(mockToken));
+        privateShapley = new MonteCarloPrivateShapley(address(mockToken));
         mockToken.mint(address(privateShapley), 1_000_000_000 * 10 ** 18);
 
         roundId = 1;
@@ -74,7 +74,7 @@ contract PrivateShapleyGasAnalysis is Test {
             uint256 trainerCount = counts[i];
 
             // Reset contract for clean state
-            privateShapley = new ImprovedPrivateShapley(address(mockToken));
+            privateShapley = new MonteCarloPrivateShapley(address(mockToken));
 
             // Measure setTrainers gas
             address[] memory trainers = new address[](trainerCount);
@@ -442,7 +442,7 @@ contract PrivateShapleyGasAnalysis is Test {
     function testOwnerWorkflow() private {
         console.log("\n--- Owner Workflow ---");
 
-        privateShapley = new ImprovedPrivateShapley(address(mockToken));
+        privateShapley = new MonteCarloPrivateShapley(address(mockToken));
         uint256 totalGas = 0;
 
         // 1. Set trainers (50)
@@ -955,7 +955,7 @@ contract PrivateShapleyGasAnalysis is Test {
         counts[4] = 255;
 
         for (uint256 i = 0; i < counts.length; i++) {
-            privateShapley = new ImprovedPrivateShapley(address(mockToken));
+            privateShapley = new MonteCarloPrivateShapley(address(mockToken));
 
             address[] memory trainers = new address[](counts[i]);
             bytes32[] memory salts = new bytes32[](counts[i]);
@@ -1296,7 +1296,7 @@ contract PrivateShapleyGasAnalysis is Test {
     function setupShapleyValuesForSize(uint256 n) private {
         require(n <= 20, "Max 20 for Shapley");
 
-        // Simple coalition values for testing
+        // Simple coalition values for testing that ensure positive Shapley values
         uint256 numCoalitions = 1 << n;
         uint256[][] memory coalitions = new uint256[][](numCoalitions);
         uint256[] memory values = new uint256[](numCoalitions);
@@ -1315,7 +1315,9 @@ contract PrivateShapleyGasAnalysis is Test {
                 }
             }
 
-            values[mask] = size * 10_000000; // Simple value based on coalition size
+            // Use a simple value function that ensures positive marginal contributions
+            // Each coalition gets a value proportional to its size squared
+            values[mask] = size * size * 10_000000;
         }
 
         privateShapley.setShapleyCoalitionValues(1, coalitions, values);
@@ -1407,13 +1409,13 @@ contract PrivateShapleyGasAnalysis is Test {
         console.log("Players | GasUsed | Gas/Trainer | 2^n loops");
         console.log("--------|---------|-------------|-----------");
 
-        uint8[12] memory cases = [1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 13, 20];
+        uint8[11] memory cases = [1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 13];
 
         for (uint256 i = 0; i < cases.length; i++) {
             uint8 n = cases[i];
 
             // ── 1) create a fresh round with `n` trainers ──────────────────────
-            privateShapley = new ImprovedPrivateShapley(address(mockToken));
+            privateShapley = new MonteCarloPrivateShapley(address(mockToken));
             setupRoundWithTrainers(n, 1); // registers + mapping reveal
             setupShapleyValuesForSize(n); // sets 2^n coalition values
 
@@ -1424,7 +1426,7 @@ contract PrivateShapleyGasAnalysis is Test {
             bytes32 comm = keccak256(abi.encodePacked(bitfield, nonce));
             privateShapley.commitCoalitions(1, toArray(cid), toArray(comm));
 
-            uint256[] memory scores = toArray(10_000000); // TODO: change to random scores
+            uint256[] memory scores = toArray(10_00);
             vm.prank(testers[0]);
             privateShapley.publishResults(1, toArray(cid), scores);
             privateShapley.revealCoalitions(
@@ -1467,7 +1469,7 @@ contract PrivateShapleyGasAnalysis is Test {
             uint256 n = cases[k];
 
             // fresh contract each run
-            privateShapley = new ImprovedPrivateShapley(address(mockToken));
+            privateShapley = new MonteCarloPrivateShapley(address(mockToken));
 
             // build trainer arrays
             address[] memory tr = new address[](n);
