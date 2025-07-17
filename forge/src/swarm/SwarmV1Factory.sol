@@ -6,7 +6,7 @@ import {AccessControl} from "@openzeppelin-contracts-5.2.0/access/AccessControl.
 
 import {SwarmV1} from "./SwarmV1.sol";
 
-contract ModelFactory is AccessControl {
+contract SwarmV1Factory is AccessControl {
     address private _logicContract;
 
     event ContractCreated(

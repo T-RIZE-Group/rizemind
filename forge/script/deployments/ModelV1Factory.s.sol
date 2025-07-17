@@ -3,17 +3,17 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Script.sol";
 import {Deployments} from "./Deployments.sol";
-import {ModelMetaV1} from "@rizemind-contracts/models/ModelMetaV1.sol";
-import {ModelFactory} from "@rizemind-contracts/models/ModelFactory.sol";
+import {SwarmV1} from "@rizemind-contracts/swarm/SwarmV1.sol";
+import {SwarmV1Factory} from "@rizemind-contracts/swarm/SwarmV1Factory.sol";
 
 contract DeployModelFactoryScript is Script, Deployments {
     function run() external {
         vm.startBroadcast();
 
         // Deploy the implementation contract.
-        ModelMetaV1 modelImpl = new ModelMetaV1();
+        SwarmV1 modelImpl = new SwarmV1();
         // Deploy the factory using the implementation address.
-        ModelFactory modelFactory = new ModelFactory(address(modelImpl));
+        SwarmV1Factory modelFactory = new SwarmV1Factory(address(modelImpl));
 
         vm.stopBroadcast();
 
