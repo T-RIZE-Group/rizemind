@@ -1,6 +1,10 @@
+from pathlib import Path
 from typing import Annotated, List
 
+from rizemind.swarm.certificate.certificate import Certificate, CompressedCertificate
 import typer
+from cryptography import x509
+from cryptography.hazmat.primitives import serialization
 from pydantic import HttpUrl
 
 from rizemind.cli.account.loader import account_config_loader
@@ -56,3 +60,29 @@ def deploy_new(
     )
     address = deployment.get_address()
     typer.echo(f"New federation deployed at {address}")
+
+
+@swarm.command("set-cert")
+def set_cert(
+    cert_path: Annotated[
+        Path,
+        typer.Argument(
+            exists=True,
+            readable=True,
+            resolve_path=True,
+            help="PEM or DER certificate file",
+        ),
+    ],
+) -> None:
+    """
+    Read *CERT_PATH* and write the (optionally compressed) certificate bytes
+    to **STDOUT** in binary mode so that shell redirection works cleanly.
+    """
+    cert: Certificate = Certificate.from_path(cert_path)
+
+    cc: CompressedCertificate = cert.get_compressed_bytes()
+    payload: bytes = cc.data
+    algo_name: str = cc.algorithm.value
+
+    # progress message to stderr so redirection doesn't capture it
+    typer.echo(f"[{algo_name}] {len(payload)} bytes", err=True)

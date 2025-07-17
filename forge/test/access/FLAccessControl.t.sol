@@ -13,7 +13,7 @@ contract InitializableFLAccessControlTest is Test {
 
     function setUp() public {
         // Define our test accounts.
-        aggregator = vm.addr(1); // accounts[0] in ApeWorx
+        aggregator = vm.addr(1);
         // Define trainers as accounts[1], accounts[2], accounts[3]
         trainers.push(vm.addr(2));
         trainers.push(vm.addr(3));

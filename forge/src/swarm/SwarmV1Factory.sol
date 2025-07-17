@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import {ERC1967Proxy} from "@openzeppelin-contracts-5.2.0/proxy/ERC1967/ERC1967Proxy.sol";
 import {AccessControl} from "@openzeppelin-contracts-5.2.0/access/AccessControl.sol";
 
-import {ModelMetaV1} from "./ModelMetaV1.sol";
+import {SwarmV1} from "./SwarmV1.sol";
 
 contract ModelFactory is AccessControl {
     address private _logicContract;
@@ -21,14 +21,14 @@ contract ModelFactory is AccessControl {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    function createModel(
+    function createSwarm(
         string memory name,
         string memory symbol,
         address aggregator,
         address[] memory initialTrainers
     ) external returns (address) {
         bytes memory data = abi.encodeWithSelector(
-            ModelMetaV1.initialize.selector,
+            SwarmV1.initialize.selector,
             name,
             symbol,
             aggregator,

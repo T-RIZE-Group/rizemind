@@ -6,6 +6,7 @@ import {AccessControlUpgradeable} from "@openzeppelin-contracts-upgradeable-5.2.
 contract FLAccessControl is AccessControlUpgradeable {
     bytes32 constant AGGREGATOR_ROLE = keccak256("AGGREGATOR");
     bytes32 constant TRAINER_ROLE = keccak256("TRAINER");
+    bytes32 constant EVALUATOR_ROLE = keccak256("EVALUATOR_ROLE");
 
     modifier onlyTrainer(address account) {
         _checkTrainer(account);
@@ -14,6 +15,11 @@ contract FLAccessControl is AccessControlUpgradeable {
 
     modifier onlyAggregator(address account) {
         _checkAggregator(account);
+        _;
+    }
+
+    modifier onlyEvaluator(address tester) {
+        _checkEvaluator(tester);
         _;
     }
 
@@ -27,6 +33,10 @@ contract FLAccessControl is AccessControlUpgradeable {
         }
     }
 
+    function addTrainer(address trainer) public onlyAggregator(msg.sender) {
+        _grantRole(TRAINER_ROLE, trainer);
+    }
+
     function isTrainer(address trainer) public view returns (bool) {
         return hasRole(TRAINER_ROLE, trainer);
     }
@@ -35,12 +45,43 @@ contract FLAccessControl is AccessControlUpgradeable {
         _checkRole(TRAINER_ROLE, trainer);
     }
 
+    function addAggregator(
+        address aggregator
+    ) public onlyAggregator(msg.sender) {
+        _grantRole(AGGREGATOR_ROLE, aggregator);
+    }
+
     function isAggregator(address aggregator) public view returns (bool) {
         return hasRole(AGGREGATOR_ROLE, aggregator);
     }
 
     function _checkAggregator(address aggregator) internal view virtual {
         _checkRole(AGGREGATOR_ROLE, aggregator);
+    }
+
+    function addEvaluator(address evaluator) public onlyAggregator(msg.sender) {
+        _grantRole(EVALUATOR_ROLE, evaluator);
+    }
+
+    function isEvaluator(address evaluator) public view returns (bool) {
+        return hasRole(EVALUATOR_ROLE, evaluator);
+    }
+
+    function _checkEvaluator(address evaluator) internal view virtual {
+        _checkRole(EVALUATOR_ROLE, evaluator);
+    }
+
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override returns (bool) {
+        return
+            AccessControlUpgradeable.supportsInterface(interfaceId) ||
+            interfaceId == this.addTrainer.selector ||
+            interfaceId == this.isTrainer.selector ||
+            interfaceId == this.addAggregator.selector ||
+            interfaceId == this.isAggregator.selector ||
+            interfaceId == this.addEvaluator.selector ||
+            interfaceId == this.isEvaluator.selector;
     }
 }
 

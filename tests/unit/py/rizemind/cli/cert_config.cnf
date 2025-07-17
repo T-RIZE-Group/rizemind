@@ -1,0 +1,20 @@
+# ---- openssl-certbot.cnf ----
+[ req ]
+default_md      = sha256
+prompt          = no
+distinguished_name = dn
+x509_extensions = cert_ext
+
+[ dn ]
+CN = example.com                    # first domain
+
+[ cert_ext ]
+basicConstraints = CA:FALSE
+keyUsage         = digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName   = @alt_names
+
+[ alt_names ]
+DNS.1 = example.com
+DNS.2 = www.example.com
+# add DNS.3 = ... as needed
