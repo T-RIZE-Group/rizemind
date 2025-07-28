@@ -3,13 +3,17 @@ from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
 
 from rizemind.authentication.signature import recover_model_signer
-from rizemind.contracts.models.model_meta_v1 import ModelMetaV1
+from rizemind.contracts.erc.erc5267 import SupportsERC5267
+from rizemind.swarm.specs.supports_can_train import SupportsCanTrain
 
 
 class CannotTrainException(BaseException):
     def __init__(self, address: str) -> None:
         message = f"{address} cannot train"
         super().__init__(message)
+
+
+class EthAccountStrategyContract(SupportsERC5267, SupportsCanTrain): ...
 
 
 class EthAccountStrategy(Strategy):
@@ -31,23 +35,24 @@ class EthAccountStrategy(Strategy):
     .. code-block:: python
 
         strategy = SomeBaseStrategy()
-        model_registry = ModelRegistryV1.from_address(address="0xMY_MODEL_ADDRESS")
+        model_registry = SwarmV1.from_address(address="0xMY_MODEL_ADDRESS")
         eth_strategy = EthAccountStrategy(strategy, model_registry)
     """
 
     strat: Strategy
-    model: ModelMetaV1
+    model: EthAccountStrategyContract
     address: str
 
     def __init__(
         self,
         strat: Strategy,
-        model: ModelMetaV1,
+        model: EthAccountStrategyContract,
     ):
         super().__init__()
         self.strat = strat
         self.model = model
-        self.address = self.model.fl_contract.address
+        domain = self.model.get_eip712_domain()
+        self.address = domain.verifyingContract
 
     def initialize_parameters(self, client_manager):
         return self.strat.initialize_parameters(client_manager)
@@ -56,8 +61,7 @@ class EthAccountStrategy(Strategy):
         client_instructions = self.strat.configure_fit(
             server_round, parameters, client_manager
         )
-        # We need to add contract address and server round to FitIns so that clients have
-        # access to it
+        # contract_address is used in signing client
         for _, fit_ins in client_instructions:
             fit_ins.config["contract_address"] = self.address
             fit_ins.config["current_round"] = server_round
@@ -107,6 +111,6 @@ def ensure_bytes(value) -> bytes:
         raise ValueError("Value must not be None")
     if isinstance(value, bytes):
         return value
-    if isinstance(value, (bool, int, float, str)):
+    if isinstance(value, bool | int | float | str):
         return str(value).encode("utf-8")
     raise ValueError(f"Cannot convert value of type {type(value)} to bytes")

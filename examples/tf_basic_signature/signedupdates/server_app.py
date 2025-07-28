@@ -9,9 +9,9 @@ from rizemind.configuration.toml_config import TomlConfig
 from rizemind.contracts.compensation.simple_compensation_strategy import (
     SimpleCompensationStrategy,
 )
-from rizemind.contracts.models.model_factory_v1 import (
-    ModelFactoryV1,
-    ModelFactoryV1Config,
+from rizemind.contracts.swarm.swarm_v1.swarm_v1_factory import (
+    SwarmV1Factory,
+    SwarmV1FactoryConfig,
 )
 from rizemind.web3.config import Web3Config
 
@@ -56,8 +56,8 @@ def server_fn(context: Context):
         trainer = auth_config.get_account(i)
         members.append(trainer.address)
 
-    model_v1_config = ModelFactoryV1Config(**config.get("tool.web3.model_v1"))
-    contract = ModelFactoryV1(model_v1_config).deploy(account, members, w3)
+    model_v1_config = SwarmV1FactoryConfig(**config.get("tool.web3.model_v1"))
+    contract = SwarmV1Factory(model_v1_config).deploy(account, members, w3)
     config = ServerConfig(num_rounds=int(num_rounds))
     authStrategy = EthAccountStrategy(
         SimpleCompensationStrategy(strategy, contract), contract

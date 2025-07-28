@@ -67,6 +67,6 @@ class AccountConfig(BaseModel):
         return self
 
     def get_account(self, i: int) -> LocalAccount:
-        hd_path = f"m/44'/60'/{i}'/0/0"
+        hd_path = f"m/44'/60'/0'/0/{i}"
         Account.enable_unaudited_hdwallet_features()
         return Account.from_mnemonic(self.mnemonic, account_path=hd_path)

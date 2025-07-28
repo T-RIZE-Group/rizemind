@@ -55,8 +55,9 @@ include = ["src/py/rizemind"]
 
 [tool.pytest.ini_options]
 minversion = "6.2"
-testpaths = ["src/py"]
+testpaths = ["src/py", "tests"]
 filterwarnings = "ignore::DeprecationWarning"
+pythonpath = ["."]
 
 [tool.ruff]
 exclude = [
@@ -93,7 +94,7 @@ target-version = "py312"
 preview = false
 
 [tool.ruff.lint]
-select = ["E4", "E7", "E9", "F", "I", "RUF001", "RUF002", "RUF003", "UP]
+select = ["E4", "E7", "E9", "F", "I", "RUF001", "RUF002", "RUF003", "UP"]
 ignore = []
 allowed-confusables = []
 fixable = ["ALL"]

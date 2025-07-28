@@ -11,12 +11,13 @@ from rizemind.contracts.compensation.shapley.decentralized.shapley_value_strateg
     DecentralShapleyValueStrategy,
 )
 from rizemind.contracts.compensation.shapley.shapley_value_strategy import Coalition
-from rizemind.contracts.logging.metrics_storage import MetricsStorage
-from rizemind.contracts.logging.metrics_storage_strategy import MetricsStorageStrategy
-from rizemind.contracts.models.model_factory_v1 import (
-    ModelFactoryV1,
-    ModelFactoryV1Config,
+from rizemind.contracts.swarm.swarm_v1.swarm_v1 import SwarmV1
+from rizemind.contracts.swarm.swarm_v1.swarm_v1_factory import (
+    SwarmV1Factory,
+    SwarmV1FactoryConfig,
 )
+from rizemind.logging.metrics_storage import MetricsStorage
+from rizemind.logging.metrics_storage_strategy import MetricsStorageStrategy
 from rizemind.web3.config import Web3Config
 
 from .task import Net, get_weights
@@ -72,8 +73,8 @@ def server_fn(context: Context):
         trainer = auth_config.get_account(i)
         members.append(trainer.address)
 
-    model_v1_config = ModelFactoryV1Config(**toml_config.get("tool.web3.model_v1"))
-    contract = ModelFactoryV1(model_v1_config).deploy(account, members, w3)
+    model_v1_config = SwarmV1FactoryConfig(**toml_config.get("tool.web3.model_v1"))
+    contract = SwarmV1Factory(model_v1_config).deploy(account, members, w3)
     authStrategy = EthAccountStrategy(
         DecentralShapleyValueStrategy(
             strategy,

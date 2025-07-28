@@ -1,17 +1,17 @@
 from pathlib import Path
-from typing import List, Tuple, cast
+from typing import cast
 
 from flwr.common import Context, Metrics, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
-from rizemind.contracts.logging.metrics_storage import MetricsStorage
-from rizemind.contracts.logging.metrics_storage_strategy import MetricsStorageStrategy
+from rizemind.logging.metrics_storage import MetricsStorage
+from rizemind.logging.metrics_storage_strategy import MetricsStorageStrategy
 
 from .task import Net, get_weights
 
 
 # Define metric aggregation function
-def weighted_average(metrics: List[Tuple[int, Metrics]]) -> Metrics:
+def weighted_average(metrics: list[tuple[int, Metrics]]) -> Metrics:
     # Multiply accuracy of each client by number of examples used
     accuracies = [
         num_examples * cast(float, m["accuracy"]) for num_examples, m in metrics

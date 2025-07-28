@@ -15,7 +15,7 @@ from rizemind.configuration.toml_config import TomlConfig
 from rizemind.contracts.compensation.shapley.decentralized.shapley_value_client import (
     DecentralShapleyValueClient,
 )
-from rizemind.contracts.models.erc5267 import Web3
+from rizemind.contracts.erc.erc5267 import Web3
 from rizemind.contracts.models.model_meta import RoundMetrics
 from rizemind.contracts.models.model_meta_v1 import ModelMetaV1
 from rizemind.web3.config import Web3Config
