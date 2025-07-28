@@ -1,35 +1,18 @@
-from abc import ABC, abstractmethod
 import os
 from pathlib import Path
-from typing import NamedTuple, Unpack
+from typing import Unpack
 
-from eth_typing import ChecksumAddress
 from rizemind.contracts.abi_helper import load_abi
 from rizemind.contracts.base_contract import (
     BaseContract,
     FromAddressKwargs,
     contract_factory,
 )
+from rizemind.contracts.erc.erc5267.typings import EIP712Domain, SupportsERC5267
 from web3 import Web3
 from web3.contract import Contract
 
 abi = load_abi(Path(os.path.dirname(__file__)) / "./erc5267.abi.json")
-
-
-class EIP712Domain(NamedTuple):
-    fields: bytes
-    name: str
-    version: str
-    chainId: int
-    verifyingContract: ChecksumAddress
-    salt: bytes
-    extensions: list[int]
-
-
-class SupportsERC5267(ABC):
-    @abstractmethod
-    def get_eip712_domain(self) -> EIP712Domain:
-        pass
 
 
 class ERC5267(SupportsERC5267, BaseContract):

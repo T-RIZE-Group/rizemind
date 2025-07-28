@@ -6,6 +6,7 @@ from typing import Unpack, cast
 from eth_account.signers.base import BaseAccount
 from eth_account.types import TransactionDictType
 from hexbytes import HexBytes
+from pydantic import BaseModel
 from rizemind.contracts.abi_helper import load_abi
 from rizemind.contracts.base_contract import (
     BaseContract,
@@ -17,10 +18,21 @@ from rizemind.contracts.swarm.constants import (
     CONTRIBUTION_DECIMALS,
     MODEL_SCORE_DECIMALS,
 )
-from rizemind.swarm.specs.supports_round import RoundMetrics, RoundSummary
 from web3.contract import Contract
 
 abi = load_abi(Path(os.path.dirname(__file__)) / "./abi.json")
+
+
+class RoundMetrics(BaseModel):
+    n_trainers: int
+    model_score: float
+    total_contributions: float
+
+
+class RoundSummary(BaseModel):
+    round_id: int
+    finished: bool
+    metrics: RoundMetrics | None
 
 
 class RoundTraining(HasAccount, BaseContract):

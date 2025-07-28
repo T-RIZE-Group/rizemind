@@ -4,10 +4,10 @@ from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
 from rizemind.authentication.config import AccountConfig
 from rizemind.authentication.eth_account_client import SigningClient
-from rizemind.configuration.toml_config import TomlConfig
-from rizemind.contracts.compensation.shapley.decentralized.shapley_value_client import (
+from rizemind.compensation.shapley.decentralized.shapley_value_client import (
     DecentralShapleyValueClient,
 )
+from rizemind.configuration.toml_config import TomlConfig
 from rizemind.web3.config import Web3Config
 
 from .task import load_data, load_model

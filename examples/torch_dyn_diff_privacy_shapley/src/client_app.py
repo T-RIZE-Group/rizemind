@@ -5,19 +5,18 @@ from typing import cast
 import datasets
 import torch
 from eth_account import Account
-from eth_typing import HexAddress
+from eth_typing import ChecksumAddress
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context, Scalar
 from opacus import PrivacyEngine
 from rizemind.authentication.config import AccountConfig
 from rizemind.authentication.eth_account_client import SigningClient
-from rizemind.configuration.toml_config import TomlConfig
-from rizemind.contracts.compensation.shapley.decentralized.shapley_value_client import (
+from rizemind.compensation.shapley.decentralized.shapley_value_client import (
     DecentralShapleyValueClient,
 )
-from rizemind.contracts.erc.erc5267 import Web3
-from rizemind.contracts.models.model_meta import RoundMetrics
-from rizemind.contracts.models.model_meta_v1 import ModelMetaV1
+from rizemind.configuration.toml_config import TomlConfig
+from rizemind.contracts.erc.erc5267.erc5267 import Web3
+from rizemind.swarm.swarm import Swarm
 from rizemind.web3.config import Web3Config
 
 from .task import Net, get_weights, load_data, set_weights, test, train
@@ -131,13 +130,15 @@ class FlowerClient(NumPyClient):
 
 
 class DynamicPrivacyClient(NumPyClient):
-    def __init__(self, flwr_client: FlowerClient, w3: Web3, client_address: HexAddress):
+    def __init__(
+        self, flwr_client: FlowerClient, w3: Web3, client_address: ChecksumAddress
+    ):
         self.flwr_client = flwr_client
         self.w3 = w3
         self.client_address = client_address
 
     def fit(self, parameters, config):
-        contract_address = str(config["contract_address"])
+        contract_address = Web3.to_checksum_address(str(config["contract_address"]))
         round = int(config["current_round"])
         trainer_contribution, total_contributions, n_trainers = self._get_contribution(
             self.client_address, round, contract_address
@@ -151,19 +152,22 @@ class DynamicPrivacyClient(NumPyClient):
         return self.flwr_client.evaluate(parameters, config)
 
     def _get_contribution(
-        self, client_address: HexAddress, round: int, contract_address: str
+        self,
+        client_address: ChecksumAddress,
+        round: int,
+        contract_address: ChecksumAddress,
     ):
-        model = ModelMetaV1.from_address(contract_address, account=None, w3=self.w3)
-        round_summary = model.get_last_contributed_round_summary(trainer=client_address)
-        if round_summary is None:
+        swarm = Swarm(address=contract_address, account=None, w3=self.w3)
+        round_summary = swarm.get_last_contributed_round_summary(trainer=client_address)
+        if round_summary is None or round_summary.metrics is None:
             return -1.0, -1.0, -1
-        metrics = cast(RoundMetrics, round_summary.metrics)
+        metrics = round_summary.metrics
         n_trainers, total_contributions = (
             metrics.n_trainers,
             metrics.total_contributions,
         )
         trainer_contribution = cast(
-            float, model.get_latest_contribution(trainer=client_address)
+            float, swarm.get_latest_contribution(trainer=client_address)
         )
         return trainer_contribution, total_contributions, n_trainers
 

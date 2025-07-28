@@ -1,5 +1,3 @@
-from typing import Dict
-
 from eth_account.signers.base import BaseAccount
 from flwr.client import Client
 from flwr.common import EvaluateIns, FitIns, FitRes
@@ -8,7 +6,7 @@ from web3 import Web3
 from rizemind.authentication.signature import (
     sign_parameters_model,
 )
-from rizemind.contracts.models.model_meta_v1 import ModelMetaV1
+from rizemind.swarm.swarm import Swarm
 
 
 class SigningClient(Client):
@@ -83,8 +81,10 @@ class SigningClient(Client):
         results.metrics = results.metrics | signature
         return results
 
-    def _sign(self, res: FitRes, round: int, contract_address: str) -> Dict[str, bytes]:
-        model = ModelMetaV1.from_address(contract_address, account=None, w3=self.w3)  # type: ignore
+    def _sign(self, res: FitRes, round: int, contract_address: str) -> dict[str, bytes]:
+        model = Swarm(
+            address=Web3.to_checksum_address(contract_address), account=None, w3=self.w3
+        )
         eip712_domain = model.get_eip712_domain()
 
         # Output Signer
@@ -112,6 +112,6 @@ def ensure_int(value) -> int:
         raise ValueError("Value must not be None")
     if isinstance(value, int):
         return value
-    if isinstance(value, (bool, bytes, float, str)):
+    if isinstance(value, bool | bytes | float | str):
         return int(value)
     raise ValueError(f"Cannot convert value of type {type(value)} to int")

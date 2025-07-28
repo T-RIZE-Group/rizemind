@@ -3,26 +3,24 @@ import uuid
 from collections.abc import Callable
 from logging import DEBUG, INFO, WARNING
 from math import factorial
-from typing import cast
+from typing import Protocol, cast
 
 from bidict import bidict
-from eth_typing import Address
+from eth_typing import ChecksumAddress
 from flwr.common import FitRes
 from flwr.common.logger import log
 from flwr.common.typing import FitIns, Parameters, Scalar
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
-from rizemind.swarm.specs.supports_distribute import SupportsDistribute
-from rizemind.swarm.specs.supports_round import SupportsRound
 
-type CoalitionScore = tuple[list[Address], float]
-type PlayerScore = tuple[Address, float]
+type CoalitionScore = tuple[list[ChecksumAddress], float]
+type PlayerScore = tuple[ChecksumAddress, float]
 
 
 class Coalition:
     id: str
-    members: list[Address]
+    members: list[ChecksumAddress]
     parameters: Parameters
     config: dict[str, Scalar]
     loss: float | None
@@ -31,7 +29,7 @@ class Coalition:
     def __init__(
         self,
         id: str,
-        members: list[Address],
+        members: list[ChecksumAddress],
         parameters: Parameters,
         config: dict[str, Scalar],
     ) -> None:
@@ -49,8 +47,17 @@ class Coalition:
         return default
 
 
-class SupportsShapleyValueStrategy(SupportsDistribute, SupportsRound):
-    pass
+class SupportsShapleyValueStrategy(Protocol):
+    def distribute(
+        self, trainer_scores: list[tuple[ChecksumAddress, float]]
+    ) -> str: ...
+    def next_round(
+        self,
+        round_id: int,
+        n_trainers: int,
+        model_score: float,
+        total_contributions: float,
+    ) -> str: ...
 
 
 class ShapleyValueStrategy(Strategy):
@@ -160,9 +167,11 @@ class ShapleyValueStrategy(Strategy):
         for results_coalition in results_coalitions:
             id = uuid.uuid4()
             id = str(id)
-            members: list[Address] = []
+            members: list[ChecksumAddress] = []
             for _, fit_res in results_coalition:
-                members.append(cast(Address, fit_res.metrics["trainer_address"]))
+                members.append(
+                    cast(ChecksumAddress, fit_res.metrics["trainer_address"])
+                )
             if len(results_coalition) == 0:
                 parameters = self.last_round_parameters
             else:
@@ -201,7 +210,7 @@ class ShapleyValueStrategy(Strategy):
 
         coalitions.sort(key=lambda coalition: len(coalition.members))
         list_of_addresses = coalitions[-1].members
-        address_map: bidict[Address, int] = bidict()
+        address_map: bidict[ChecksumAddress, int] = bidict()
         bit = 0b1
         for address in list_of_addresses:
             address_map[address] = bit
@@ -216,7 +225,7 @@ class ShapleyValueStrategy(Strategy):
 
         num_players = len(list_of_addresses)
 
-        player_scores: dict[Address, float] = dict()
+        player_scores: dict[ChecksumAddress, float] = dict()
         for player in address_map.values():
             shapley = 0
             for coalition, value in coalition_set.items():

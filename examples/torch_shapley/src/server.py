@@ -6,18 +6,14 @@ from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
 from rizemind.authentication.config import AccountConfig
 from rizemind.authentication.eth_account_strategy import EthAccountStrategy
-from rizemind.configuration.toml_config import TomlConfig
-from rizemind.contracts.compensation.shapley.decentralized.shapley_value_strategy import (
+from rizemind.compensation.shapley.decentralized.shapley_value_strategy import (
     DecentralShapleyValueStrategy,
 )
-from rizemind.contracts.compensation.shapley.shapley_value_strategy import Coalition
-from rizemind.contracts.swarm.swarm_v1.swarm_v1 import SwarmV1
-from rizemind.contracts.swarm.swarm_v1.swarm_v1_factory import (
-    SwarmV1Factory,
-    SwarmV1FactoryConfig,
-)
+from rizemind.compensation.shapley.shapley_value_strategy import Coalition
+from rizemind.configuration.toml_config import TomlConfig
 from rizemind.logging.metrics_storage import MetricsStorage
 from rizemind.logging.metrics_storage_strategy import MetricsStorageStrategy
+from rizemind.swarm.config import SwarmConfig
 from rizemind.web3.config import Web3Config
 
 from .task import Net, get_weights
@@ -73,16 +69,16 @@ def server_fn(context: Context):
         trainer = auth_config.get_account(i)
         members.append(trainer.address)
 
-    model_v1_config = SwarmV1FactoryConfig(**toml_config.get("tool.web3.model_v1"))
-    contract = SwarmV1Factory(model_v1_config).deploy(account, members, w3)
+    swarm_config = SwarmConfig(**toml_config.get("tool.web3.swarm"))
+    swarm = swarm_config.get_or_deploy(deployer=account, trainers=members, w3=w3)
     authStrategy = EthAccountStrategy(
         DecentralShapleyValueStrategy(
             strategy,
-            contract,
+            swarm,
             coalition_to_score_fn=lambda coalition: coalition.metrics["accuracy"],
             aggregate_coalition_metrics_fn=aggregate_coalitions,
         ),
-        contract,
+        swarm,
     )
     metrics_storage = MetricsStorage(
         Path(str(context.run_config["metrics-storage-path"])),

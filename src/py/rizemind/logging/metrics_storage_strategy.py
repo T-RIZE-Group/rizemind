@@ -2,7 +2,7 @@ from flwr.common import EvaluateIns, EvaluateRes, FitIns, FitRes, Parameters, Sc
 from flwr.server import ClientManager
 from flwr.server.strategy import Strategy
 from rizemind.authentication.eth_account_strategy import ClientProxy
-from rizemind.contracts.logging.metrics_storage import MetricsStorage
+from rizemind.logging.metrics_storage import MetricsStorage
 
 
 class MetricsStorageStrategy(Strategy):

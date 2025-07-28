@@ -47,7 +47,7 @@ class FlowerClient(NumPyClient):
     def evaluate(self, parameters, config):
         """Evaluate the model on the data this client has."""
         self.model.set_weights(parameters)
-        loss, accuracy = self.model.evaluate(self.x_test, self.y_test, verbose=0)
+        loss, accuracy = self.model.evaluate(self.x_test, self.y_test, verbose="0")
         return loss, len(self.x_test), {"accuracy": accuracy}
 
 

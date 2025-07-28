@@ -1,15 +1,19 @@
 from logging import INFO
-from typing import cast
+from typing import Protocol, cast
 
-from eth_typing import Address
+from eth_typing import Address, ChecksumAddress
 from flwr.common import EvaluateIns, EvaluateRes, FitIns, Parameters
 from flwr.common.logger import log
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
-from rizemind.swarm.specs.supports_distribute import (
-    SupportsDistribute,
-)
+from web3 import Web3
+
+
+class SupportsDistribute(Protocol):
+    def distribute(
+        self, trainer_scores: list[tuple[ChecksumAddress, float]]
+    ) -> str: ...
 
 
 class SimpleCompensationStrategy(Strategy):
@@ -22,7 +26,7 @@ class SimpleCompensationStrategy(Strategy):
 
     def calculate(self, client_ids: list[Address]):
         log(INFO, "calculate: calculating compensations.")
-        return [(id, 1.0) for id in client_ids]
+        return [(Web3.to_checksum_address(id), 1.0) for id in client_ids]
 
     def aggregate_fit(self, server_round, results, failures):
         log(

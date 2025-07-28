@@ -1,19 +1,25 @@
+from typing import Protocol
+
+from eth_typing import ChecksumAddress
 from flwr.common.typing import FitRes
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
+from web3 import Web3
 
 from rizemind.authentication.signature import recover_model_signer
-from rizemind.contracts.erc.erc5267 import SupportsERC5267
-from rizemind.swarm.specs.supports_can_train import SupportsCanTrain
+from rizemind.contracts.erc.erc5267.typings import EIP712Domain
+from rizemind.exception.base_exception import RizemindException
 
 
-class CannotTrainException(BaseException):
+class CannotTrainException(RizemindException):
     def __init__(self, address: str) -> None:
         message = f"{address} cannot train"
-        super().__init__(message)
+        super().__init__(code="cannot_train", message=message)
 
 
-class EthAccountStrategyContract(SupportsERC5267, SupportsCanTrain): ...
+class SupportsEthAccountStrategy(Protocol):
+    def can_train(self, trainer: ChecksumAddress, round_id: int) -> bool: ...
+    def get_eip712_domain(self) -> EIP712Domain: ...
 
 
 class EthAccountStrategy(Strategy):
@@ -40,13 +46,13 @@ class EthAccountStrategy(Strategy):
     """
 
     strat: Strategy
-    model: EthAccountStrategyContract
+    model: SupportsEthAccountStrategy
     address: str
 
     def __init__(
         self,
         strat: Strategy,
-        model: EthAccountStrategyContract,
+        model: SupportsEthAccountStrategy,
     ):
         super().__init__()
         self.strat = strat
@@ -94,7 +100,7 @@ class EthAccountStrategy(Strategy):
             round=server_round,
             signature=vrs,
         )
-        return signer
+        return Web3.to_checksum_address(signer)
 
     def configure_evaluate(self, server_round, parameters, client_manager):
         return self.strat.configure_evaluate(server_round, parameters, client_manager)

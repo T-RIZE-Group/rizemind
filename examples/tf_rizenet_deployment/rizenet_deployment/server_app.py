@@ -9,14 +9,11 @@ from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
 from rizemind.authentication.config import AccountConfig
 from rizemind.authentication.eth_account_strategy import EthAccountStrategy
-from rizemind.configuration.toml_config import TomlConfig
-from rizemind.contracts.compensation.simple_compensation_strategy import (
+from rizemind.compensation.simple_compensation_strategy import (
     SimpleCompensationStrategy,
 )
-from rizemind.contracts.models.model_factory_v1 import (
-    ModelFactoryV1,
-    ModelFactoryV1Config,
-)
+from rizemind.configuration.toml_config import TomlConfig
+from rizemind.swarm.config import SwarmConfig
 from rizemind.web3.config import Web3Config
 
 from .task import load_model
@@ -70,19 +67,12 @@ def server_fn(context: Context):
         trainer = auth_config.get_account(i)
         members.append(trainer.address)
 
-    # loads the config for the model
-    model_v1_config = ModelFactoryV1Config(**config.get("tool.web3.model_v1"))
-    log(INFO, "Web3 model contract loaded.")
-    log(
-        INFO,
-        "Web3 model contract address: https://testnet-explorer.rizenet.io/address/0xB88D434B10f0bB783A826bC346396AbB19B6C6F7",
-    )
-    # deploys the smart contract
-    contract = ModelFactoryV1(model_v1_config).deploy(account, members, w3)
+    swarm_config = SwarmConfig(**config.get("tool.web3.swarm"))
+    swarm = swarm_config.get_or_deploy(deployer=account, trainers=members, w3=w3)
     config = ServerConfig(num_rounds=int(num_rounds))
     log(INFO, "Server configured.")
     authStrategy = EthAccountStrategy(
-        SimpleCompensationStrategy(strategy, contract), contract
+        SimpleCompensationStrategy(strategy, swarm), swarm
     )
     log(INFO, "Compensation strategy configured.")
     return ServerAppComponents(strategy=authStrategy, config=config)

@@ -14,7 +14,7 @@ from rizemind.contracts.base_contract import (
     FromAddressKwargs,
     contract_factory,
 )
-from rizemind.contracts.erc.erc5267 import ERC5267
+from rizemind.contracts.erc.erc5267.erc5267 import ERC5267
 from rizemind.contracts.has_account import HasAccount
 from rizemind.contracts.swarm.constants import (
     CONTRIBUTION_DECIMALS,

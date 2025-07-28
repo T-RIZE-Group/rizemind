@@ -29,14 +29,14 @@ class MetricsStorage:
             os.path.exists(self.config_file) and os.path.getsize(self.config_file) > 0
         )
         if file_exists_and_has_content is True:
-            with open(self.config_file, mode="r") as f:
+            with open(self.config_file) as f:
                 existing_config: dict = json.load(f)
                 for key, value in existing_config.items():
                     config[key] = value
         try:
             with open(self.config_file, mode="w") as f:
                 json.dump(config, f)
-        except IOError as e:
+        except OSError as e:
             log(ERROR, f"Error writing config JSON to {self.config_file}: {e}")
 
     def write_metrics(self, round: int, metrics: dict[str, Scalar]):
