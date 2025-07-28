@@ -25,7 +25,7 @@ class SwarmV1FactoryConfig(BaseModel):
     factory_deployments: dict[int, DeployedContract] = {
         RIZENET_TESTNET_CHAINID: DeployedContract(
             address=Web3.to_checksum_address(
-                "0xB88D434B10f0bB783A826bC346396AbB19B6C6F7"
+                "0x6363a330D80E0Ed348FA203f31C5c1d2B7731e04"
             )
         )
     }

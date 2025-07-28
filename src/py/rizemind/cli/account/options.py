@@ -1,9 +1,9 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
 
 AccountNameOption = Annotated[
-    Optional[str],
+    str | None,
     typer.Option(
         "--account-name",
         "-a",
@@ -14,7 +14,7 @@ AccountNameOption = Annotated[
 
 
 MnemonicOption = Annotated[
-    Optional[str],
+    str | None,
     typer.Option(
         "--mnemonic",
         "-m",

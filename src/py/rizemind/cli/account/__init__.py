@@ -91,7 +91,7 @@ def load_account(
     typer.echo("First 10 derived addresses:")
     for i in range(10):
         acct = account_config.get_account(i)
-        typer.echo(f"  {i:>2}: {acct.address}")
+        typer.echo(f"  {i:>2}: {acct.address}, private key: {acct.key.hex()}")
 
 
 if __name__ == "__main__":

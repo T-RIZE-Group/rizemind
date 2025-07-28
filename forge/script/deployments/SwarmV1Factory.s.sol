@@ -16,7 +16,7 @@ contract DeploySwarmV1Factory is Script {
 
         vm.stopBroadcast();
 
-        console.log("ModelRegistryV1 deployed at:", address(swarmImpl));
-        console.log("ModelRegistryFactory deployed at:", address(swarmFactory));
+        console.log("Swarm Implementation deployed at:", address(swarmImpl));
+        console.log("Factory deployed at:", address(swarmFactory));
     }
 }

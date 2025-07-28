@@ -21,17 +21,54 @@ import lzma as _lzma
 
 @unique
 class Algorithm(Enum):
-    """Compression algorithm identifiers."""
+    """Compression algorithm identifiers with byte tags."""
 
     ZSTD_19 = "zstd19"
     BROTLI_11 = "brotli11"
     LZMA_9E = "lzma-9e"
+
+    def to_byte(self) -> bytes:
+        return bytes([self.to_index()])
+
+    def to_index(self) -> int:
+        """Returns a stable byte identifier (ordinal)."""
+        mapping = {
+            Algorithm.ZSTD_19: 0x01,
+            Algorithm.BROTLI_11: 0x02,
+            Algorithm.LZMA_9E: 0x03,
+        }
+        return mapping[self]
+
+    @classmethod
+    def from_byte(cls, b: int) -> "Algorithm":
+        reverse = {
+            0x01: Algorithm.ZSTD_19,
+            0x02: Algorithm.BROTLI_11,
+            0x03: Algorithm.LZMA_9E,
+        }
+        if b not in reverse:
+            raise ValueError(f"Unknown algorithm byte: {b}")
+        return reverse[b]
 
 
 @dataclass(slots=True, frozen=True)
 class CompressedCertificate:
     algorithm: Algorithm
     data: bytes
+
+    def serialize(self) -> bytes:
+        """Serializes the algorithm and data as: [1-byte algo] + data."""
+        return self.algorithm.to_byte() + self.data
+
+    @classmethod
+    def deserialize(cls, raw: bytes) -> "CompressedCertificate":
+        """Restores object from serialized form."""
+        if len(raw) < 1:
+            raise ValueError("Serialized data too short")
+        algo_byte = raw[0]
+        data = raw[1:]
+        algorithm = Algorithm.from_byte(algo_byte)
+        return cls(algorithm=algorithm, data=data)
 
 
 class Certificate:
@@ -92,7 +129,7 @@ class Certificate:
         )
 
     @staticmethod
-    def from_compressed_bytes(cc: CompressedCertificate) -> "Certificate":
+    def from_compressed(cc: CompressedCertificate) -> "Certificate":
         """Inflate *cc* and return the original :class:`Certificate`."""
         algo, data = cc.algorithm, cc.data
 
@@ -113,7 +150,8 @@ class Certificate:
         change ``serialization.Encoding`` below.
         """
         cert = x509.load_der_x509_certificate(self._der)
-        path.write_bytes(cert.public_bytes(serialization.Encoding.DER))
+        pem_data = cert.public_bytes(serialization.Encoding.PEM)
+        path.write_text(pem_data.decode("utf-8"))
 
     def __bytes__(self) -> bytes:  # convenience
         return self._der

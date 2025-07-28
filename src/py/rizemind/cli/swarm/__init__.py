@@ -1,32 +1,34 @@
 from pathlib import Path
-from typing import Annotated, List
+from typing import Annotated, cast
 
-from rizemind.swarm.certificate.certificate import Certificate, CompressedCertificate
 import typer
-from cryptography import x509
-from cryptography.hazmat.primitives import serialization
+from eth_typing import ChecksumAddress
 from pydantic import HttpUrl
+from web3 import Web3
 
 from rizemind.cli.account.loader import account_config_loader
 from rizemind.cli.account.options import AccountNameOption, MnemonicOption
-from rizemind.contracts.models.model_factory_v1 import (
-    ModelFactoryV1,
-    ModelFactoryV1Config,
-)
+from rizemind.contracts.swarm.swarm_v1.swarm_v1_factory import SwarmV1FactoryConfig
+from rizemind.swarm.certificate.certificate import Certificate, CompressedCertificate
+from rizemind.swarm.config import SwarmConfig
 from rizemind.web3.config import Web3Config
 
 swarm = typer.Typer(help="Federation management commands")
 
 
-def csv_to_list(
-    _ctx: typer.Context,
-    _param: typer.CallbackParam,
-    value: List[str],
-) -> List[str]:
-    """Split a comma-separated string into a list, trimming whitespace."""
+def split_addresses(
+    value: list[str],
+) -> list[ChecksumAddress]:
+    """Split a list of comma-separated strings into a flat list, trimming whitespace."""
     if not value:
         return []
-    return [addr.strip() for addr in value[0].split(",") if addr.strip()]
+
+    return [
+        Web3.to_checksum_address(item.strip())
+        for part in value
+        for item in part.split(",")
+        if item.strip()
+    ]
 
 
 @swarm.command("new")
@@ -35,13 +37,8 @@ def deploy_new(
     name: str,
     rpc_url: str | None = None,
     members: Annotated[
-        List[str],
-        typer.Option(
-            "--members",
-            "-m",
-            help="Comma-separated list of addresses",
-            callback=csv_to_list,
-        ),
+        list[str],
+        typer.Option("--members", "-m", help="Comma-separated list of addresses"),
     ] = [],
     mnemonic: MnemonicOption = None,
     account_name: AccountNameOption = None,
@@ -49,17 +46,19 @@ def deploy_new(
 ):
     account_config = account_config_loader(mnemonic, account_name)
     account = account_config.get_account(account_index)
-
-    model = ModelFactoryV1Config(name=name, ticker=ticker)
-
-    web3_config = Web3Config(url=HttpUrl(url=rpc_url) if rpc_url else None)
-
-    model_factory = ModelFactoryV1(model)
-    deployment = model_factory.deploy(
-        deployer=account, member_address=members, w3=web3_config.get_web3()
+    factory_config = SwarmV1FactoryConfig(
+        name=name,
+        ticker=ticker,
     )
-    address = deployment.get_address()
-    typer.echo(f"New federation deployed at {address}")
+    swarm_config = SwarmConfig(factory_v1=factory_config, address=None)
+
+    web3_config = Web3Config(url=cast(HttpUrl | None, rpc_url))
+    trainers = split_addresses(members)
+    deployment = swarm_config.deploy(
+        deployer=account, trainers=trainers, w3=web3_config.get_web3()
+    )
+    address = deployment.address
+    typer.echo(f"New Swarm deployed at {address}")
 
 
 @swarm.command("set-cert")
@@ -73,10 +72,36 @@ def set_cert(
             help="PEM or DER certificate file",
         ),
     ],
+    address: Annotated[
+        str,
+        typer.Option(
+            "--address",
+            "-a",
+            help="The address of the swarm",
+            callback=Web3.to_checksum_address,
+        ),
+    ],
+    id: Annotated[
+        str,
+        typer.Option(
+            "--id",
+            help="The certificate ID",
+        ),
+    ],
+    rpc_url: Annotated[
+        str | None,
+        typer.Option(
+            "--rpc-url",
+            help="The RPC url for the blockchain",
+        ),
+    ] = None,
+    mnemonic: MnemonicOption = None,
+    account_name: AccountNameOption = None,
+    account_index: int = 0,
 ) -> None:
     """
-    Read *CERT_PATH* and write the (optionally compressed) certificate bytes
-    to **STDOUT** in binary mode so that shell redirection works cleanly.
+    Read *CERT_PATH* certificate bytes
+    and writes it onchain
     """
     cert: Certificate = Certificate.from_path(cert_path)
 
@@ -84,5 +109,65 @@ def set_cert(
     payload: bytes = cc.data
     algo_name: str = cc.algorithm.value
 
-    # progress message to stderr so redirection doesn't capture it
-    typer.echo(f"[{algo_name}] {len(payload)} bytes", err=True)
+    swarm_config = SwarmConfig(address=address)
+    web3_config = Web3Config(url=cast(HttpUrl | None, rpc_url))
+    w3 = web3_config.get_web3()
+    account_config = account_config_loader(mnemonic, account_name)
+    account = account_config.get_account(account_index)
+    swarm = swarm_config.get(w3=w3, account=account)
+    success = swarm.set_certificate(id, cert)
+    if success:
+        typer.echo(f"Store [{algo_name}] {len(payload)} bytes onchain")
+    else:
+        typer.echo("Failed to set certificate", err=True)
+
+
+@swarm.command("download-cert")
+def download_cert(
+    cert_path: Annotated[
+        Path,
+        typer.Argument(
+            exists=False,
+            writable=True,
+            resolve_path=True,
+            help="PEM or DER certificate file",
+        ),
+    ],
+    address: Annotated[
+        str,
+        typer.Option(
+            "--address",
+            "-a",
+            help="The address of the swarm",
+            callback=Web3.to_checksum_address,
+        ),
+    ],
+    id: Annotated[
+        str,
+        typer.Option(
+            "--id",
+            help="The certificate ID",
+        ),
+    ],
+    rpc_url: Annotated[
+        str | None,
+        typer.Option(
+            "--rpc-url",
+            help="The RPC url for the blockchain",
+        ),
+    ] = None,
+) -> None:
+    """
+    Stores certificates locally at *CERT_PATH*
+    """
+
+    swarm_config = SwarmConfig(address=address)
+    web3_config = Web3Config(url=cast(HttpUrl | None, rpc_url))
+    w3 = web3_config.get_web3()
+    swarm = swarm_config.get(w3=w3)
+    cert = swarm.get_certificate(id)
+    if cert is None:
+        typer.echo("No certificate found", err=True)
+    else:
+        cert.store(cert_path)
+        typer.echo(f"Stored certificate at {cert_path}")

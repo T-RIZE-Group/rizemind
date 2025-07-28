@@ -6,16 +6,23 @@ from rizemind.contracts.swarm.swarm_v1.swarm_v1_factory import (
     SwarmV1Factory,
     SwarmV1FactoryConfig,
 )
+from rizemind.exception.base_exception import RizemindException
 from rizemind.swarm.swarm import Swarm
 from web3 import Web3
 
 
+class SwarmConfigException(RizemindException):
+    def __init__(self, field: str):
+        super().__init__(code="missing_value", message=f"missing field {field}")
+
+
 class SwarmConfig(BaseModel):
     address: EthereumAddress | None = Field(
-        None, description="Ethereum address for the swarm contract"
+        default=None, description="Ethereum address for the swarm contract"
     )
     factory_v1: SwarmV1FactoryConfig | None = Field(
-        None, description="ModelFactoryV1Config object to deploy on Aggregator side"
+        default=None,
+        description="ModelFactoryV1Config object to deploy on Aggregator side",
     )
 
     @model_validator(mode="after")
@@ -24,13 +31,27 @@ class SwarmConfig(BaseModel):
             raise ValueError("One of `address` or `factory_v1` must be provided.")
         return self
 
+    def get(self, *, account: BaseAccount | None = None, w3: Web3) -> Swarm:
+        if self.address is None:
+            raise SwarmConfigException("address")
+        return Swarm(
+            address=Web3.to_checksum_address(self.address), w3=w3, account=account
+        )
+
+    def deploy(
+        self, *, deployer: BaseAccount, w3: Web3, trainers: list[ChecksumAddress] = []
+    ) -> Swarm:
+        if self.factory_v1 is None:
+            raise SwarmConfigException("factory_v1")
+        factory = SwarmV1Factory(self.factory_v1)
+        deployment = factory.deploy(deployer, trainers, w3)
+        return Swarm(w3=w3, address=deployment.address, account=deployer)
+
     def get_or_deploy(
         self, *, deployer: BaseAccount, w3: Web3, trainers: list[ChecksumAddress] = []
     ) -> Swarm:
         if self.factory_v1 is not None:
-            factory = SwarmV1Factory(self.factory_v1)
-            deployment = factory.deploy(deployer, trainers, w3)
-            return Swarm(w3=w3, address=deployment.address, account=deployer)
+            return self.deploy(deployer=deployer, w3=w3, trainers=trainers)
 
         if self.address is not None:
             return Swarm(

@@ -33,7 +33,7 @@ def swarm_deployment(anvil: AnvilContext) -> SwarmFixture:
     aggregator = anvil.account_conf.get_account(1)
     trainers = [anvil.account_conf.get_account(i) for i in range(2, 6)]
     w3 = anvil.w3conf.get_web3()
-    swarm = swarm_config.get_or_deploy(
+    swarm = swarm_config.deploy(
         deployer=aggregator,
         trainers=[trainer.address for trainer in trainers],
         w3=w3,
