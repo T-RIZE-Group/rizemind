@@ -1,21 +1,51 @@
 name: Pytest
 run-name: Pytest will run to check if all tests pass
-on: pull_request
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    types: [opened, synchronize, reopened]
 
+
+#    services:
+#      anvil:
+#        image: ghcr.io/foundry-rs/foundry:latest
+#        ports:
+#          - 8545:8545
+#        env:
+#          ANVIL_IP_ADDR: "0.0.0.0"
+#        options: >-
+#          --entrypoint anvil  
 jobs:
-  test:
+  unit-test:
+    runs-on: ubuntu-latest    
+    env:
+      UV_LINK_MODE: copy
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+
+    - name: Set up Python
+      run: uv python install
+
+    - name: Install the project
+      run: uv sync
+
+    - name: Run tests
+      run: uv run pytest test/unit
+
+  integration-test:
+    needs: unit-test
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     env:
       UV_LINK_MODE: copy
-    services:
-      anvil:
-        image: ghcr.io/foundry-rs/foundry:latest
-        ports:
-          - 8545:8545
-        env:
-          ANVIL_IP_ADDR: "0.0.0.0"
-        options: >-
-          --entrypoint anvil  
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -45,4 +75,4 @@ jobs:
       run: uv sync
 
     - name: Run tests
-      run: uv run -- pytest .
+      run: uv run pytest unit/integration
