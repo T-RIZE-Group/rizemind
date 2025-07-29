@@ -1,4 +1,4 @@
-from typing import Tuple, TypedDict
+from typing import TypedDict
 
 from eth_account import Account
 from eth_account.datastructures import SignedMessage
@@ -140,7 +140,7 @@ def recover_model_signer(
     contract: str,
     name: str,
     round: int,
-    signature: Tuple[Scalar, Scalar, Scalar],
+    signature: tuple[Scalar, Scalar, Scalar],
 ) -> HexAddress:
     """
     Recover the address of the signed model.
