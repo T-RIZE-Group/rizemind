@@ -1,12 +1,12 @@
 import os
 from functools import reduce
 from pathlib import Path
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 import tomli
 
 
-def replace_env_vars(obj: Union[dict[str, Any], str]) -> Union[dict[str, Any], str]:
+def replace_env_vars(obj: dict[str, Any] | str) -> dict[str, Any] | str:
     if isinstance(obj, str):
         # Replace placeholders with environment variable values
         return os.path.expandvars(obj)
@@ -45,7 +45,7 @@ class TomlConfig:
     :type path: str
     """
 
-    def __init__(self, path: str):
+    def __init__(self, path: str | Path):
         """
         Initialize the TomlConfig instance.
 
@@ -78,7 +78,7 @@ class TomlConfig:
         """
         return self._data
 
-    def get(self, keys: Union[list[str], str], default: Optional[Any] = None) -> Any:
+    def get(self, keys: list[str] | str, default: Any | None = None) -> Any:
         """
         Retrieve a nested value from the config safely.
 

@@ -8,15 +8,12 @@ from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
 from rizemind.authentication.config import AccountConfig
 from rizemind.authentication.eth_account_strategy import EthAccountStrategy
-from rizemind.configuration.toml_config import TomlConfig
-from rizemind.contracts.compensation.shapley.centralized.shapley_value_strategy import (
+from rizemind.compensation.shapley.centralized.shapley_value_strategy import (
     CentralShapleyValueStrategy,
 )
-from rizemind.contracts.compensation.shapley.shapley_value_strategy import Coalition
-from rizemind.contracts.models.model_factory_v1 import (
-    ModelFactoryV1,
-    ModelFactoryV1Config,
-)
+from rizemind.compensation.shapley.shapley_value_strategy import Coalition
+from rizemind.configuration.toml_config import TomlConfig
+from rizemind.swarm.config import SwarmConfig
 from rizemind.web3.config import Web3Config
 
 from .task import evaluate_fn, load_model
@@ -68,17 +65,17 @@ def server_fn(context: Context):
         trainer = auth_config.get_account(i)
         members.append(trainer.address)
 
-    model_v1_config = ModelFactoryV1Config(**config.get("tool.web3.model_v1"))
-    contract = ModelFactoryV1(model_v1_config).deploy(account, members, w3)
+    swarm_config = SwarmConfig(**config.get("tool.web3.swarm"))
+    swarm = swarm_config.get_or_deploy(deployer=account, trainers=members, w3=w3)
     config = ServerConfig(num_rounds=int(num_rounds))
     authStrategy = EthAccountStrategy(
         CentralShapleyValueStrategy(
             strategy,
-            contract,
+            swarm,
             coalition_to_score_fn=lambda coalition: coalition.metrics["accuracy"],
             aggregate_coalition_metrics_fn=aggregate_coalitions,
         ),
-        contract,
+        swarm,
     )
     return ServerAppComponents(strategy=authStrategy, config=config)
 

@@ -44,9 +44,9 @@ options.num-supernodes = 10
 options.backend.client-resources.num-cpus = 1 # each ClientApp assumes to use 2CPUs
 options.backend.client-resources.num-gpus = 0.10 # at most 5 ClientApp will run in a given GPU
 
-[tool.web3.model_v1]
+[tool.web3.swarm.factory_v1]
 name = "test_model"
-local_factory_deployment_path = "../../forge/output/31337/ModelRegistryFactory.json"
+local_factory_deployment_path = "../../forge/broadcast/SwarmV1Factory.s.sol/31337/run-latest.json"
 
 [tool.eth.account]
 mnemonic = "test test test test test test test test test test test junk"

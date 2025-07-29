@@ -4,6 +4,7 @@ from typing import Annotated
 import typer
 from eth_account import Account
 
+from rizemind.cli.account.loader import account_config_loader
 from rizemind.mnemonic.store import MnemonicStore
 
 Account.enable_unaudited_hdwallet_features()
@@ -56,7 +57,7 @@ def generate(
 
 @account.command("list")
 def list_accounts() -> None:
-    """Show all stored account names (taken from ~/.rzmnd/keystore)."""
+    """Show all stored account names."""
     names = mnemonic_store.list_accounts()
 
     if not names:
@@ -79,24 +80,18 @@ def load_account(
     ],
 ) -> None:
     """
-    Decrypt the stored mnemonic for *ACCOUNT_NAME* and show the first 10
+    Display the stored mnemonic for *ACCOUNT_NAME* and show the first 10
     derived Ethereum addresses.
     """
-    passphrase = getpass("Passphrase: ")
+    account_config = account_config_loader(account_name=account_name)
 
-    try:
-        mnemonic = mnemonic_store.load(account_name, passphrase)
-    except (FileNotFoundError, ValueError) as err:
-        typer.echo(f"ERROR: {err}", err=True)
-        raise typer.Exit(code=1)
-
-    typer.echo(f'Mnemonic: \n"{mnemonic}"\n')
+    typer.echo(f'Mnemonic:\n"{account_config.mnemonic}"\n')
 
     # Derive and display the first 10 HD-wallet accounts
     typer.echo("First 10 derived addresses:")
     for i in range(10):
-        acct = Account.from_mnemonic(mnemonic, account_path=f"m/44'/60'/0'/0/{i}")
-        typer.echo(f"  {i:>2}: {acct.address}")
+        acct = account_config.get_account(i)
+        typer.echo(f"  {i:>2}: {acct.address}, private key: {acct.key.hex()}")
 
 
 if __name__ == "__main__":

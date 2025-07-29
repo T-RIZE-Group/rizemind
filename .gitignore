@@ -17,7 +17,6 @@ poetry.lock
 **/build
 
 *.log
-*.json
 .vscode
 
 **/.swp

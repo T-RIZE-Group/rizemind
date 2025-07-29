@@ -19,7 +19,7 @@ def _derive_address(mnemonic: str, index: int) -> str:
     implementation under test.
     """
     Account.enable_unaudited_hdwallet_features()
-    hd_path = f"m/44'/60'/{index}'/0/0"
+    hd_path = f"m/44'/60'/0'/0/{index}"
     return Account.from_mnemonic(mnemonic, account_path=hd_path).address
 
 

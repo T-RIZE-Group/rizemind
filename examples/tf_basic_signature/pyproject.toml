@@ -42,9 +42,9 @@ default = "local-simulation"
 [tool.flwr.federations.local-simulation]
 options.num-supernodes = 10
 
-[tool.web3.model_v1]
+[tool.web3.swarm.factory_v1]
 name = "test_model"
-local_factory_deployment_path = "../../forge/output/31337/ModelRegistryFactory.json"
+local_factory_deployment_path = "../../forge/broadcast/SwarmV1Factory.s.sol/31337/run-latest.json"
 
 [tool.eth.account]
 mnemonic = "test test test test test test test test test test test junk"

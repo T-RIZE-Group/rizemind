@@ -1,16 +1,22 @@
 import json
 from pathlib import Path
 
+from web3 import Web3
+
 from rizemind.contracts.deployment import DeployedContract
 
 
-def load_local_deployment(path="../smart_contracts") -> DeployedContract:
-    path = Path(path)
-
+def load_forge_artifact(path: Path, contract_name: str) -> DeployedContract:
+    """
+    Load a Forge broadcast artifact and return the contract address for the given contract name.
+    """
     if not path.exists():
         raise FileNotFoundError(f"File not found: {path}")
-
-    with open(path, "r") as f:
-        file_data = json.load(f)
-
-    return DeployedContract.model_validate(file_data)
+    with open(path) as f:
+        data = json.load(f)
+    for tx in data.get("transactions", []):
+        if tx.get("contractName") == contract_name:
+            return DeployedContract(
+                address=Web3.to_checksum_address(tx.get("contractAddress"))
+            )
+    raise ValueError(f"Contract '{contract_name}' not found in artifact: {path}")
