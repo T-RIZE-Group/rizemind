@@ -38,7 +38,7 @@ jobs:
       run: uv sync
 
     - name: Run tests
-      run: uv run pytest test/unit
+      run: uv run pytest tests/unit
 
   integration-test:
     needs: unit-test
@@ -75,4 +75,4 @@ jobs:
       run: uv sync
 
     - name: Run tests
-      run: uv run pytest unit/integration
+      run: uv run pytest tests/integration
