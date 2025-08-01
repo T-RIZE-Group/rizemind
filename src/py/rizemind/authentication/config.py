@@ -1,12 +1,13 @@
 from typing import Any
+
 from eth_account import Account
 from eth_account.signers.base import BaseAccount
+from flwr.common.context import Context
 from mnemonic import Mnemonic
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from rizemind.configuration.base_config import BaseConfig
 from rizemind.mnemonic.store import MnemonicStore
-from flwr.common.context import Context
 
 ACCOUNT_CONFIG_STATE_KEY = "rizemind.account"
 

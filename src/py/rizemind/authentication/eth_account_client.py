@@ -3,7 +3,7 @@ from flwr.client import Client
 from flwr.common import EvaluateIns, FitIns, FitRes
 from web3 import Web3
 
-from rizemind.authentication.signature import (
+from rizemind.authentication.signatures.model import (
     sign_parameters_model,
 )
 from rizemind.swarm.swarm import Swarm

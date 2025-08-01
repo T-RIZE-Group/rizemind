@@ -1,15 +1,18 @@
 from abc import ABC, abstractmethod
-from typing import NamedTuple
 
 from eth_typing import ChecksumAddress
+from pydantic import BaseModel
 
 
-class EIP712Domain(NamedTuple):
-    fields: bytes
+class EIP712DomainMinimal(BaseModel):
     name: str
     version: str
     chainId: int
     verifyingContract: ChecksumAddress
+
+
+class EIP712Domain(EIP712DomainMinimal):
+    fields: bytes
     salt: bytes
     extensions: list[int]
 

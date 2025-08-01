@@ -1,15 +1,19 @@
 from typing import Any
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from flwr.common.context import Context
+from pydantic import Field, HttpUrl, field_validator
 from pydantic_core import Url
+from rizemind.configuration.base_config import BaseConfig
 from rizemind.web3.chains import RIZENET_TESTNET_CHAINID
 from web3 import HTTPProvider, Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 
 poaChains = [RIZENET_TESTNET_CHAINID]
 
+WEB3_CONFIG_STATE_KEY = "rizemind.web3"
 
-class Web3Config(BaseModel):
+
+class Web3Config(BaseConfig):
     url: HttpUrl | None = Field(..., description="The HTTP provider URL")
 
     @field_validator("url", mode="before")
@@ -33,3 +37,10 @@ class Web3Config(BaseModel):
         if url is None:
             url = "https://testnet.rizenet.io"
         return Web3.HTTPProvider(str(url))
+
+    @staticmethod
+    def from_context(context: Context) -> "Web3Config | None":
+        if WEB3_CONFIG_STATE_KEY in context.state.config_records:
+            records: Any = context.state.config_records[WEB3_CONFIG_STATE_KEY]
+            return Web3Config(**records)
+        return None

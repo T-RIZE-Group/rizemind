@@ -2,13 +2,15 @@ import torch
 from eth_account import Account
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
-from rizemind.authentication.config import AccountConfig
+from rizemind.authentication.authentication_mod import authentication_mod
+from rizemind.authentication.config import ACCOUNT_CONFIG_STATE_KEY, AccountConfig
 from rizemind.authentication.eth_account_client import SigningClient
 from rizemind.compensation.shapley.decentralized.shapley_value_client import (
     DecentralShapleyValueClient,
 )
 from rizemind.configuration.toml_config import TomlConfig
-from rizemind.web3.config import Web3Config
+from rizemind.logging.inspector_mod import inspector_mod
+from rizemind.web3.config import WEB3_CONFIG_STATE_KEY, Web3Config
 
 from .task import Net, get_weights, load_data, set_weights, test, train
 
@@ -57,8 +59,10 @@ def client_fn(context: Context):
     learning_rate = context.run_config["learning-rate"]
 
     config = TomlConfig("./pyproject.toml")
-    account_config = AccountConfig(**config.get("tool.eth.account"))
-    account = account_config.get_account(partition_id + 1)
+    account_config = AccountConfig(
+        **config.get("tool.eth.account") | {"default_account_index": partition_id + 1}
+    )
+    account = account_config.get_account()
     web3_config = Web3Config(**config.get("tool.web3"))
 
     # Return Client instance
@@ -67,9 +71,13 @@ def client_fn(context: Context):
     signing_client = SigningClient(
         client=shapley_client.to_client(), account=account, w3=web3_config.get_web3()
     )
+    context.state.config_records[ACCOUNT_CONFIG_STATE_KEY] = (
+        account_config.to_config_record()
+    )
+    context.state.config_records[WEB3_CONFIG_STATE_KEY] = web3_config.to_config_record()
     return signing_client
 
 
 Account.enable_unaudited_hdwallet_features()
 # Flower ClientApp
-app = ClientApp(client_fn)
+app = ClientApp(client_fn, mods=[authentication_mod])
