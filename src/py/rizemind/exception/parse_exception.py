@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from functools import wraps
-from typing import TypeVar
+from typing import ParamSpec, TypeVar
 
 from pydantic_core import ValidationError as PydanticValidationError
 from rizemind.exception.base_exception import RizemindException
@@ -9,10 +9,11 @@ from rizemind.exception.base_exception import RizemindException
 class ParseException(RizemindException): ...
 
 
-_F = TypeVar("_F", bound=Callable[..., object])
+P = ParamSpec("P")
+R = TypeVar("R")
 
 
-def catch_parse_errors(func: _F) -> _F:  # type: ignore[misc]
+def catch_parse_errors(func: Callable[P, R]) -> Callable[P, R]:
     """
     Decorator that wraps *func* and converts ``KeyError`` or Pydantic
     ``ValidationError`` into ``ParseException``.
@@ -25,5 +26,4 @@ def catch_parse_errors(func: _F) -> _F:  # type: ignore[misc]
         except (KeyError, PydanticValidationError) as exc:
             raise ParseException(code="parse_error", message=str(exc)) from exc
 
-    # mypy / typing friendly cast
-    return _wrapper  # type: ignore[return-value]
+    return _wrapper
