@@ -20,7 +20,7 @@ def catch_parse_errors(func: Callable[P, R]) -> Callable[P, R]:
     """
 
     @wraps(func)
-    def _wrapper(*args, **kwargs):
+    def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         try:
             return func(*args, **kwargs)
         except (KeyError, PydanticValidationError) as exc:
