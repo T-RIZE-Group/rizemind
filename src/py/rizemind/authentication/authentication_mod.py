@@ -44,7 +44,7 @@ def authentication_mod(
         account = account_config.get_account()
         get_properties_ins = recorddict_to_getpropertiesins(msg.content)
         train_auth_ins = parse_train_auth_ins(get_properties_ins)
-        # TODO: validate domain agaisnt configure domain
+        # TODO: validate domain agaisnt configured domain
         signature = sign_auth_message(
             account=account,
             round=train_auth_ins.round_id,
