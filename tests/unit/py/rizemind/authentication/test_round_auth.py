@@ -18,22 +18,19 @@ from rizemind.authentication.train_auth import (
     prepare_train_auth_ins,
     prepare_train_auth_res,
 )
-from rizemind.contracts.erc.erc5267.typings import EIP712Domain
+from rizemind.contracts.erc.erc5267.typings import EIP712DomainMinimal
 from web3 import Web3
 
 
 @pytest.fixture(scope="module")
-def domain() -> EIP712Domain:
-    return EIP712Domain(
+def domain() -> EIP712DomainMinimal:
+    return EIP712DomainMinimal(
         name="RizeMind",
         version="1",
         chainId=1,
         verifyingContract=Web3.to_checksum_address(
             "0x0000000000000000000000000000000000000000"
         ),
-        fields=b"1",
-        salt=b"1",
-        extensions=[],
     )
 
 

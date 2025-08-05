@@ -9,7 +9,6 @@ from rizemind.compensation.shapley.decentralized.shapley_value_client import (
     DecentralShapleyValueClient,
 )
 from rizemind.configuration.toml_config import TomlConfig
-from rizemind.logging.inspector_mod import inspector_mod
 from rizemind.web3.config import WEB3_CONFIG_STATE_KEY, Web3Config
 
 from .task import Net, get_weights, load_data, set_weights, test, train
