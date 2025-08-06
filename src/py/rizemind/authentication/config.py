@@ -1,9 +1,15 @@
+from typing import Any
+
 from eth_account import Account
-from eth_account.signers.local import LocalAccount
+from eth_account.signers.base import BaseAccount
+from flwr.common.context import Context
 from mnemonic import Mnemonic
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from rizemind.configuration.base_config import BaseConfig
 from rizemind.mnemonic.store import MnemonicStore
+
+ACCOUNT_CONFIG_STATE_KEY = "rizemind.account"
 
 
 class MnemonicStoreConfig(BaseModel):
@@ -11,7 +17,7 @@ class MnemonicStoreConfig(BaseModel):
     passphrase: str = Field(..., description="Pass-phrase that unlocks the keystore")
 
 
-class AccountConfig(BaseModel):
+class AccountConfig(BaseConfig):
     """
     Accept **one** of the two authentication sources:
 
@@ -33,6 +39,7 @@ class AccountConfig(BaseModel):
     )
 
     mnemonic_store: MnemonicStoreConfig | None = None
+    default_account_index: int | None = Field(default=None)
 
     @field_validator("mnemonic")
     @classmethod
@@ -66,7 +73,22 @@ class AccountConfig(BaseModel):
 
         return self
 
-    def get_account(self, i: int) -> LocalAccount:
+    def get_account(self, i: int | None = None) -> BaseAccount:
+        if i is None:
+            i = self.default_account_index
+
+        if i is None:
+            raise ValueError(
+                "no default_account_index specified, provide the index as an argument"
+            )
+
         hd_path = f"m/44'/60'/0'/0/{i}"
         Account.enable_unaudited_hdwallet_features()
         return Account.from_mnemonic(self.mnemonic, account_path=hd_path)
+
+    @staticmethod
+    def from_context(context: Context) -> "AccountConfig | None":
+        if ACCOUNT_CONFIG_STATE_KEY in context.state.config_records:
+            records: Any = context.state.config_records[ACCOUNT_CONFIG_STATE_KEY]
+            return AccountConfig(**records)
+        return None

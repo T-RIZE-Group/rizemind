@@ -39,7 +39,7 @@ class TestAccountConfig:
     @pytest.mark.parametrize("index", [0, 1, 2, 10])
     def test_get_account_returns_correct_account(self, index):
         cfg = AccountConfig(mnemonic=VALID_MNEMONIC)
-        acct: LocalAccount = cfg.get_account(index)
+        acct = cfg.get_account(index)
 
         # Returned type must be eth_account.signers.local.LocalAccount
         assert isinstance(acct, LocalAccount)
@@ -59,6 +59,23 @@ class TestAccountConfig:
         addresses = {cfg.get_account(i).address for i in range(5)}
         # All five indices should map to five distinct addresses
         assert len(addresses) == 5
+
+    def test_get_account_with_default_index(self):
+        cfg = AccountConfig(mnemonic=VALID_MNEMONIC, default_account_index=2)
+        account = cfg.get_account()
+        expected_address = _derive_address(VALID_MNEMONIC, 2)
+        assert account.address == expected_address
+
+    def test_get_account_explicit_index_overrides_default(self):
+        cfg = AccountConfig(mnemonic=VALID_MNEMONIC, default_account_index=2)
+        account = cfg.get_account(1)  # Explicit index should override default
+        expected_address = _derive_address(VALID_MNEMONIC, 1)
+        assert account.address == expected_address
+
+    def test_get_account_no_index_raises_error(self):
+        cfg = AccountConfig(mnemonic=VALID_MNEMONIC)  # No default_account_index
+        with pytest.raises(ValueError, match="no default_account_index specified"):
+            cfg.get_account()  # Should raise when no index provided
 
 
 class TestAccountConfigWithMnemonicStore:
@@ -105,7 +122,7 @@ class TestAccountConfigWithMnemonicStore:
                 passphrase="open sesame",
             ),
         )
-        acct: LocalAccount = cfg.get_account(index)
+        acct = cfg.get_account(index)
         assert isinstance(acct, LocalAccount)
         expected = _derive_address(VALID_MNEMONIC, index)
         assert acct.address == expected

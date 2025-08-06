@@ -1,6 +1,10 @@
+from typing import Any
+
 from eth_account.signers.base import BaseAccount
 from eth_typing import ChecksumAddress
-from pydantic import BaseModel, Field, model_validator
+from flwr.common.context import Context
+from pydantic import Field, model_validator
+from rizemind.configuration.base_config import BaseConfig
 from rizemind.configuration.validators.eth_address import EthereumAddress
 from rizemind.contracts.swarm.swarm_v1.swarm_v1_factory import (
     SwarmV1Factory,
@@ -10,13 +14,15 @@ from rizemind.exception.base_exception import RizemindException
 from rizemind.swarm.swarm import Swarm
 from web3 import Web3
 
+SWARM_CONFIG_STATE_KEY = "rizemind.swarm"
+
 
 class SwarmConfigException(RizemindException):
     def __init__(self, field: str):
         super().__init__(code="missing_value", message=f"missing field {field}")
 
 
-class SwarmConfig(BaseModel):
+class SwarmConfig(BaseConfig):
     address: EthereumAddress | None = Field(
         default=None, description="Ethereum address for the swarm contract"
     )
@@ -59,3 +65,10 @@ class SwarmConfig(BaseModel):
             )
 
         raise Exception("No address or factory settings found")
+
+    @staticmethod
+    def from_context(context: Context) -> "SwarmConfig | None":
+        if SWARM_CONFIG_STATE_KEY in context.state.config_records:
+            records: Any = context.state.config_records[SWARM_CONFIG_STATE_KEY]
+            return SwarmConfig(**records)
+        return None

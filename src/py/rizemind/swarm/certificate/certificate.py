@@ -146,7 +146,7 @@ class Certificate:
 
     def store(self, path: Path) -> None:
         """
-        Persist the certificate to *path* (DER).  If you need PEM just
+        Persist the certificate to *path* (PEM Format).  If you need PEM just
         change ``serialization.Encoding`` below.
         """
         cert = x509.load_der_x509_certificate(self._der)

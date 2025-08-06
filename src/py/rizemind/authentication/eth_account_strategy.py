@@ -1,13 +1,13 @@
-from typing import Protocol
-
-from eth_typing import ChecksumAddress
 from flwr.common.typing import FitRes
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
 from web3 import Web3
 
-from rizemind.authentication.signature import recover_model_signer
-from rizemind.contracts.erc.erc5267.typings import EIP712Domain
+from rizemind.authentication.authenticated_client_manager import (
+    AuthenticatedClientManager,
+)
+from rizemind.authentication.signatures.model import recover_model_signer
+from rizemind.authentication.typing import SupportsEthAccountStrategy
 from rizemind.exception.base_exception import RizemindException
 
 
@@ -15,11 +15,6 @@ class CannotTrainException(RizemindException):
     def __init__(self, address: str) -> None:
         message = f"{address} cannot train"
         super().__init__(code="cannot_train", message=message)
-
-
-class SupportsEthAccountStrategy(Protocol):
-    def can_train(self, trainer: ChecksumAddress, round_id: int) -> bool: ...
-    def get_eip712_domain(self) -> EIP712Domain: ...
 
 
 class EthAccountStrategy(Strategy):
@@ -46,27 +41,29 @@ class EthAccountStrategy(Strategy):
     """
 
     strat: Strategy
-    model: SupportsEthAccountStrategy
+    swarm: SupportsEthAccountStrategy
     address: str
 
     def __init__(
         self,
         strat: Strategy,
-        model: SupportsEthAccountStrategy,
+        swarm: SupportsEthAccountStrategy,
     ):
         super().__init__()
         self.strat = strat
-        self.model = model
-        domain = self.model.get_eip712_domain()
+        self.swarm = swarm
+        domain = self.swarm.get_eip712_domain()
         self.address = domain.verifyingContract
 
     def initialize_parameters(self, client_manager):
         return self.strat.initialize_parameters(client_manager)
 
     def configure_fit(self, server_round, parameters, client_manager):
+        auth_cm = AuthenticatedClientManager(client_manager, server_round, self.swarm)
         client_instructions = self.strat.configure_fit(
-            server_round, parameters, client_manager
+            server_round, parameters, auth_cm
         )
+
         # contract_address is used in signing client
         for _, fit_ins in client_instructions:
             fit_ins.config["contract_address"] = self.address
@@ -77,7 +74,7 @@ class EthAccountStrategy(Strategy):
         whitelisted: list[tuple[ClientProxy, FitRes]] = []
         for client, res in results:
             signer = self._recover_signer(res, server_round)
-            if self.model.can_train(signer, server_round):
+            if self.swarm.can_train(signer, server_round):
                 res.metrics["trainer_address"] = signer
                 whitelisted.append((client, res))
             else:
@@ -90,7 +87,7 @@ class EthAccountStrategy(Strategy):
             ensure_bytes(res.metrics.get("r")),
             ensure_bytes(res.metrics.get("s")),
         )
-        eip712_domain = self.model.get_eip712_domain()
+        eip712_domain = self.swarm.get_eip712_domain()
         signer = recover_model_signer(
             model=res.parameters,
             version=eip712_domain.version,
@@ -103,7 +100,8 @@ class EthAccountStrategy(Strategy):
         return Web3.to_checksum_address(signer)
 
     def configure_evaluate(self, server_round, parameters, client_manager):
-        return self.strat.configure_evaluate(server_round, parameters, client_manager)
+        auth_cm = AuthenticatedClientManager(client_manager, server_round, self.swarm)
+        return self.strat.configure_evaluate(server_round, parameters, auth_cm)
 
     def aggregate_evaluate(self, server_round, results, failures):
         return self.strat.aggregate_evaluate(server_round, results, failures)
