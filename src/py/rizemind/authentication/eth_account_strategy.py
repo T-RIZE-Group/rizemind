@@ -1,14 +1,23 @@
+from eth_account.signers.base import BaseAccount
 from flwr.common.typing import FitRes
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
-from web3 import Web3
 
 from rizemind.authentication.authenticated_client_manager import (
     AuthenticatedClientManager,
 )
-from rizemind.authentication.signatures.model import recover_model_signer
+from rizemind.authentication.notary.model.config import (
+    parse_model_notary_config,
+    prepare_model_notary_config,
+)
+from rizemind.authentication.notary.model.model_signature import (
+    hash_parameters,
+    recover_model_signer,
+    sign_parameters_model,
+)
 from rizemind.authentication.typing import SupportsEthAccountStrategy
 from rizemind.exception.base_exception import RizemindException
+from rizemind.exception.parse_exception import ParseException
 
 
 class CannotTrainException(RizemindException):
@@ -43,17 +52,20 @@ class EthAccountStrategy(Strategy):
     strat: Strategy
     swarm: SupportsEthAccountStrategy
     address: str
+    account: BaseAccount
 
     def __init__(
         self,
         strat: Strategy,
         swarm: SupportsEthAccountStrategy,
+        account: BaseAccount,
     ):
         super().__init__()
         self.strat = strat
         self.swarm = swarm
         domain = self.swarm.get_eip712_domain()
         self.address = domain.verifyingContract
+        self.account = account
 
     def initialize_parameters(self, client_manager):
         return self.strat.initialize_parameters(client_manager)
@@ -63,41 +75,46 @@ class EthAccountStrategy(Strategy):
         client_instructions = self.strat.configure_fit(
             server_round, parameters, auth_cm
         )
-
-        # contract_address is used in signing client
+        domain = self.swarm.get_eip712_domain()
         for _, fit_ins in client_instructions:
-            fit_ins.config["contract_address"] = self.address
-            fit_ins.config["current_round"] = server_round
+            signature = sign_parameters_model(
+                account=self.account,
+                domain=domain,
+                parameters=fit_ins.parameters,
+                round=server_round,
+            )
+            notary_config = prepare_model_notary_config(
+                round_id=server_round,
+                domain=domain,
+                signature=signature,
+                model_hash=hash_parameters(fit_ins.parameters),
+            )
+            fit_ins.config = fit_ins.config | notary_config
         return client_instructions
 
     def aggregate_fit(self, server_round, results, failures):
         whitelisted: list[tuple[ClientProxy, FitRes]] = []
         for client, res in results:
-            signer = self._recover_signer(res, server_round)
-            if self.swarm.can_train(signer, server_round):
-                res.metrics["trainer_address"] = signer
-                whitelisted.append((client, res))
-            else:
+            try:
+                signer = self._recover_signer(res, server_round)
+                if self.swarm.can_train(signer, server_round):
+                    res.metrics["trainer_address"] = signer
+                    whitelisted.append((client, res))
+                else:
+                    failures.append(CannotTrainException(signer))
+            except ParseException:
                 failures.append(CannotTrainException(signer))
         return self.strat.aggregate_fit(server_round, whitelisted, failures)
 
     def _recover_signer(self, res: FitRes, server_round: int):
-        vrs = (
-            ensure_bytes(res.metrics.get("v")),
-            ensure_bytes(res.metrics.get("r")),
-            ensure_bytes(res.metrics.get("s")),
-        )
+        notary_config = parse_model_notary_config(res.metrics)
         eip712_domain = self.swarm.get_eip712_domain()
-        signer = recover_model_signer(
+        return recover_model_signer(
             model=res.parameters,
-            version=eip712_domain.version,
-            chainid=eip712_domain.chainId,
-            contract=eip712_domain.verifyingContract,
-            name=eip712_domain.name,
+            domain=eip712_domain,
             round=server_round,
-            signature=vrs,
+            signature=notary_config.signature,
         )
-        return Web3.to_checksum_address(signer)
 
     def configure_evaluate(self, server_round, parameters, client_manager):
         auth_cm = AuthenticatedClientManager(client_manager, server_round, self.swarm)
@@ -108,13 +125,3 @@ class EthAccountStrategy(Strategy):
 
     def evaluate(self, server_round, parameters):
         return self.strat.evaluate(server_round, parameters)
-
-
-def ensure_bytes(value) -> bytes:
-    if value is None:
-        raise ValueError("Value must not be None")
-    if isinstance(value, bytes):
-        return value
-    if isinstance(value, bool | int | float | str):
-        return str(value).encode("utf-8")
-    raise ValueError(f"Cannot convert value of type {type(value)} to bytes")

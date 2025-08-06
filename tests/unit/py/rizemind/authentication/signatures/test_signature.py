@@ -5,9 +5,7 @@ from eth_account import Account
 from eth_account.datastructures import SignedMessage
 from eth_account.messages import encode_defunct
 from eth_typing import HexStr
-
-# 👉 CHANGE THIS import if the class lives in another module
-from rizemind.authentication.signatures.signature import Signature  # type: ignore
+from rizemind.authentication.signatures.signature import Signature
 from web3 import Web3
 
 # --------------------------------------------------------------------------- #

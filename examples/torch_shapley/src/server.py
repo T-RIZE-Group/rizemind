@@ -79,6 +79,7 @@ def server_fn(context: Context):
             aggregate_coalition_metrics_fn=aggregate_coalitions,
         ),
         swarm,
+        account,
     )
     metrics_storage = MetricsStorage(
         Path(str(context.run_config["metrics-storage-path"])),

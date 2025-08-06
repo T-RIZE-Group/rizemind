@@ -4,7 +4,7 @@ from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
 from rizemind.authentication.authentication_mod import authentication_mod
 from rizemind.authentication.config import ACCOUNT_CONFIG_STATE_KEY, AccountConfig
-from rizemind.authentication.eth_account_client import SigningClient
+from rizemind.authentication.notary.model.mod import model_notary_mod
 from rizemind.compensation.shapley.decentralized.shapley_value_client import (
     DecentralShapleyValueClient,
 )
@@ -61,22 +61,18 @@ def client_fn(context: Context):
     account_config = AccountConfig(
         **config.get("tool.eth.account") | {"default_account_index": partition_id + 1}
     )
-    account = account_config.get_account()
-    web3_config = Web3Config(**config.get("tool.web3"))
-
-    # Return Client instance
-    flwr_client = FlowerClient(trainloader, valloader, local_epochs, learning_rate)
-    shapley_client = DecentralShapleyValueClient(client=flwr_client)
-    signing_client = SigningClient(
-        client=shapley_client.to_client(), account=account, w3=web3_config.get_web3()
-    )
     context.state.config_records[ACCOUNT_CONFIG_STATE_KEY] = (
         account_config.to_config_record()
     )
+    web3_config = Web3Config(**config.get("tool.web3"))
     context.state.config_records[WEB3_CONFIG_STATE_KEY] = web3_config.to_config_record()
-    return signing_client
+    # Return Client instance
+    flwr_client = FlowerClient(trainloader, valloader, local_epochs, learning_rate)
+    shapley_client = DecentralShapleyValueClient(client=flwr_client)
+
+    return shapley_client.to_client()
 
 
 Account.enable_unaudited_hdwallet_features()
 # Flower ClientApp
-app = ClientApp(client_fn, mods=[authentication_mod])
+app = ClientApp(client_fn, mods=[authentication_mod, model_notary_mod])

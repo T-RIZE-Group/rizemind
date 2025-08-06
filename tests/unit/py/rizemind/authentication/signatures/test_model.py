@@ -1,12 +1,17 @@
 import pytest
 from eth_account import Account
-from eth_account.datastructures import SignedMessage
-from rizemind.authentication.signatures.model import (
+from rizemind.authentication.notary.model.model_signature import (
     Parameters,
     hash_parameters,
     recover_model_signer,
     sign_parameters_model,
 )
+from rizemind.authentication.signatures.eip712 import (
+    EIP712DomainRequiredFields,
+    EIP712DomainStruct,
+)
+from rizemind.authentication.signatures.signature import Signature
+from web3 import Web3
 
 
 @pytest.fixture
@@ -21,66 +26,42 @@ def test_params():
 
 
 @pytest.fixture
-def signing_params():
-    return {
-        "version": "1.0.0",
-        "chain_id": 1,
-        "contract_address": "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
-        "app_name": "TestApp",
-        "round_number": 1,
-    }
+def domain() -> EIP712DomainRequiredFields:
+    return EIP712DomainStruct(
+        name="test",
+        version="1.0.0",
+        chainId=1,
+        verifyingContract=Web3.to_checksum_address(
+            "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC"
+        ),
+    )
 
 
 def test_hash_parameters(test_params):
     """Test that parameter hashing produces expected output"""
     hash_result = hash_parameters(test_params)
-    assert isinstance(hash_result, str), "hash should be a hex string"
-    assert hash_result.startswith("0x"), "hash should start with 0x"
-    assert len(hash_result) == 66, "hash should be 32 bytes (66 chars including 0x)"
+    assert isinstance(hash_result, bytes), "hash should be a hex string"
+    assert len(hash_result) == 32, "hash should be 32 bytes"
 
 
-def test_sign_parameters_model(eth_account, test_params, signing_params):
+def test_sign_parameters_model(eth_account, test_params, domain):
     """Test that model parameter signing works correctly"""
     signed_message = sign_parameters_model(
-        eth_account,
-        signing_params["version"],
-        test_params,
-        signing_params["chain_id"],
-        signing_params["contract_address"],
-        signing_params["app_name"],
-        signing_params["round_number"],
+        account=eth_account, domain=domain, round=1, parameters=test_params
     )
-    assert isinstance(signed_message, SignedMessage), "should return a SignedMessage"
-    assert hasattr(signed_message, "signature"), "should have signature attribute"
-    assert hasattr(signed_message, "message_hash"), "should have message_hash attribute"
+    assert isinstance(signed_message, Signature), "should return a SignedMessage"
 
 
-def test_recover_model_signer(eth_account, test_params, signing_params):
+def test_recover_model_signer(eth_account, test_params, domain):
     """Test that we can recover the correct signer from a signature"""
-    # First sign the message
-    signed_message = sign_parameters_model(
-        eth_account,
-        signing_params["version"],
-        test_params,
-        signing_params["chain_id"],
-        signing_params["contract_address"],
-        signing_params["app_name"],
-        signing_params["round_number"],
+    round = 1
+    signature = sign_parameters_model(
+        account=eth_account, domain=domain, round=round, parameters=test_params
     )
-
-    # Extract v, r, s from signature
-    sig = signed_message.signature
-    v, r, s = sig[-1], sig[:32], sig[32:64]
 
     # Recover signer
     recovered_address = recover_model_signer(
-        test_params,
-        signing_params["version"],
-        signing_params["chain_id"],
-        signing_params["contract_address"],
-        signing_params["app_name"],
-        signing_params["round_number"],
-        (v, r, s),
+        model=test_params, round=round, domain=domain, signature=signature
     )
 
     assert recovered_address == eth_account.address, (

@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import pytest
-from rizemind.configuration.transform import (  # type: ignore
+from rizemind.configuration.transform import (
     flatten,
     from_config,
     normalize,
