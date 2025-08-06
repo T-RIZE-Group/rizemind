@@ -10,6 +10,7 @@ from rizemind.authentication.train_auth import (
 )
 from rizemind.authentication.typing import SupportsEthAccountStrategy
 from rizemind.contracts.erc.erc5267.typings import EIP712Domain
+from rizemind.exception.parse_exception import ParseException
 
 
 class CanTrainCriterion(Criterion):
@@ -28,11 +29,14 @@ class CanTrainCriterion(Criterion):
             round_id=self.round_id, nonce=nonce, domain=self.domain
         )
         res = client.get_properties(ins, timeout=20, group_id=self.round_id)
-        auth = parse_train_auth_res(res)
-        signer = recover_auth_signer(
-            round=self.round_id,
-            nonce=nonce,
-            domain=self.domain,
-            signature=auth.signature,
-        )
-        return self.swarm.can_train(signer, self.round_id)
+        try:
+            auth = parse_train_auth_res(res)
+            signer = recover_auth_signer(
+                round=self.round_id,
+                nonce=nonce,
+                domain=self.domain,
+                signature=auth.signature,
+            )
+            return self.swarm.can_train(signer, self.round_id)
+        except ParseException:
+            return False

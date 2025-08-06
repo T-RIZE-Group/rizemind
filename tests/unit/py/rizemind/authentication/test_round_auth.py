@@ -19,6 +19,7 @@ from rizemind.authentication.train_auth import (
     prepare_train_auth_res,
 )
 from rizemind.contracts.erc.erc5267.typings import EIP712DomainMinimal
+from rizemind.exception.parse_exception import ParseException
 from web3 import Web3
 
 
@@ -97,7 +98,7 @@ def test_train_auth_ins_validation_error_bad_round_id(domain, nonce):
 def test_train_auth_ins_parse_missing_prefix_raises():
     # Deliberately omit the expected "rizemind.train_auth" prefix
     bad_ins = GetPropertiesIns(config={"foo.bar": 1})
-    with pytest.raises(KeyError):
+    with pytest.raises(ParseException):
         parse_train_auth_ins(bad_ins)
 
 
