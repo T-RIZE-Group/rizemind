@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "uv-dynamic-versioning"]
 build-backend = "hatchling.build"
 
 [project]
 name = "rizemind"
-version = "0.0.1"
+dynamic = ["version"]
 description = "RIZEMIND: building decentralized collective intelligence"
 authors = [{ name = "T-RIZE Labs", email = "michael.duchesne@t-rize.io" }]
 requires-python = ">=3.12"
@@ -43,6 +43,12 @@ tensorflow = [
     "tensorflow-cpu>=2.9.1,!=2.11.1 ; platform_machine == 'x86_64'",
 ]
 torch = ["opacus>=1.5.3", "torch>=2.6.0", "torchvision>=0.21.0"]
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+fallback-version = "0.0.0"
 
 [tool.hatch.build.targets.sdist]
 include = ["src/py/rizemind"]
