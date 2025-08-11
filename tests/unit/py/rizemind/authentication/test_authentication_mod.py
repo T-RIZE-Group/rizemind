@@ -174,7 +174,7 @@ class TestAuthenticationMod:
         # Act
         result = authentication_mod(non_get_properties_message, context, call_next)
 
-        assert result.message_type == MessageType.TRAIN
+        assert result.metadata.message_type == MessageType.TRAIN
 
     def test_authentication_mod_no_account_config(
         self, context: Context, call_next, get_properties_message: Message

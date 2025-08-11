@@ -1,7 +1,10 @@
+import logging
+
 from flwr.client.typing import ClientAppCallable
 from flwr.common import (
     Context,
     Message,
+    log,
 )
 from flwr.common.constant import MessageType
 from flwr.common.recorddict_compat import (
@@ -68,8 +71,9 @@ def model_notary_mod(
                         message=f"{model_signer} is not an aggregator",
                     )
         except (ParseException, MissingConfigNotaryModError):
-            print(
-                "Impossible to verify parameters authenticity: Cannot find swarm config or web3 config"
+            log(
+                level=logging.WARN,
+                msg="Impossible to verify parameters authenticity: Cannot find swarm config or web3 config",
             )
 
     reply = call_next(msg, ctxt)
@@ -105,5 +109,8 @@ def model_notary_mod(
                 fit_res.metrics = concat(fit_res.metrics, notary_config)
                 reply.content = fitres_to_recorddict(fit_res, False)
         except (ParseException, MissingConfigNotaryModError):
-            print("Impossible to sign parameters: Cannot find required configs")
+            log(
+                level=logging.ERROR,
+                msg="Impossible to sign parameters: Cannot find required configs",
+            )
     return reply

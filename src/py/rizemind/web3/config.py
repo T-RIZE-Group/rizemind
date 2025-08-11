@@ -26,8 +26,8 @@ class Web3Config(BaseConfig):
             return HttpUrl(value)  # will raise if invalid
         raise TypeError("url must be a string, HttpUrl, or None")
 
-    def get_web3(self) -> Web3:
-        w3 = Web3(self.web3_provider())
+    def get_web3(self, *, web3_factory=Web3) -> Web3:
+        w3 = web3_factory(self.web3_provider())
         if w3.eth.chain_id in poaChains:
             w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
         return w3
