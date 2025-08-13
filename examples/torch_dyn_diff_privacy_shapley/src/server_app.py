@@ -80,6 +80,7 @@ def server_fn(context: Context) -> ServerAppComponents:
             aggregate_coalition_metrics_fn=aggregate_coalitions,
         ),
         swarm,
+        account,
     )
     server_config = ServerConfig(
         num_rounds=int(context.run_config["num-server-rounds"])
