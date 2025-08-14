@@ -6,13 +6,13 @@ from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
 from rizemind.authentication.config import AccountConfig
 from rizemind.authentication.eth_account_strategy import EthAccountStrategy
-from rizemind.compensation.shapley.decentralized.shapley_value_strategy import (
-    DecentralShapleyValueStrategy,
-)
-from rizemind.compensation.shapley.shapley_value_strategy import Coalition
 from rizemind.configuration.toml_config import TomlConfig
 from rizemind.logging.metrics_storage import MetricsStorage
 from rizemind.logging.metrics_storage_strategy import MetricsStorageStrategy
+from rizemind.strategies.contribution.shapley.decentralized.shapley_value_strategy import (
+    DecentralShapleyValueStrategy,
+)
+from rizemind.strategies.contribution.shapley.shapley_value_strategy import Coalition
 from rizemind.swarm.config import SwarmConfig
 from rizemind.web3.config import Web3Config
 
