@@ -1,7 +1,7 @@
 from typing import Any, cast
 
 from flwr.common.record.configrecord import ConfigRecord
-from flwr.common.typing import Config, ConfigRecordValues
+from flwr.common.typing import Config, ConfigRecordValues, Scalar
 
 
 def normalize(data: dict[str, Any]) -> dict[str, ConfigRecordValues]:
@@ -60,3 +60,23 @@ def unflatten(flat_dict: dict[str, Any]) -> dict[str, Any]:
 
 def from_config(config: Config) -> dict[str, Any]:
     return unflatten(config)
+
+
+def _to_plain_dict(conf: Config | dict[str, Any] | ConfigRecord) -> dict[str, Any]:
+    """Return a regular ``dict[str, Any]`` from any supported config-like object."""
+    if isinstance(conf, ConfigRecord):
+        return dict(conf)
+    return cast(dict[str, Any], conf)
+
+
+def concat(
+    conf_a: Config | dict[str, Scalar] | ConfigRecord,
+    conf_b: Config | dict[str, Scalar] | ConfigRecord,
+) -> dict[str, Scalar]:
+    """
+    Merge two configuration objects into a flattened Flower ``ConfigRecord``.
+
+    """
+    dict_a = _to_plain_dict(conf_a)
+    dict_b = _to_plain_dict(conf_b)
+    return dict_a | dict_b

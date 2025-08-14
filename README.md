@@ -35,14 +35,7 @@ uv sync
 - **ML-specific installation** (includes ML libraries and above):
 
 ```bash
-uv sync --group ml --group tensorflow --group torch
-```
-
-Some examples use a `tensorflow` version that could not properly run on Windows machines in our experience.
-Therefore, if you only have a Windows machine, or you want to use examples that only use `torch`, then simply run the following instead:
-
-```bash
-uv sync --group ml --group torch
+uv sync --group ml
 ```
 
 - **Documentation generation installation** (includes ML and documentation libraries):
@@ -87,8 +80,15 @@ uv run -- flwr run
 
 Automated tests use `pytest`. Execute the full test suite with:
 
+### Unit Tests
 ```bash
-uv run -- pytest
+uv run pytest tests/unit
+```
+
+### Integration Tests
+Requires Anvil installed.
+```bash
+uv run pytest tests/integration
 ```
 
 Run specific tests with:

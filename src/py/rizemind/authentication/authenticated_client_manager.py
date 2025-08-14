@@ -69,11 +69,11 @@ class AuthenticatedClientManager(ClientManager):
     def num_available(self) -> int:
         return self._base.num_available()
 
-    def register(self, client: ClientProxy) -> None:
-        self._base.register(client)
+    def register(self, client: ClientProxy) -> bool:
+        return self._base.register(client)
 
     def unregister(self, client: ClientProxy) -> None:
-        self._base.unregister(client)
+        return self._base.unregister(client)
 
     def all(self) -> dict[str, ClientProxy]:
         return self._base.all()

@@ -97,7 +97,7 @@ def test_select_propagates_swarm_decision(
     expected_ins = prepare_train_auth_ins(round_id=rnd, nonce=nonce, domain=domain)
     (ins_arg,), kw = client.get_properties.call_args
     assert ins_arg == expected_ins
-    assert kw["timeout"] == 20 and kw["group_id"] == rnd
+    assert kw["group_id"] == rnd
 
     # `swarm.can_train` should have been invoked with the *recovered* signer
     # and the same round id

@@ -67,8 +67,12 @@ class SwarmConfig(BaseConfig):
         raise Exception("No address or factory settings found")
 
     @staticmethod
-    def from_context(context: Context) -> "SwarmConfig | None":
+    def from_context(
+        context: Context, *, fallback_address: ChecksumAddress | None = None
+    ) -> "SwarmConfig | None":
         if SWARM_CONFIG_STATE_KEY in context.state.config_records:
             records: Any = context.state.config_records[SWARM_CONFIG_STATE_KEY]
             return SwarmConfig(**records)
+        if fallback_address is not None:
+            return SwarmConfig(address=fallback_address)
         return None

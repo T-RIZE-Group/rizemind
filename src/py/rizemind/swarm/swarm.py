@@ -50,6 +50,9 @@ class Swarm:
     def can_train(self, trainer: ChecksumAddress, round_id: int) -> bool:
         return self.access_control.is_trainer(trainer)
 
+    def is_aggregator(self, trainer: ChecksumAddress, round_id: int) -> bool:
+        return self.access_control.is_aggregator(trainer)
+
     def distribute(self, trainer_scores: list[tuple[ChecksumAddress, float]]) -> str:
         return self.swarm.distribute(trainer_scores).to_0x_hex()
 

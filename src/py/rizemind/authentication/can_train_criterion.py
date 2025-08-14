@@ -28,8 +28,9 @@ class CanTrainCriterion(Criterion):
         ins = prepare_train_auth_ins(
             round_id=self.round_id, nonce=nonce, domain=self.domain
         )
-        res = client.get_properties(ins, timeout=20, group_id=self.round_id)
+
         try:
+            res = client.get_properties(ins, timeout=60, group_id=self.round_id)
             auth = parse_train_auth_res(res)
             signer = recover_auth_signer(
                 round=self.round_id,
@@ -38,5 +39,5 @@ class CanTrainCriterion(Criterion):
                 signature=auth.signature,
             )
             return self.swarm.can_train(signer, self.round_id)
-        except ParseException:
+        except (ParseException, ValueError):
             return False

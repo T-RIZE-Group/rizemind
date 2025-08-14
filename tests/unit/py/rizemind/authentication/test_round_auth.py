@@ -7,8 +7,6 @@ from flwr.common import GetPropertiesIns, GetPropertiesRes
 from flwr.common.typing import Code
 from pydantic import ValidationError
 from rizemind.authentication.signatures.signature import Signature
-
-# ≡≡≡  CHANGE THESE imports if the code lives elsewhere  ≡≡≡
 from rizemind.authentication.train_auth import (
     TRAIN_AUTH_PREFIX,
     RoundAuthResponseConfig,
@@ -54,8 +52,7 @@ def signed_message():
 
 @pytest.fixture(scope="module")
 def signature(signed_message) -> Signature:
-    """A valid Signature instance built from a *real* ECDSA signature."""
-    return Signature(data=signed_message.signature)  # type: ignore[attr-defined]
+    return Signature(data=signed_message.signature)
 
 
 def test_prepare_and_parse_train_auth_ins_roundtrip(domain, round_id, nonce):

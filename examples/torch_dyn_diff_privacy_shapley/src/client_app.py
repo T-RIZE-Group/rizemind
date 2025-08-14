@@ -8,16 +8,20 @@ from eth_account import Account
 from eth_typing import ChecksumAddress
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context, Scalar
-from opacus import PrivacyEngine
-from rizemind.authentication.config import AccountConfig
-from rizemind.authentication.eth_account_client import SigningClient
+from opacus import GradSampleModule, PrivacyEngine
+from opacus.optimizers import DPOptimizer
+from rizemind.authentication.authentication_mod import authentication_mod
+from rizemind.authentication.config import ACCOUNT_CONFIG_STATE_KEY, AccountConfig
+from rizemind.authentication.notary.model.config import parse_model_notary_config
+from rizemind.authentication.notary.model.mod import model_notary_mod
 from rizemind.compensation.shapley.decentralized.shapley_value_client import (
     DecentralShapleyValueClient,
 )
 from rizemind.configuration.toml_config import TomlConfig
 from rizemind.contracts.erc.erc5267.erc5267 import Web3
 from rizemind.swarm.swarm import Swarm
-from rizemind.web3.config import Web3Config
+from rizemind.web3.config import WEB3_CONFIG_STATE_KEY, Web3Config
+from torch.utils.data import DataLoader
 
 from .task import Net, get_weights, load_data, set_weights, test, train
 
@@ -97,14 +101,21 @@ class FlowerClient(NumPyClient):
             model,
             optimizer,
             self.train_loader,
-        ) = privacy_engine.make_private_with_epsilon(
-            module=model,
-            optimizer=optimizer,
-            data_loader=self.train_loader,
-            max_grad_norm=self.max_grad_norm,
-            target_delta=self.target_delta,
-            target_epsilon=self.target_epsilon,
-            epochs=self.epochs,
+        ) = cast(
+            # if `grad_sample_mode` is equal to "ghost",
+            # this method returns an additional value typed DPLossFastGradientClipping
+            # therefore for proper typing, we need to cast its result
+            tuple[GradSampleModule, DPOptimizer, DataLoader],
+            privacy_engine.make_private_with_epsilon(
+                module=model,
+                optimizer=optimizer,
+                data_loader=self.train_loader,
+                max_grad_norm=self.max_grad_norm,
+                target_delta=self.target_delta,
+                target_epsilon=self.target_epsilon,
+                epochs=self.epochs,
+                grad_sample_mode="hooks",  # default value
+            ),
         )
 
         epsilon = train(
@@ -138,8 +149,9 @@ class DynamicPrivacyClient(NumPyClient):
         self.client_address = client_address
 
     def fit(self, parameters, config):
-        contract_address = Web3.to_checksum_address(str(config["contract_address"]))
-        round = int(config["current_round"])
+        notary_config = parse_model_notary_config(config)
+        contract_address = notary_config.domain.verifyingContract
+        round = notary_config.round_id
         trainer_contribution, total_contributions, n_trainers = self._get_contribution(
             self.client_address, round, contract_address
         )
@@ -173,8 +185,9 @@ class DynamicPrivacyClient(NumPyClient):
 
 
 def client_fn(context: Context):
+    partition_id = int(context.node_config["partition-id"])
     train_loader, test_loader = load_data(
-        partition_id=cast(int, context.node_config["partition-id"]),
+        partition_id=partition_id,
         num_partitions=cast(int, context.node_config["num-partitions"]),
         batch_size=cast(int, context.run_config["batch-size"]),
         alpha=cast(float, context.run_config["alpha"]),
@@ -195,21 +208,21 @@ def client_fn(context: Context):
     )
 
     config = TomlConfig("./pyproject.toml")
-    account_config = AccountConfig(**config.get("tool.eth.account"))
-    account = account_config.get_account(
-        cast(int, context.node_config["partition-id"]) + 1
+    account_config = AccountConfig(
+        **config.get("tool.eth.account") | {"default_account_index": partition_id + 1}
+    )
+    context.state.config_records[ACCOUNT_CONFIG_STATE_KEY] = (
+        account_config.to_config_record()
     )
     web3_config = Web3Config(**config.get("tool.web3"))
+    context.state.config_records[WEB3_CONFIG_STATE_KEY] = web3_config.to_config_record()
     w3 = web3_config.get_web3()
-
+    account = account_config.get_account()
     dp_client = DynamicPrivacyClient(flwr_client, w3, account.address)
     shapley_client = DecentralShapleyValueClient(client=dp_client)
-    signing_client = SigningClient(
-        client=shapley_client.to_client(), account=account, w3=w3
-    )
 
-    return signing_client
+    return shapley_client.to_client()
 
 
 Account.enable_unaudited_hdwallet_features()
-app = ClientApp(client_fn=client_fn)
+app = ClientApp(client_fn=client_fn, mods=[authentication_mod, model_notary_mod])
