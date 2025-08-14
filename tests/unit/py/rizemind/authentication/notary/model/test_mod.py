@@ -192,24 +192,17 @@ class TestModelNotaryMod:
         call_next,
         minimal_domain: EIP712DomainMinimal,
         test_round_id: int,
-        test_model_hash: bytes,
-        account: BaseAccount,
         caplog,
     ) -> None:
         """Test that logs are emitted when ParseException occurs."""
-        # Create a message with invalid config data to trigger ParseException
         parameters = Parameters(tensors=[b"test_model"], tensor_type="bytes")
-
-        # Create invalid notary config (missing required fields)
-        invalid_config = {
-            "round_id": test_round_id,
-            # Missing domain and signature fields to trigger ParseException
-        }
-
-        # Create FitIns with the invalid config
+        # Create FitIns with an invalid config
         fit_ins = FitIns(
             parameters=parameters,
-            config=invalid_config,
+            config={
+                "round_id": test_round_id,
+                # Missing domain and signature fields to trigger ParseException
+            },
         )
 
         # Convert to recorddict format

@@ -3,7 +3,7 @@ from typing import Any
 from pydantic import BaseModel
 from rizemind.authentication.signatures.signature import Signature
 from rizemind.configuration.transform import from_config, to_config
-from rizemind.contracts.erc.erc5267.typings import EIP712Domain, EIP712DomainMinimal
+from rizemind.contracts.erc.erc5267.typings import EIP712DomainMinimal
 from rizemind.exception.parse_exception import catch_parse_errors
 
 MODEL_NOTARY_PREFIX = "rizemind.notary.model"
@@ -19,7 +19,7 @@ class ModelNotaryConfig(BaseModel):
 def prepare_model_notary_config(
     *,
     round_id: int,
-    domain: EIP712Domain,
+    domain: EIP712DomainMinimal,
     signature: Signature,
     model_hash: bytes,
 ):

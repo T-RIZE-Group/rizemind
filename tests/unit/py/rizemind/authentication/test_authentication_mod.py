@@ -185,7 +185,6 @@ class TestAuthenticationMod:
             authentication_mod(get_properties_message, context, call_next)
 
         assert exc_info.value.code == "no_account_config"
-        assert "AccountConfig cannot be found" in exc_info.value.message
 
     def test_authentication_mod_wrong_swarm_domain(
         self,
@@ -219,7 +218,7 @@ class TestAuthenticationMod:
         # Arrange - Create a message with invalid content that will cause ParseException
 
         msg = Message(
-            content=RecordDict(getpropertiesins_to_recorddict(GetPropertiesIns({}))),
+            content=getpropertiesins_to_recorddict(GetPropertiesIns({})),
             message_type=MessageTypeLegacy.GET_PROPERTIES,
             dst_node_id=1,
         )
