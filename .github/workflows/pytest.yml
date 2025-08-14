@@ -3,32 +3,32 @@ run-name: Pytest will run to check if all tests pass
 on:
   push:
     branches:
-      - '**'
+      - "**"
   pull_request:
     types: [opened, synchronize, reopened]
 
 jobs:
   unit-test:
-    runs-on: ubuntu-latest    
+    runs-on: ubuntu-latest
     env:
       UV_LINK_MODE: copy
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
 
-    - name: Set up Python
-      run: uv python install
+      - name: Set up Python
+        run: uv python install
 
-    - name: Install the project
-      run: uv sync
+      - name: Install the project
+        run: uv sync
 
-    - name: Run tests
-      run: uv run pytest tests/unit
+      - name: Run tests
+        run: uv run pytest tests/unit
 
   integration-test:
     needs: unit-test
@@ -37,28 +37,28 @@ jobs:
     env:
       UV_LINK_MODE: copy
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-    - name: Install Foundry
-      uses: foundry-rs/foundry-toolchain@v1
-      with:
-        version: nightly
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
 
-    - name: Install Dependencies
-      working-directory: forge
-      run: forge soldeer install
+      - name: Install Dependencies
+        working-directory: forge
+        run: forge soldeer install
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
 
-    - name: Set up Python
-      run: uv python install
+      - name: Set up Python
+        run: uv python install
 
-    - name: Install the project
-      run: uv sync
+      - name: Install the project
+        run: uv sync
 
-    - name: Run tests
-      run: uv run pytest tests/integration
+      - name: Run tests
+        run: uv run pytest tests/integration
