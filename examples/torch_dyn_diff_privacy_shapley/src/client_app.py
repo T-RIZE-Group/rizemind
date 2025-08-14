@@ -8,7 +8,8 @@ from eth_account import Account
 from eth_typing import ChecksumAddress
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context, Scalar
-from opacus import PrivacyEngine
+from opacus import GradSampleModule, PrivacyEngine
+from opacus.optimizers import DPOptimizer
 from rizemind.authentication.authentication_mod import authentication_mod
 from rizemind.authentication.config import ACCOUNT_CONFIG_STATE_KEY, AccountConfig
 from rizemind.authentication.notary.model.config import parse_model_notary_config
@@ -20,6 +21,7 @@ from rizemind.configuration.toml_config import TomlConfig
 from rizemind.contracts.erc.erc5267.erc5267 import Web3
 from rizemind.swarm.swarm import Swarm
 from rizemind.web3.config import WEB3_CONFIG_STATE_KEY, Web3Config
+from torch.utils.data import DataLoader
 
 from .task import Net, get_weights, load_data, set_weights, test, train
 
@@ -99,14 +101,21 @@ class FlowerClient(NumPyClient):
             model,
             optimizer,
             self.train_loader,
-        ) = privacy_engine.make_private_with_epsilon(
-            module=model,
-            optimizer=optimizer,
-            data_loader=self.train_loader,
-            max_grad_norm=self.max_grad_norm,
-            target_delta=self.target_delta,
-            target_epsilon=self.target_epsilon,
-            epochs=self.epochs,
+        ) = cast(
+            # if `grad_sample_mode` is equal to "ghost",
+            # this method returns an additional value typed DPLossFastGradientClipping
+            # therefore for proper typing, we need to cast its result
+            tuple[GradSampleModule, DPOptimizer, DataLoader],
+            privacy_engine.make_private_with_epsilon(
+                module=model,
+                optimizer=optimizer,
+                data_loader=self.train_loader,
+                max_grad_norm=self.max_grad_norm,
+                target_delta=self.target_delta,
+                target_epsilon=self.target_epsilon,
+                epochs=self.epochs,
+                grad_sample_mode="hooks",  # default value
+            ),
         )
 
         epsilon = train(
