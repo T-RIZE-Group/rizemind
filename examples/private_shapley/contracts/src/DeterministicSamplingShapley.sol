@@ -337,6 +337,14 @@ contract ImprovedPrivateShapley is Ownable, ReentrancyGuard {
         uint256 value
     );
 
+    // 3
+    // [A , B, C, D]
+    // { B, C, D, A}
+    // { C, D, A, B}
+
+    // (nplayer * num_samples)/2
+    // 5000/100 ->
+
     /* ---------- Fisher‑Yates shuffle derived from a public seed ---------- */
     function _permutation(
         uint256 seed,

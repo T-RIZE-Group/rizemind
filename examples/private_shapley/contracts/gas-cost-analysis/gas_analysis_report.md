@@ -333,6 +333,13 @@ _(average of 1000 random games, scores 0‑1000)._
 
 ---
 
+TODO: probibilty graph coalition and optimial amount k, where k is the same colation shar ewith multiple player so we can have atleast one results if the player drops out
+
+TODO: paper scope:
+
+- on-chain method for shapley value.( literature review on shapley x smart contract).
+- holistic results / end to end results in context of federated learning, showing improvement in fdl
+
 ### 6. Architectural Improvements
 
 1. **Lazy Shapley calculation**: Calculate only when claiming, not storing all values
