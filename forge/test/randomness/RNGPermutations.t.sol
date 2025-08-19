@@ -20,7 +20,7 @@ contract RandPermTest is Test {
         wrapper = new RandPermWrapper();
     }
 
-    function test_RandPerm_BasicFunctionality() public {
+    function test_RandPerm_BasicFunctionality() public view {
         uint256 max = 100;
         uint256 i = 42;
         
@@ -30,7 +30,7 @@ contract RandPermTest is Test {
         assertTrue(result >= 0, "Result should be non-negative");
     }
 
-    function test_RandPerm_EdgeCases() public {
+    function test_RandPerm_EdgeCases() public view {
         // Test with max = 1
         uint256 result1 = wrapper.rand(TEST_SEED, 0, 1);
         assertEq(result1, 0, "With max=1, should always return 0");
@@ -43,7 +43,7 @@ contract RandPermTest is Test {
         assertTrue(result2 != result3, "Different indices should produce different results");
     }
 
-    function test_RandPerm_Reversibility() public {
+    function test_RandPerm_Reversibility() public view {
         uint256 max = 100;
         
         // Test that the same seed and index always produces the same result
@@ -52,7 +52,7 @@ contract RandPermTest is Test {
         assertEq(result1, result2, "Same seed and index should produce same result");
     }
 
-    function test_RandPerm_SeedDependency() public {
+    function test_RandPerm_SeedDependency() public view {
         uint256 max = 100;
         uint256 i = 42;
         
@@ -64,7 +64,7 @@ contract RandPermTest is Test {
         assertTrue(result1 != result2, "Different seeds should produce different results");
     }
 
-    function test_RandPerm_IndexDependency() public {
+    function test_RandPerm_IndexDependency() public view {
         uint256 max = 100;
         
         uint256 result1 = wrapper.rand(TEST_SEED, 0, max);
@@ -77,7 +77,7 @@ contract RandPermTest is Test {
         assertTrue(result2 != result3, "Different indices should produce different results");
     }
 
-    function test_RandPerm_PermutationProperties() public {
+    function test_RandPerm_PermutationProperties() public view {
         uint256 max = 10; // Small enough to test all values
         
         // Collect all results
@@ -100,7 +100,7 @@ contract RandPermTest is Test {
         }
     }
 
-    function test_RandPerm_LargeMax() public {
+    function test_RandPerm_LargeMax() public view {
         uint256 max = 1000;
         
         // Test with larger max value
@@ -111,7 +111,7 @@ contract RandPermTest is Test {
         }
     }
 
-    function test_RandPerm_PowerOfTwoMax() public {
+    function test_RandPerm_PowerOfTwoMax() public view {
         uint256 max = 256; // 2^8
         
         // Test with power of 2 max value
@@ -122,7 +122,7 @@ contract RandPermTest is Test {
         }
     }
 
-    function test_RandPerm_NonPowerOfTwoMax() public {
+    function test_RandPerm_NonPowerOfTwoMax() public view {
         uint256 max = 100; // Not a power of 2
         
         // Test with non-power of 2 max value
@@ -133,7 +133,7 @@ contract RandPermTest is Test {
         }
     }
 
-    function test_RandPerm_ConsistencyAcrossRuns() public {
+    function test_RandPerm_ConsistencyAcrossRuns() public view {
         uint256 max = 100;
         uint256[] memory results = new uint256[](10);
         
@@ -152,23 +152,23 @@ contract RandPermTest is Test {
 
     function test_RandPerm_ErrorConditions_MaxZero() public {
         // Test max = 0 (should revert)
-        vm.expectRevert("RandPerm: max=0");
+        vm.expectRevert(RandPerm.MaxCannotBeZero.selector);
         wrapper.rand(TEST_SEED, 0, 0);
     }
 
     function test_RandPerm_ErrorConditions_IndexEqualToMax() public {
         // Test i = max (should revert)
-        vm.expectRevert("RandPerm: i>=max");
+        vm.expectRevert(RandPerm.IndexGreaterThanOrEqualToMax.selector);
         wrapper.rand(TEST_SEED, 100, 100);
     }
 
     function test_RandPerm_ErrorConditions_IndexGreaterThanMax() public {
         // Test i > max (should revert)
-        vm.expectRevert("RandPerm: i>=max");
+        vm.expectRevert(RandPerm.IndexGreaterThanOrEqualToMax.selector);
         wrapper.rand(TEST_SEED, 101, 100);
     }
 
-    function test_RandPerm_BitLengthEdgeCases() public {
+    function test_RandPerm_BitLengthEdgeCases() public view {
         // Test with very small values
         uint256 result1 = wrapper.rand(TEST_SEED, 0, 1);
         assertEq(result1, 0, "max=1 should return 0");
@@ -180,7 +180,7 @@ contract RandPermTest is Test {
         assertTrue(result2 != result3, "Different indices should produce different results");
     }
 
-    function test_RandPerm_FeistelNetwork() public {
+    function test_RandPerm_FeistelNetwork() public view {
         // Test that the Feistel network produces different outputs for different inputs
         uint256 max = 16; // 2^4, so nBits will be 4
         
@@ -198,7 +198,7 @@ contract RandPermTest is Test {
         assertTrue(result3 != result4, "Feistel should produce different outputs");
     }
 
-    function test_RandPerm_DeterministicWithSameSeed() public {
+    function test_RandPerm_DeterministicWithSameSeed() public view {
         uint256 max = 100;
         
         // Test that same seed produces same sequence

@@ -8,13 +8,17 @@ pragma solidity ^0.8.20;
 library RandPerm {
     uint256 internal constant ROUNDS = 4; // 4 Feistel rounds are usually plenty for mixing
 
+    /// @dev Custom errors for better gas efficiency
+    error MaxCannotBeZero();
+    error IndexGreaterThanOrEqualToMax();
+
     /// @dev Returns the i-th pseudorandom element of a seed-keyed permutation of [0, max)
-    /// @param seed Arbitrary 32-byte seed (fix it to “freeze” the permutation)
+    /// @param seed Arbitrary 32-byte seed (fix it to "freeze" the permutation)
     /// @param i Index in [0, max)
     /// @param max Size of the domain (> 0). Outputs are in [0, max).
     function rand(bytes32 seed, uint256 i, uint256 max) internal pure returns (uint256) {
-        require(max > 0, "RandPerm: max=0");
-        require(i < max, "RandPerm: i>=max");
+        if (max == 0) revert MaxCannotBeZero();
+        if (i >= max) revert IndexGreaterThanOrEqualToMax();
 
         // Bit length n = ceil(log2(max)); use balanced Feistel on 2^n domain
         uint256 nBits = _bitLen(max - 1);
