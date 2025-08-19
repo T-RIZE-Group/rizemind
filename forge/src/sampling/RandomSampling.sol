@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {ITrainerSelection} from "./ITrainerSampling.sol";
+import {ISelector} from "./ISelector.sol";
 import {RNG} from "../randomness/RNG.sol";
 import {ISeedProvider} from "../randomness/ISeedProvider.sol";
+import {IERC165} from "@openzeppelin-contracts-5.2.0/utils/introspection/IERC165.sol";
 
 /// @title Random Trainer Sampling Contract
 /// @notice Implements probabilistic trainer sampling using a fixed target ratio and RNG
 /// @dev Stores only a target ratio and uses RNG to determine selection based on that ratio
-abstract contract RandomTrainerSampling is ITrainerSelection, ISeedProvider {
+abstract contract RandomSampling is ISelector, ISeedProvider {
     
-    /// @dev The target ratio of trainers to select (as a percentage, 0-10000 where 10000 = 100%)
+    /// @dev The target ratio of trainers to select (as a percentage, 1 ether = 100%)
     uint256 public targetRatio;
 
     uint256 constant RATIO_DECIMALS = 10**18;
@@ -22,7 +23,7 @@ abstract contract RandomTrainerSampling is ITrainerSelection, ISeedProvider {
     error InvalidTargetRatio(uint256 ratio);
     
     /// @dev Constructor sets the initial target ratio and owner
-    /// @param _targetRatio The initial target ratio (0-10000, where 10000 = 100%)
+    /// @param _targetRatio The initial target ratio (as a percentage, 1 ether = 100%)
     constructor(uint256 _targetRatio) {
         if (_targetRatio > RATIO_DECIMALS) {
             revert InvalidTargetRatio(_targetRatio);
@@ -37,7 +38,7 @@ abstract contract RandomTrainerSampling is ITrainerSelection, ISeedProvider {
     /// @param addr The address of the trainer to check
     /// @param roundId The round ID (used for RNG seed)
     /// @return True if the trainer is selected, false otherwise
-    function isTrainerSelected(
+    function isSelected(
         address addr,
         uint256 roundId
     ) external view override returns (bool) {
@@ -59,7 +60,7 @@ abstract contract RandomTrainerSampling is ITrainerSelection, ISeedProvider {
     
     
     /// @notice Gets the current target ratio
-    /// @return The target ratio as a percentage (0-10000, where 10000 = 100%)
+    /// @return The target ratio as a percentage (as a percentage, 1 ether = 100%)
     function getTargetRatio() external view returns (uint256) {
         return targetRatio;
     }
@@ -78,6 +79,12 @@ abstract contract RandomTrainerSampling is ITrainerSelection, ISeedProvider {
         
         // If the random value is below the target ratio, the trainer is selected
         return randomValue <= targetRatio;
+    }
+
+    /// @dev See {IERC165-supportsInterface}
+    function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
+        return interfaceId == type(ISelector).interfaceId || 
+               interfaceId == type(IERC165).interfaceId;
     }
 
     function _getSeed(uint256 roundId) internal view virtual returns (bytes32);

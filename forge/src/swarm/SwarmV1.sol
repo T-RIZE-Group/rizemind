@@ -9,6 +9,7 @@ import {SimpleMintCompensation} from "../compensation/SimpleMintCompensation.sol
 import {RoundTraining} from "../training/RoundTraining.sol";
 import {CertificateRegistry} from "./registry/CertificateRegistry.sol";
 
+
 contract SwarmV1 is
     FLAccessControl,
     SimpleMintCompensation,
@@ -16,7 +17,7 @@ contract SwarmV1 is
     RoundTraining,
     CertificateRegistry
 {
-    string private constant _VERSION = "1.0.0";
+    string private constant _VERSION = "swarm-v1.0.0";
 
     function initialize(
         string memory name,
