@@ -12,7 +12,7 @@ library RNG {
     /// @param max The maximum value for the random number
     /// @return The random number
     /// @return The new index in case a number is skipped to avoid modulo bias
-    function rand(bytes32 seed, uint256 i, uint256 max) external pure returns (uint256, uint256) {
+    function rand(bytes32 seed, uint256 i, uint256 max) internal pure returns (uint256, uint256) {
         if (max == 0) {
             revert MaxCannotBeZero();
         }
