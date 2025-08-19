@@ -5,7 +5,6 @@ import pytest
 from flwr.common import EvaluateIns, EvaluateRes, FitRes, Parameters
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
-
 from rizemind.compensation.shapley.shapley_value_strategy import (
     Coalition,
     ShapleyValueStrategy,

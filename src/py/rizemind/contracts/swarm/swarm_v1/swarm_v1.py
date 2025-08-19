@@ -25,7 +25,7 @@ abi_v1_0_0 = load_abi(Path(os.path.dirname(__file__)) / "./abi_1_0_0.json")
 
 
 class SwarmV1(BaseContract, HasAccount):
-    abi_versions: dict[str, list[dict]] = {"1.0.0": abi_v1_0_0}
+    abi_versions: dict[str, list[dict]] = {"swarm-v1.0.0": abi_v1_0_0}
 
     def __init__(self, contract: Contract, account: BaseAccount | None):
         BaseContract.__init__(self, contract=contract)

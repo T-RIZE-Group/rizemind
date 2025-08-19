@@ -1,19 +1,14 @@
 from logging import INFO
-from typing import Protocol, cast
+from typing import cast
 
-from eth_typing import Address, ChecksumAddress
+from eth_typing import Address
 from flwr.common import EvaluateIns, EvaluateRes, FitIns, Parameters
 from flwr.common.logger import log
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
+from rizemind.strategies.compensation.typings import SupportsDistribute
 from web3 import Web3
-
-
-class SupportsDistribute(Protocol):
-    def distribute(
-        self, trainer_scores: list[tuple[ChecksumAddress, float]]
-    ) -> str: ...
 
 
 class SimpleCompensationStrategy(Strategy):
