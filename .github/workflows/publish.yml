@@ -1,0 +1,37 @@
+name: "Publish"
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  publish:
+    name: "Build and publish release"
+    runs-on: ubuntu-latest
+    environment: trusted-publisher
+    # Granting permissions for OIDC token exchange (Trusted Publishers)
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install the dependencies
+        run: uv sync --all-groups
+
+      - name: Build
+        run: uv build
+
+      - name: Publish
+        run: uv publish

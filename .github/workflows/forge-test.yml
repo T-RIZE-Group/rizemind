@@ -3,12 +3,12 @@ name: Forge Test
 on:
   push:
     branches:
-      - '*'
+      - "*"
     paths:
-      - 'forge/**'
+      - "forge/**"
   pull_request:
     branches:
-      - '*'
+      - "*"
   workflow_dispatch:
 
 env:
