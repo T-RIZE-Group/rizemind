@@ -78,7 +78,7 @@ abstract contract RandomSampling is ISelector, ISeedProvider {
         (uint256 randomValue,) = RNG.rand(seed, trainerIndex, RATIO_DECIMALS);
         
         // If the random value is below the target ratio, the trainer is selected
-        return randomValue <= targetRatio;
+        return randomValue < targetRatio;
     }
 
     /// @dev See {IERC165-supportsInterface}
