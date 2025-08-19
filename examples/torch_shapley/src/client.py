@@ -5,10 +5,10 @@ from flwr.common import Context
 from rizemind.authentication.authentication_mod import authentication_mod
 from rizemind.authentication.config import ACCOUNT_CONFIG_STATE_KEY, AccountConfig
 from rizemind.authentication.notary.model.mod import model_notary_mod
+from rizemind.configuration.toml_config import TomlConfig
 from rizemind.strategies.contribution.shapley.decentralized.shapley_value_client import (
     DecentralShapleyValueClient,
 )
-from rizemind.configuration.toml_config import TomlConfig
 from rizemind.web3.config import WEB3_CONFIG_STATE_KEY, Web3Config
 
 from .task import Net, get_weights, load_data, set_weights, test, train
