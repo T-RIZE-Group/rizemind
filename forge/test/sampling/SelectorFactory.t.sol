@@ -13,16 +13,31 @@ contract MockInvalidSelector {
     // This contract intentionally doesn't implement ISelector
 }
 
-/// @title MockSelectorWithConstructor
+contract AlwaysSampledV2Mock is AlwaysSampled {
+        /**
+     * @dev The version parameter for the EIP712 domain.
+     */
+    // solhint-disable-next-line func-name-mixedcase
+    function _EIP712Version()
+        internal
+        pure
+        override(AlwaysSampled)
+        returns (string memory)
+    {
+        return "always-sampled-v2.0.0";
+    }
+}
+
+/// @title MockSelectorWithInit
 /// @notice Mock selector that requires initialization parameters
-contract MockSelectorWithConstructor is ISelector, IERC165 {
+contract MockSelectorWithInit is AlwaysSampled {
     uint256 public targetRatio;
     address public owner;
     bool public initialized;
 
     event Initialized(uint256 targetRatio, address owner);
 
-    function init(uint256 _targetRatio, address _owner) external {
+    function initialize(uint256 _targetRatio, address _owner) external {
         require(!initialized, "Already initialized");
         targetRatio = _targetRatio;
         owner = _owner;
@@ -30,13 +45,26 @@ contract MockSelectorWithConstructor is ISelector, IERC165 {
         emit Initialized(_targetRatio, _owner);
     }
 
-    function isSelected(address, uint256) external pure returns (bool) {
+    function isSelected(address, uint256) external pure override returns (bool) {
         return true;
     }
 
-    function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
+    function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {
         return interfaceId == type(ISelector).interfaceId || 
                interfaceId == type(IERC165).interfaceId;
+    }
+
+            /**
+     * @dev The version parameter for the EIP712 domain.
+     */
+    // solhint-disable-next-line func-name-mixedcase
+    function _EIP712Version()
+        internal
+        pure
+        override(AlwaysSampled)
+        returns (string memory)
+    {
+        return "mock-selector-with-init-v1.0.0";
     }
 
     function getTargetRatio() external view returns (uint256) {
@@ -51,15 +79,13 @@ contract MockSelectorWithConstructor is ISelector, IERC165 {
 contract SelectorFactoryTest is Test {
     SelectorFactory public factory;
     AlwaysSampled public alwaysSampled;
-    MockInvalidSelector public invalidSelector;
-    MockSelectorWithConstructor public mockSelectorWithConstructor;
+    MockSelectorWithInit public mockSelectorWithInit;
 
     address public owner;
     address public user;
 
-    bytes32 public constant ALWAYS_SAMPLED_ID = keccak256("always_sampled");
-    bytes32 public constant INVALID_SELECTOR_ID = keccak256("invalid_selector");
-    bytes32 public constant MOCK_SELECTOR_ID = keccak256("mock_selector");
+    bytes32 public alwaysSampledId;
+    bytes32 public mockSelectorWithInitId;
 
     event SelectorImplementationRegistered(bytes32 indexed id, address indexed implementation);
     event SelectorInstanceCreated(bytes32 indexed id, address indexed instance, address indexed creator);
@@ -70,11 +96,18 @@ contract SelectorFactoryTest is Test {
         owner = makeAddr("owner");
         user = makeAddr("user");
 
+        vm.startPrank(owner);
         // Deploy contracts
         factory = new SelectorFactory(owner);
         alwaysSampled = new AlwaysSampled();
-        invalidSelector = new MockInvalidSelector();
-        mockSelectorWithConstructor = new MockSelectorWithConstructor();
+        factory.registerSelectorImplementation(address(alwaysSampled));
+        (,, string memory version,,,,) = alwaysSampled.eip712Domain();
+        alwaysSampledId = factory.getID(version);
+        mockSelectorWithInit = new MockSelectorWithInit();
+        factory.registerSelectorImplementation(address(mockSelectorWithInit));
+        (,, string memory version2,,,,) = mockSelectorWithInit.eip712Domain();
+        mockSelectorWithInitId = factory.getID(version2);
+        vm.stopPrank();
     }
 
     // ============================================================================
@@ -83,44 +116,43 @@ contract SelectorFactoryTest is Test {
 
     function test_registerSelectorImplementation_AlwaysSampled_success() public {
         vm.startPrank(owner);
-
+        AlwaysSampledV2Mock alwaysSampledV2Mock = new AlwaysSampledV2Mock();
         vm.expectEmit(true, true, false, false);
-        emit SelectorImplementationRegistered(ALWAYS_SAMPLED_ID, address(alwaysSampled));
+        bytes32 actualId = factory.getID("always-sampled-v2.0.0");
+        emit SelectorImplementationRegistered(actualId, address(alwaysSampledV2Mock));
 
-        factory.registerSelectorImplementation(ALWAYS_SAMPLED_ID, address(alwaysSampled));
+        factory.registerSelectorImplementation(address(alwaysSampledV2Mock));
 
-        assertTrue(factory.isSelectorRegistered(ALWAYS_SAMPLED_ID), "Selector should be registered");
-        assertEq(factory.selectorImplementations(ALWAYS_SAMPLED_ID), address(alwaysSampled), "Implementation should be set");
+        assertTrue(factory.isSelectorRegistered(actualId), "Selector should be registered");
+        assertEq(factory.getSelectorImplementation(actualId), address(alwaysSampledV2Mock), "Implementation should be set");
     }
 
     function test_registerSelectorImplementation_onlyOwner() public {
         vm.startPrank(user);
 
         vm.expectRevert();
-        factory.registerSelectorImplementation(ALWAYS_SAMPLED_ID, address(alwaysSampled));
+        factory.registerSelectorImplementation(address(alwaysSampled));
     }
 
     function test_registerSelectorImplementation_alreadyExists() public {
         vm.startPrank(owner);
 
-        factory.registerSelectorImplementation(ALWAYS_SAMPLED_ID, address(alwaysSampled));
-
         vm.expectRevert(SelectorFactory.SelectorImplementationAlreadyExists.selector);
-        factory.registerSelectorImplementation(ALWAYS_SAMPLED_ID, address(alwaysSampled));
+        factory.registerSelectorImplementation(address(alwaysSampled));
     }
 
     function test_registerSelectorImplementation_zeroAddress() public {
         vm.startPrank(owner);
 
         vm.expectRevert(SelectorFactory.SelectorImplementationInvalid.selector);
-        factory.registerSelectorImplementation(ALWAYS_SAMPLED_ID, address(0));
+        factory.registerSelectorImplementation(address(0));
     }
 
     function test_registerSelectorImplementation_invalidInterface() public {
         vm.startPrank(owner);
-
+        MockInvalidSelector invalidSelector = new MockInvalidSelector();
         vm.expectRevert(SelectorFactory.SelectorImplementationInvalid.selector);
-        factory.registerSelectorImplementation(INVALID_SELECTOR_ID, address(invalidSelector));
+        factory.registerSelectorImplementation(address(invalidSelector));
     }
 
     // ============================================================================
@@ -128,9 +160,6 @@ contract SelectorFactoryTest is Test {
     // ============================================================================
 
     function test_createSelector_AlwaysSampled_success() public {
-        vm.startPrank(owner);
-        factory.registerSelectorImplementation(ALWAYS_SAMPLED_ID, address(alwaysSampled));
-        vm.stopPrank();
 
         vm.startPrank(user);
 
@@ -139,9 +168,9 @@ contract SelectorFactoryTest is Test {
 
         // Don't expect specific address in event since it's generated
         vm.expectEmit(true, false, false, false);
-        emit SelectorInstanceCreated(ALWAYS_SAMPLED_ID, address(0), user); // address(0) placeholder
+        emit SelectorInstanceCreated(alwaysSampledId, address(0), user); // address(0) placeholder
 
-        address instance = factory.createSelector(ALWAYS_SAMPLED_ID, salt, constructorData);
+        address instance = factory.createSelector(alwaysSampledId, salt, constructorData);
 
         assertTrue(instance != address(0), "Instance should be created");
         
@@ -153,13 +182,10 @@ contract SelectorFactoryTest is Test {
     }
 
     function test_createSelector_withInitData() public {
-        vm.startPrank(owner);
-        factory.registerSelectorImplementation(MOCK_SELECTOR_ID, address(mockSelectorWithConstructor));
-        vm.stopPrank();
 
         // Encode init function call: targetRatio = 80%, owner = user
         bytes memory initData = abi.encodeWithSelector(
-            MockSelectorWithConstructor.init.selector,
+            MockSelectorWithInit.initialize.selector,
             80 * 10**18,
             user
         );
@@ -167,12 +193,12 @@ contract SelectorFactoryTest is Test {
         bytes32 salt = keccak256(abi.encodePacked("test_salt_with_init"));
 
         vm.startPrank(user);
-        address instance = factory.createSelector(MOCK_SELECTOR_ID, salt, initData);
+        address instance = factory.createSelector(mockSelectorWithInitId, salt, initData);
 
         assertTrue(instance != address(0), "Instance should be created");
         
         // Verify the instance was initialized correctly via init function
-        MockSelectorWithConstructor selectorInstance = MockSelectorWithConstructor(instance);
+        MockSelectorWithInit selectorInstance = MockSelectorWithInit(instance);
         assertTrue(selectorInstance.isSelected(user, 1), "Instance should work correctly");
         assertEq(selectorInstance.getTargetRatio(), 80 * 10**18, "Target ratio should be set");
         assertEq(selectorInstance.getOwner(), user, "Owner should be set");
@@ -184,13 +210,10 @@ contract SelectorFactoryTest is Test {
 
         bytes32 salt = keccak256(abi.encodePacked("test_salt"));
         vm.expectRevert(SelectorFactory.SelectorImplementationNotFound.selector);
-        factory.createSelector(ALWAYS_SAMPLED_ID, salt, "");
+        factory.createSelector(salt, salt, "");
     }
 
     function test_createSelector_initFailure() public {
-        vm.startPrank(owner);
-        factory.registerSelectorImplementation(MOCK_SELECTOR_ID, address(mockSelectorWithConstructor));
-        vm.stopPrank();
 
         // Test with invalid init data that will cause the call to fail
         bytes memory invalidInitData = abi.encodeWithSelector(
@@ -202,21 +225,18 @@ contract SelectorFactoryTest is Test {
 
         vm.startPrank(user);
         vm.expectRevert(); // Expect any revert since the error type may vary
-        factory.createSelector(MOCK_SELECTOR_ID, salt, invalidInitData);
+        factory.createSelector(mockSelectorWithInitId, salt, invalidInitData);
     }
 
     function test_createSelector_deterministicAddresses() public {
-        vm.startPrank(owner);
-        factory.registerSelectorImplementation(ALWAYS_SAMPLED_ID, address(alwaysSampled));
-        vm.stopPrank();
 
         bytes32 salt1 = keccak256(abi.encodePacked("salt1"));
         bytes32 salt2 = keccak256(abi.encodePacked("salt2"));
 
         vm.startPrank(user);
 
-        address instance1 = factory.createSelector(ALWAYS_SAMPLED_ID, salt1, "");
-        address instance2 = factory.createSelector(ALWAYS_SAMPLED_ID, salt2, "");
+        address instance1 = factory.createSelector(alwaysSampledId, salt1, "");
+        address instance2 = factory.createSelector(alwaysSampledId, salt2, "");
 
         assertTrue(instance1 != address(0), "First instance should be created");
         assertTrue(instance2 != address(0), "Second instance should be created");
@@ -229,10 +249,6 @@ contract SelectorFactoryTest is Test {
     }
 
     function test_createSelector_multipleUsers() public {
-        vm.startPrank(owner);
-        factory.registerSelectorImplementation(ALWAYS_SAMPLED_ID, address(alwaysSampled));
-        vm.stopPrank();
-
         address user1 = makeAddr("user1");
         address user2 = makeAddr("user2");
         address user3 = makeAddr("user3");
@@ -243,15 +259,15 @@ contract SelectorFactoryTest is Test {
 
         // User 1 creates instance
         vm.prank(user1);
-        address instance1 = factory.createSelector(ALWAYS_SAMPLED_ID, salt1, "");
+        address instance1 = factory.createSelector(alwaysSampledId, salt1, "");
 
         // User 2 creates instance
         vm.prank(user2);
-        address instance2 = factory.createSelector(ALWAYS_SAMPLED_ID, salt2, "");
+        address instance2 = factory.createSelector(alwaysSampledId, salt2, "");
 
         // User 3 creates instance
         vm.prank(user3);
-        address instance3 = factory.createSelector(ALWAYS_SAMPLED_ID, salt3, "");
+        address instance3 = factory.createSelector(alwaysSampledId, salt3, "");
 
         // All instances should be different
         assertTrue(instance1 != instance2, "Instances should be different");
@@ -273,77 +289,20 @@ contract SelectorFactoryTest is Test {
     // ============================================================================
 
     function test_getSelectorImplementation_success() public {
-        vm.startPrank(owner);
-        factory.registerSelectorImplementation(ALWAYS_SAMPLED_ID, address(alwaysSampled));
-        vm.stopPrank();
 
-        address implementation = factory.getSelectorImplementation(ALWAYS_SAMPLED_ID);
+        address implementation = factory.getSelectorImplementation(alwaysSampledId);
         assertEq(implementation, address(alwaysSampled), "Should return correct implementation");
     }
 
     function test_getSelectorImplementation_notRegistered() public view {
-        address implementation = factory.getSelectorImplementation(ALWAYS_SAMPLED_ID);
+        address implementation = factory.getSelectorImplementation(hex"0122");
         assertEq(implementation, address(0), "Should return zero address for unregistered selector");
     }
 
     function test_isSelectorRegistered() public {
-        assertFalse(factory.isSelectorRegistered(ALWAYS_SAMPLED_ID), "Should not be registered initially");
+        assertFalse(factory.isSelectorVersionRegistered("0122"), "Should not be registered initially");
 
-        vm.startPrank(owner);
-        factory.registerSelectorImplementation(ALWAYS_SAMPLED_ID, address(alwaysSampled));
-        vm.stopPrank();
-
-        assertTrue(factory.isSelectorRegistered(ALWAYS_SAMPLED_ID), "Should be registered after registration");
+        assertTrue(factory.isSelectorRegistered(alwaysSampledId), "Should be registered after registration");
     }
 
-    // ============================================================================
-    // INTEGRATION TESTS
-    // ============================================================================
-
-    function test_fullWorkflow_AlwaysSampled() public {
-        vm.startPrank(owner);
-
-        // 1. Register AlwaysSampled implementation
-        factory.registerSelectorImplementation(ALWAYS_SAMPLED_ID, address(alwaysSampled));
-
-        assertTrue(factory.isSelectorRegistered(ALWAYS_SAMPLED_ID), "Selector should be registered");
-        assertEq(factory.getSelectorImplementation(ALWAYS_SAMPLED_ID), address(alwaysSampled), "Implementation should be set");
-
-        vm.stopPrank();
-
-        // 2. Create multiple instances
-        vm.startPrank(user);
-
-        bytes32 salt1 = keccak256(abi.encodePacked("workflow_salt1"));
-        bytes32 salt2 = keccak256(abi.encodePacked("workflow_salt2"));
-
-        address instance1 = factory.createSelector(ALWAYS_SAMPLED_ID, salt1, "");
-        address instance2 = factory.createSelector(ALWAYS_SAMPLED_ID, salt2, "");
-
-        assertTrue(instance1 != address(0), "First instance should be created");
-        assertTrue(instance2 != address(0), "Second instance should be created");
-        assertTrue(instance1 != instance2, "Instances should be different");
-
-        vm.stopPrank();
-
-        // 3. Verify instances work correctly
-        ISelector selector1 = ISelector(instance1);
-        ISelector selector2 = ISelector(instance2);
-
-        // Test with different addresses and round IDs
-        address testAddr1 = makeAddr("test1");
-        address testAddr2 = makeAddr("test2");
-
-        assertTrue(selector1.isSelected(testAddr1, 1), "Instance 1 should work with test address 1");
-        assertTrue(selector1.isSelected(testAddr2, 1), "Instance 1 should work with test address 2");
-        assertTrue(selector1.isSelected(testAddr1, 100), "Instance 1 should work with different round ID");
-
-        assertTrue(selector2.isSelected(testAddr1, 1), "Instance 2 should work with test address 1");
-        assertTrue(selector2.isSelected(testAddr2, 1), "Instance 2 should work with test address 2");
-        assertTrue(selector2.isSelected(testAddr1, 100), "Instance 2 should work with different round ID");
-
-        // 4. Verify AlwaysSampled always returns true
-        assertTrue(selector1.isSelected(address(0), 1), "Should work even with zero address");
-        assertTrue(selector1.isSelected(address(1), 999), "Should work with any address and round ID");
-    }
 }

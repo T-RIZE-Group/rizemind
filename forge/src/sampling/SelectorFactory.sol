@@ -47,21 +47,21 @@ contract SelectorFactory is Ownable {
 
     /// @notice Register a new selector implementation
     /// @dev Only callable by the owner
-    /// @param id The unique identifier for the selector implementation
     /// @param implementation The address of the selector implementation contract
-    function registerSelectorImplementation(bytes32 id, address implementation) external onlyOwner {
-        if (isSelectorRegistered(id)) {
-            revert SelectorImplementationAlreadyExists();
-        }
-
-        if (implementation == address(0)) {
-            revert SelectorImplementationInvalid();
-        }
-
+    function registerSelectorImplementation(address implementation) external onlyOwner {
         // Verify the implementation supports ISelector interface
         if (!_supportsISelector(implementation)) {
             revert SelectorImplementationInvalid();
         }
+        ISelector selector = ISelector(implementation);
+        // aderyn-fp-next-line(reentrancy-state-change)
+        (,, string memory version,,,,) = selector.eip712Domain();
+        bytes32 id = getID(version);
+
+        if (isSelectorRegistered(id)) {
+            revert SelectorImplementationAlreadyExists();
+        }
+
 
         selectorImplementations[id] = implementation;
 
@@ -72,29 +72,15 @@ contract SelectorFactory is Ownable {
         return selectorImplementations[id] != address(0);
     }
 
-    /// @notice Update an existing selector implementation
-    /// @dev Only callable by the owner
-    /// @param id The unique identifier for the selector implementation
-    /// @param newImplementation The new implementation address
-    function updateSelectorImplementation(bytes32 id, address newImplementation) external onlyOwner {
-        if (!isSelectorRegistered(id)) {
-            revert SelectorImplementationNotFound();
-        }
-
-        if (newImplementation == address(0)) {
-            revert SelectorImplementationInvalid();
-        }
-
-        // Verify the new implementation supports ISelector interface
-        if (!_supportsISelector(newImplementation)) {
-            revert SelectorImplementationInvalid();
-        }
-
-        address oldImplementation = selectorImplementations[id];
-        selectorImplementations[id] = newImplementation;
-
-        emit SelectorImplementationUpdated(id, oldImplementation, newImplementation);
+    function isSelectorVersionRegistered(string memory version) external view returns (bool) {
+        bytes32 id = getID(version);
+        return isSelectorRegistered(id);
     }
+
+    function getID(string memory version) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(version));
+    }
+
 
     /// @notice Remove a selector implementation
     /// @dev Only callable by the owner

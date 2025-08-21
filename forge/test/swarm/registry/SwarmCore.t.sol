@@ -10,15 +10,8 @@ import {IERC165} from "@openzeppelin-contracts-5.2.0/utils/introspection/IERC165
 
 /// @title MockEvaluatorSelector
 /// @notice Mock contract that implements IEvaluatorSelector interface
-contract MockSelector is ISelector, IERC165 {
-    function isSelected(address, uint256) external pure returns (bool) {
-        return true;
-    }
+contract MockSelector is AlwaysSampled {
 
-    function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
-        return interfaceId == type(ISelector).interfaceId || 
-               interfaceId == type(IERC165).interfaceId;
-    }
 }
 
 /// @title MockSwarmCore
