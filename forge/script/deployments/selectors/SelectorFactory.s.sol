@@ -8,17 +8,17 @@ import {DevOpsTools} from "../../Devops.sol";
 contract DeploySelectorFactory is Script {
     
     function run() external {
+        address owner = vm.envAddress("SELECTOR_FACTORY_OWNER");
         if (isDeployed()) {
             address deployedAddress = getDeployedAddress();
             console.log("SelectorFactory already deployed at:", deployedAddress);
-            SelectorFactory selectorImpl = new SelectorFactory(address(1));
+            SelectorFactory selectorImpl = new SelectorFactory(owner);
             require(deployedAddress.codehash == address(selectorImpl).codehash, "SelectorFactory codehash mismatch");
             return;
         }
         
         vm.startBroadcast();
 
-        address owner = vm.envAddress("SELECTOR_FACTORY_OWNER");
         SelectorFactory selectorFactory = new SelectorFactory(owner);
 
         vm.stopBroadcast();
