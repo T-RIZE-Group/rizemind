@@ -16,6 +16,15 @@ type Deployment = tuple[FlAccessControl, str, list[str]]
 @pytest.fixture(scope="module")
 def factory_config(anvil: AnvilContext):
     deployer = anvil.account_conf.get_account(0)
+    run_script(
+        "script/deployments/selectors/SelectorFactory.s.sol",
+        account=deployer.address,
+        env={"SELECTOR_FACTORY_OWNER": deployer.address},
+    )
+    run_script(
+        "script/deployments/selectors/AlwaysSampled.s.sol",
+        account=deployer.address,
+    )
     artifact_path = run_script(
         "script/deployments/SwarmV1Factory.s.sol",
         account=deployer.address,

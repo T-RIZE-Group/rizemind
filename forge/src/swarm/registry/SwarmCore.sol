@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {IERC165} from "@openzeppelin-contracts-5.2.0/utils/introspection/IERC165.sol";
 import {ISelector} from "../../sampling/ISelector.sol";
-import {Initializable} from "@openzeppelin-contracts-5.2.0/proxy/utils/Initializable.sol";
+import {Initializable} from "@openzeppelin-contracts-upgradeable-5.2.0/proxy/utils/Initializable.sol";
 
 /// @title SwarmCore
 /// @notice Core contract for managing swarm configuration
@@ -51,13 +51,13 @@ contract SwarmCore is Initializable {
 
     /// @notice Get the current trainer selector contract address
     /// @return The address of the current trainer selector contract
-    function getTrainerSelector() external view returns (address) {
+    function getTrainerSelector() public view returns (address) {
         return _getSwarmCoreStorage().trainerSelector;
     }
 
     /// @notice Get the current evaluator selector contract address
     /// @return The address of the current evaluator selector contract
-    function getEvaluatorSelector() external view returns (address) {
+    function getEvaluatorSelector() public view returns (address) {
         return _getSwarmCoreStorage().evaluatorSelector;
     }
 
@@ -81,7 +81,7 @@ contract SwarmCore is Initializable {
     /// @dev Validates interface support before updating storage
     /// @param newEvaluatorSelector The new evaluator selector contract address
     function _updateEvaluatorSelector(address newEvaluatorSelector) internal {
-        // Check if the new address supports IEvaluatorSelector interface
+        // Check if the new address supports ISelector interface
         if (!_supportsISelector(newEvaluatorSelector)) {
             revert InvalidEvaluatorSelector();
         }

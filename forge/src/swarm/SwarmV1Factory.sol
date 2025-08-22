@@ -5,9 +5,12 @@ import {ERC1967Proxy} from "@openzeppelin-contracts-5.2.0/proxy/ERC1967/ERC1967P
 import {AccessControl} from "@openzeppelin-contracts-5.2.0/access/AccessControl.sol";
 
 import {SwarmV1} from "./SwarmV1.sol";
+import {SelectorFactory} from "../sampling/SelectorFactory.sol";
 
+// aderyn-ignore-next-line(centralization-risk)
 contract SwarmV1Factory is AccessControl {
     address private _logicContract;
+    address private _selectorFactory;
 
     event ContractCreated(
         address indexed proxyAddress,
@@ -16,28 +19,62 @@ contract SwarmV1Factory is AccessControl {
     );
     event ProxyUpgraded(address indexed proxyAddress, address indexed newLogic);
 
-    constructor(address logicContract) {
+    struct SwarmV1Params {
+        string name;
+        string symbol;
+        address aggregator;
+        address[] trainers;
+    }
+
+    struct SelectorParams {
+        bytes32 id;
+        bytes initData;
+    }
+
+    struct SwarmParams {
+        SwarmV1Params swarm;
+        SelectorParams trainerSelector;
+        SelectorParams evaluatorSelector;
+    }
+
+    constructor(address logicContract, address selectorFactory) {
         _logicContract = logicContract;
+        _selectorFactory = selectorFactory;
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+
     }
 
     function createSwarm(
-        string memory name,
-        string memory symbol,
-        address aggregator,
-        address[] memory initialTrainers
+        bytes32 salt,
+        SwarmParams memory params
     ) external returns (address) {
-        bytes memory data = abi.encodeWithSelector(
-            SwarmV1.initialize.selector,
-            name,
-            symbol,
-            aggregator,
-            initialTrainers
+        SelectorFactory selectorFactory = SelectorFactory(_selectorFactory);
+        bytes32 saltTrainerSelector = keccak256(abi.encodePacked(salt,"trainer-selector"));
+        address trainerSelector = selectorFactory.createSelector(
+            params.trainerSelector.id,
+            saltTrainerSelector,
+            params.trainerSelector.initData
         );
 
-        ERC1967Proxy proxy = new ERC1967Proxy(_logicContract, data);
+        bytes32 saltEvaluatorSelector = keccak256(abi.encodePacked(salt,"evaluator-selector"));
+        address evaluatorSelector = selectorFactory.createSelector(
+            params.evaluatorSelector.id,
+            saltEvaluatorSelector,
+            params.evaluatorSelector.initData
+        );
 
-        emit ContractCreated(address(proxy), msg.sender, name);
+        bytes memory data = abi.encodeWithSelector(
+            SwarmV1.initialize.selector,
+            params.swarm.name,
+            params.swarm.symbol,
+            params.swarm.aggregator,
+            params.swarm.trainers,
+            trainerSelector,
+            evaluatorSelector
+        );
+        ERC1967Proxy proxy = new ERC1967Proxy{salt: salt}(_logicContract, data);
+
+        emit ContractCreated(address(proxy), msg.sender, params.swarm.name);
         return address(proxy);
     }
 

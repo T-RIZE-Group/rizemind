@@ -11,8 +11,17 @@ from pydantic import BaseModel, Field
 from rizemind.contracts.abi_helper import load_abi
 from rizemind.contracts.deployment import DeployedContract
 from rizemind.contracts.local_deployment import load_forge_artifact
+from rizemind.contracts.sampling.always_sampled import AlwaysSamplesSelectorConfig
+from rizemind.contracts.sampling.random_sampling import RandomSamplingSelectorConfig
 from rizemind.web3.chains import RIZENET_TESTNET_CHAINID
 from web3 import Web3
+
+available_selectors = [
+    AlwaysSamplesSelectorConfig,
+    RandomSamplingSelectorConfig,
+]
+
+type AvailableSelector = AlwaysSamplesSelectorConfig | RandomSamplingSelectorConfig
 
 
 class SwarmV1FactoryConfig(BaseModel):
@@ -29,6 +38,16 @@ class SwarmV1FactoryConfig(BaseModel):
             )
         )
     }
+
+    trainer_selector: AvailableSelector = Field(
+        AlwaysSamplesSelectorConfig(),
+        description="The trainer selector to use",
+    )
+
+    evaluator_selector: AvailableSelector = Field(
+        AlwaysSamplesSelectorConfig(),
+        description="The evaluator selector to use",
+    )
 
     def __init__(self, **data):
         super().__init__(**data)
@@ -63,9 +82,28 @@ class SwarmV1Factory:
         factory = w3.eth.contract(abi=abi, address=factory_meta.address_as_bytes())
         log(INFO, "Web3 swarm contract address: %s", factory_meta.address)
 
-        tx = factory.functions.createSwarm(
-            self.config.name, self.config.ticker, deployer.address, member_address
-        ).build_transaction(
+        trainer_selector_params = self.config.trainer_selector.get_selector_params()
+        evaluator_selector_params = self.config.evaluator_selector.get_selector_params()
+
+        salt = os.urandom(32)
+        swarm_params = {
+            "swarm": {
+                "name": self.config.name,
+                "symbol": self.config.ticker,
+                "aggregator": deployer.address,
+                "trainers": member_address,
+            },
+            "trainerSelector": {
+                "id": trainer_selector_params.id,
+                "initData": trainer_selector_params.init_data,
+            },
+            "evaluatorSelector": {
+                "id": evaluator_selector_params.id,
+                "initData": evaluator_selector_params.init_data,
+            },
+        }
+
+        tx = factory.functions.createSwarm(salt, swarm_params).build_transaction(
             {
                 "from": deployer.address,
                 "nonce": w3.eth.get_transaction_count(deployer.address),

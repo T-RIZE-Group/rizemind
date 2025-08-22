@@ -102,7 +102,7 @@ uv run -- pytest path/to/test_example
 Project linting and formatting are handled by [Ruff](https://github.com/astral-sh/ruff):
 
 ```bash
-uv run -- ruff check --select I --fix
+uv run -- ruff check --fix .
 
 uv run -- ruff format
 ```

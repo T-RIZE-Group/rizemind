@@ -8,14 +8,16 @@ import {FLAccessControl} from "../access/FLAccessControl.sol";
 import {SimpleMintCompensation} from "../compensation/SimpleMintCompensation.sol";
 import {RoundTraining} from "../training/RoundTraining.sol";
 import {CertificateRegistry} from "./registry/CertificateRegistry.sol";
-
+import {SwarmCore} from "./registry/SwarmCore.sol";
+import {ISelector} from "../sampling/ISelector.sol";
 
 contract SwarmV1 is
     FLAccessControl,
     SimpleMintCompensation,
     EIP712Upgradeable,
     RoundTraining,
-    CertificateRegistry
+    CertificateRegistry,
+    SwarmCore
 {
     string private constant _VERSION = "swarm-v1.0.0";
 
@@ -23,19 +25,31 @@ contract SwarmV1 is
         string memory name,
         string memory symbol,
         address aggregator,
-        address[] memory initialTrainers
+        address[] memory initialTrainers,
+        address initialTrainerSelector,
+        address initialEvaluatorSelector
     ) external initializer {
         __EIP712_init(name, _VERSION);
         __SimpleMintCompensation_init(name, symbol, 10 ** 20);
         __FLAccessControl_init(aggregator, initialTrainers);
         __RoundTraining_init();
+        __SwarmCore_init(initialTrainerSelector, initialEvaluatorSelector);
     }
 
     function canTrain(
         address trainer,
-        uint256 /*roundId*/
+        uint256 roundId
     ) public view returns (bool) {
-        return isTrainer(trainer);
+        ISelector selector = ISelector(getTrainerSelector());
+        return isTrainer(trainer) && selector.isSelected(trainer, roundId);
+    }
+
+    function updateTrainerSelector(address newTrainerSelector) external onlyAggregator(msg.sender) {
+        _updateTrainerSelector(newTrainerSelector);
+    }
+
+    function updateEvaluatorSelector(address newEvaluatorSelector) external onlyAggregator(msg.sender) {
+        _updateEvaluatorSelector(newEvaluatorSelector);
     }
 
     function distribute(

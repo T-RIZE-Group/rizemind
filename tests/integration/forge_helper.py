@@ -38,20 +38,38 @@ def _check_tool_installed(cmd: str) -> None:
         )
 
 
-def _run(cmd: Sequence[str], *, cwd: str | None = None) -> str:
+def _run(
+    cmd: Sequence[str], *, cwd: str | None = None, env: dict[str, str] | None = None
+) -> str:
     """Run *cmd* and return *stdout*.
+
+    Parameters
+    ----------
+    cmd:
+        Command and arguments to execute.
+    cwd:
+        Working directory for the command.
+    env:
+        Environment variables to pass to the command. If None, inherits from parent process.
 
     Raises
     ------
     RuntimeError
         If the command exits with a non-zero status.
     """
+    # Merge provided env with current environment
+
+    os_env = os.environ.copy()
+    if env is not None:
+        os_env.update(env)
+
     result = subprocess.run(
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
         cwd=cwd,
+        env=os_env,
         timeout=_CMD_TIMEOUT,
     )
     if result.returncode != 0:
@@ -173,6 +191,7 @@ def run_script(
     rpc_url: str = "http://127.0.0.1:8545",
     account: ChecksumAddress,
     forge_project_root: str | Path = FORGE_DIR,
+    env: dict[str, str] | None = None,
 ) -> Path:
     """Execute a Forge script and return a mapping of *contractName → deployed address*.
 
@@ -181,7 +200,7 @@ def run_script(
     Examples
     --------
     >>> run_script("script/Deploy.s.sol", rpc_url="http://127.0.0.1:8545")
-    {'MyToken': '0x1234...abcd', 'Exchange': '0xabcd...4321'}
+
     """
     _check_tool_installed("forge")
     cmd: list[str] = [
@@ -197,7 +216,7 @@ def run_script(
         f"{account}",
     ]
 
-    _run(cmd, cwd=str(forge_project_root) if forge_project_root else None)
+    _run(cmd, cwd=str(forge_project_root) if forge_project_root else None, env=env)
 
     w3 = Web3(Web3.HTTPProvider(rpc_url))
     chain_id = w3.eth.chain_id
