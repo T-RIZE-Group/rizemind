@@ -33,16 +33,6 @@ library DevOpsTools {
         bool runProcessed;
         Vm.DirEntry[] memory entries = vm.readDir(relativeBroadcastPath, 3);
         for (uint256 i = 0; i < entries.length; i++) {
-            string memory normalizedPath = normalizePath(entries[i].path);
-            if (
-                normalizedPath.contains(string.concat("/", vm.toString(chainId), "/"))
-                    && normalizedPath.contains(".json") && !normalizedPath.contains("dry-run")
-            ) {
-                string memory json = vm.readFile(normalizedPath);
-                latestAddress = processRun(json, contractName, latestAddress);
-            }
-        }
-        for (uint256 i = 0; i < entries.length; i++) {
             Vm.DirEntry memory entry = entries[i];
             if (
                 entry.path.contains(string.concat("/", vm.toString(chainId), "/")) && entry.path.contains(".json")

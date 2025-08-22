@@ -51,13 +51,13 @@ contract SwarmCore is Initializable {
 
     /// @notice Get the current trainer selector contract address
     /// @return The address of the current trainer selector contract
-    function getTrainerSelector() external view returns (address) {
+    function getTrainerSelector() public view returns (address) {
         return _getSwarmCoreStorage().trainerSelector;
     }
 
     /// @notice Get the current evaluator selector contract address
     /// @return The address of the current evaluator selector contract
-    function getEvaluatorSelector() external view returns (address) {
+    function getEvaluatorSelector() public view returns (address) {
         return _getSwarmCoreStorage().evaluatorSelector;
     }
 

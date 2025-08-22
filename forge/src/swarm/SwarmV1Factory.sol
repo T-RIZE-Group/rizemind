@@ -23,8 +23,7 @@ contract SwarmV1Factory is AccessControl {
         string name;
         string symbol;
         address aggregator;
-        address[] initialTrainers;
-        address initialTrainerSelector;
+        address[] trainers;
     }
 
     struct SelectorParams {
@@ -46,19 +45,21 @@ contract SwarmV1Factory is AccessControl {
     }
 
     function createSwarm(
+        bytes32 salt,
         SwarmParams memory params
     ) external returns (address) {
         SelectorFactory selectorFactory = SelectorFactory(_selectorFactory);
-        bytes32 salt = keccak256(abi.encodePacked(params.swarm.name, params.swarm.symbol));
+        bytes32 saltTrainerSelector = keccak256(abi.encodePacked(salt,"trainer-selector"));
         address trainerSelector = selectorFactory.createSelector(
             params.trainerSelector.id,
-            salt,
+            saltTrainerSelector,
             params.trainerSelector.initData
         );
 
+        bytes32 saltEvaluatorSelector = keccak256(abi.encodePacked(salt,"evaluator-selector"));
         address evaluatorSelector = selectorFactory.createSelector(
             params.evaluatorSelector.id,
-            salt,
+            saltEvaluatorSelector,
             params.evaluatorSelector.initData
         );
 
@@ -67,11 +68,11 @@ contract SwarmV1Factory is AccessControl {
             params.swarm.name,
             params.swarm.symbol,
             params.swarm.aggregator,
-            params.swarm.initialTrainers,
+            params.swarm.trainers,
             trainerSelector,
             evaluatorSelector
         );
-        ERC1967Proxy proxy = new ERC1967Proxy(_logicContract, data);
+        ERC1967Proxy proxy = new ERC1967Proxy{salt: salt}(_logicContract, data);
 
         emit ContractCreated(address(proxy), msg.sender, params.swarm.name);
         return address(proxy);

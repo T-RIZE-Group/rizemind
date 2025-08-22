@@ -9,6 +9,7 @@ import {SimpleMintCompensation} from "../compensation/SimpleMintCompensation.sol
 import {RoundTraining} from "../training/RoundTraining.sol";
 import {CertificateRegistry} from "./registry/CertificateRegistry.sol";
 import {SwarmCore} from "./registry/SwarmCore.sol";
+import {ISelector} from "../sampling/ISelector.sol";
 
 contract SwarmV1 is
     FLAccessControl,
@@ -37,9 +38,10 @@ contract SwarmV1 is
 
     function canTrain(
         address trainer,
-        uint256 /*roundId*/
+        uint256 roundId
     ) public view returns (bool) {
-        return isTrainer(trainer);
+        ISelector selector = ISelector(getTrainerSelector());
+        return isTrainer(trainer) && selector.isSelected(trainer, roundId);
     }
 
     function updateTrainerSelector(address newTrainerSelector) external onlyAggregator(msg.sender) {

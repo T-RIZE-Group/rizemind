@@ -9,19 +9,20 @@ contract DeploySelectorFactory is Script {
     
     function run() external {
         if (isDeployed()) {
-            console.log("SelectorFactory already deployed at:", getDeployedAddress());
+            address deployedAddress = getDeployedAddress();
+            console.log("SelectorFactory already deployed at:", deployedAddress);
+            SelectorFactory selectorImpl = new SelectorFactory(address(1));
+            require(deployedAddress.codehash == address(selectorImpl).codehash, "SelectorFactory codehash mismatch");
             return;
         }
         
         vm.startBroadcast();
 
         address owner = vm.envAddress("SELECTOR_FACTORY_OWNER");
-        // Deploy only the selector factory with the deployer as the initial owner
         SelectorFactory selectorFactory = new SelectorFactory(owner);
 
         vm.stopBroadcast();
 
-        // Log deployment address
         console.log("=== SelectorFactory Deployment ===");
         console.log("SelectorFactory deployed at:", address(selectorFactory));
     }

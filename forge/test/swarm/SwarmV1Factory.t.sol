@@ -23,6 +23,8 @@ contract SwarmV1FactoryTest is Test {
     bytes32  TRAINER_SELECTOR_ID;
     bytes32 EVALUATOR_SELECTOR_ID;
 
+    bytes32 salt = keccak256(abi.encodePacked("test"));
+
     function setUp() public {
         aggregator = vm.addr(1);
         trainers.push(vm.addr(2));
@@ -59,7 +61,7 @@ contract SwarmV1FactoryTest is Test {
         vm.expectEmit(false, false, true, false);
         emit SwarmV1Factory.ContractCreated(address(0), address(0), "hello");
         vm.prank(aggregator);
-        address proxyAddress = swarmFactory.createSwarm(params);
+        address proxyAddress = swarmFactory.createSwarm(salt,params);
         
         assertTrue(proxyAddress != address(0), "Proxy should be created");
         
@@ -76,7 +78,7 @@ contract SwarmV1FactoryTest is Test {
         
         SwarmV1Factory.SwarmParams memory params = _createSwarmParams("hello", "world");
         vm.prank(aggregator);
-        address proxyAddress = swarmFactory.createSwarm(params);
+        address proxyAddress = swarmFactory.createSwarm(salt, params);
         assertTrue(proxyAddress != address(0), "Proxy should be created with new implementation");
     }
 
@@ -100,21 +102,6 @@ contract SwarmV1FactoryTest is Test {
         swarmFactory.updateImplementation(address(0));
     }
 
-    function testCreateSwarmWithDifferentNames() public {
-        // Test creating multiple swarms with different names
-        SwarmV1Factory.SwarmParams memory params1 = _createSwarmParams("swarm1", "SWM1");
-        SwarmV1Factory.SwarmParams memory params2 = _createSwarmParams("swarm2", "SWM2");
-        
-        vm.prank(aggregator);
-        address proxy1 = swarmFactory.createSwarm(params1);
-        vm.prank(aggregator);
-        address proxy2 = swarmFactory.createSwarm(params2);
-        
-        assertTrue(proxy1 != address(0), "First proxy should be created");
-        assertTrue(proxy2 != address(0), "Second proxy should be created");
-        assertTrue(proxy1 != proxy2, "Proxies should have different addresses");
-    }
-
     function testCreateSwarmWithEmptyInitData() public {
         SwarmV1Factory.SwarmParams memory params = _createSwarmParams("empty", "EMP");
         // Set empty init data for selectors
@@ -122,7 +109,7 @@ contract SwarmV1FactoryTest is Test {
         params.evaluatorSelector.initData = "";
         
         vm.prank(aggregator);
-        address proxyAddress = swarmFactory.createSwarm(params);
+        address proxyAddress = swarmFactory.createSwarm(salt, params);
         assertTrue(proxyAddress != address(0), "Proxy should be created even with empty init data");
     }
 
@@ -132,7 +119,7 @@ contract SwarmV1FactoryTest is Test {
         params.evaluatorSelector.initData = abi.encodeWithSelector(RandomSampling.initialize.selector, targetRatio);
         
         vm.prank(aggregator);
-        address proxyAddress = swarmFactory.createSwarm(params);
+        address proxyAddress = swarmFactory.createSwarm(salt, params);
         assertTrue(proxyAddress != address(0), "Proxy should be created with custom init data");
         SwarmV1 swarm = SwarmV1(proxyAddress);
         RandomSampling evaluatorSelector = RandomSampling(swarm.getEvaluatorSelector());
@@ -145,7 +132,7 @@ contract SwarmV1FactoryTest is Test {
         // Capture the event and verify the parameters we care about
         vm.recordLogs();
         vm.prank(aggregator);
-        swarmFactory.createSwarm(params);
+        swarmFactory.createSwarm(salt, params);
         
         Vm.Log[] memory logs = vm.getRecordedLogs();
         assertTrue(logs.length > 0, "Should emit at least one event");
@@ -176,6 +163,20 @@ contract SwarmV1FactoryTest is Test {
         assertTrue(eventFound, "ContractCreated event should be emitted");
     }
 
+    function testTwoSelectorsDontCollideDueToSalt() public {
+        SwarmV1Factory.SwarmParams memory params = _createSwarmParams("hello", "world");
+        params.trainerSelector.id = TRAINER_SELECTOR_ID;
+        params.evaluatorSelector.id = TRAINER_SELECTOR_ID;
+        
+        vm.expectEmit(false, false, true, false);
+        emit SwarmV1Factory.ContractCreated(address(0), address(0), "hello");
+        vm.prank(aggregator);
+        address proxyAddress = swarmFactory.createSwarm(salt, params);
+        
+        assertTrue(proxyAddress != address(0), "Proxy should be created");
+        
+    }
+
     // Helper function to create SwarmParams for testing
     function _createSwarmParams(
         string memory name,
@@ -185,8 +186,7 @@ contract SwarmV1FactoryTest is Test {
             name: name,
             symbol: symbol,
             aggregator: aggregator,
-            initialTrainers: trainers,
-            initialTrainerSelector: address(0) // This will be set by the factory
+            trainers: trainers
         });
         
         SwarmV1Factory.SelectorParams memory trainerSelectorParams = SwarmV1Factory.SelectorParams({

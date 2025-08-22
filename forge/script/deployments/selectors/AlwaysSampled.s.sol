@@ -16,6 +16,7 @@ contract DeployAlwaysSampled is Script {
 
         AlwaysSampled alwaysSampledImpl = new AlwaysSampled();
         (,, string memory version,,,,) = alwaysSampledImpl.eip712Domain();
+
         bytes32 id = selectorFactory.getID(version);
         // Check if AlwaysSampled is already registered
         if (selectorFactory.isSelectorRegistered(id)) {

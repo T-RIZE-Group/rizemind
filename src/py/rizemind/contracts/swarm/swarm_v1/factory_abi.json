@@ -6,6 +6,11 @@
         "name": "logicContract",
         "type": "address",
         "internalType": "address"
+      },
+      {
+        "name": "selectorFactory",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "stateMutability": "nonpayable"
@@ -28,24 +33,77 @@
     "name": "createSwarm",
     "inputs": [
       {
-        "name": "name",
-        "type": "string",
-        "internalType": "string"
+        "name": "salt",
+        "type": "bytes32",
+        "internalType": "bytes32"
       },
       {
-        "name": "symbol",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "aggregator",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "initialTrainers",
-        "type": "address[]",
-        "internalType": "address[]"
+        "name": "params",
+        "type": "tuple",
+        "internalType": "struct SwarmV1Factory.SwarmParams",
+        "components": [
+          {
+            "name": "swarm",
+            "type": "tuple",
+            "internalType": "struct SwarmV1Factory.SwarmV1Params",
+            "components": [
+              {
+                "name": "name",
+                "type": "string",
+                "internalType": "string"
+              },
+              {
+                "name": "symbol",
+                "type": "string",
+                "internalType": "string"
+              },
+              {
+                "name": "aggregator",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "trainers",
+                "type": "address[]",
+                "internalType": "address[]"
+              }
+            ]
+          },
+          {
+            "name": "trainerSelector",
+            "type": "tuple",
+            "internalType": "struct SwarmV1Factory.SelectorParams",
+            "components": [
+              {
+                "name": "id",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "initData",
+                "type": "bytes",
+                "internalType": "bytes"
+              }
+            ]
+          },
+          {
+            "name": "evaluatorSelector",
+            "type": "tuple",
+            "internalType": "struct SwarmV1Factory.SelectorParams",
+            "components": [
+              {
+                "name": "id",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "initData",
+                "type": "bytes",
+                "internalType": "bytes"
+              }
+            ]
+          }
+        ]
       }
     ],
     "outputs": [
