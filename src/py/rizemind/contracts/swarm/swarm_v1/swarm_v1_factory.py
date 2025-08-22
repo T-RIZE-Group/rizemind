@@ -7,7 +7,7 @@ from eth_account.signers.base import BaseAccount
 from eth_account.types import TransactionDictType
 from eth_typing import ChecksumAddress
 from flwr.common.logger import log
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 from rizemind.contracts.abi_helper import load_abi
 from rizemind.contracts.deployment import DeployedContract
 from rizemind.contracts.local_deployment import load_forge_artifact
