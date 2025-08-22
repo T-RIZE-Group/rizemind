@@ -26,6 +26,13 @@ class CannotTrainException(RizemindException):
         super().__init__(code="cannot_train", message=message)
 
 
+class CannotRecoverSignerException(RizemindException):
+    def __init__(
+        self,
+    ) -> None:
+        super().__init__(code="cannot_recover_signer", message="Cannot recover signer")
+
+
 class EthAccountStrategy(Strategy):
     """
     A federated learning strategy that verifies model authenticity using Ethereum-based signatures.
@@ -103,7 +110,7 @@ class EthAccountStrategy(Strategy):
                 else:
                     failures.append(CannotTrainException(signer))
             except ParseException:
-                failures.append(CannotTrainException(signer))
+                failures.append(CannotRecoverSignerException())
         return self.strat.aggregate_fit(server_round, whitelisted, failures)
 
     def _recover_signer(self, res: FitRes, server_round: int):
