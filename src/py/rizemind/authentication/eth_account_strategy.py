@@ -6,6 +6,9 @@ from flwr.server.strategy import Strategy
 from rizemind.authentication.authenticated_client_manager import (
     AuthenticatedClientManager,
 )
+from rizemind.authentication.authenticated_client_properties import (
+    AuthenticatedClientProperties,
+)
 from rizemind.authentication.notary.model.config import (
     parse_model_notary_config,
     prepare_model_notary_config,
@@ -18,6 +21,8 @@ from rizemind.authentication.notary.model.model_signature import (
 from rizemind.authentication.typing import SupportsEthAccountStrategy
 from rizemind.exception.base_exception import RizemindException
 from rizemind.exception.parse_exception import ParseException
+
+TRAINER_ADDRESS_CLIENT_PROPERTY = "trainer_address"
 
 
 class CannotTrainException(RizemindException):
@@ -104,8 +109,9 @@ class EthAccountStrategy(Strategy):
         for client, res in results:
             try:
                 signer = self._recover_signer(res, server_round)
+                properties = AuthenticatedClientProperties(trainer_address=signer)
+                properties.tag_client(client)
                 if self.swarm.can_train(signer, server_round):
-                    res.metrics["trainer_address"] = signer
                     whitelisted.append((client, res))
                 else:
                     failures.append(CannotTrainException(signer))
