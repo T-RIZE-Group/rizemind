@@ -22,8 +22,6 @@ from rizemind.authentication.typing import SupportsEthAccountStrategy
 from rizemind.exception.base_exception import RizemindException
 from rizemind.exception.parse_exception import ParseException
 
-TRAINER_ADDRESS_CLIENT_PROPERTY = "trainer_address"
-
 
 class CannotTrainException(RizemindException):
     def __init__(self, address: str) -> None:
