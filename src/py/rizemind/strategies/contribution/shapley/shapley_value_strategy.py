@@ -1,5 +1,3 @@
-import itertools
-import uuid
 from collections.abc import Callable
 from logging import DEBUG, INFO, WARNING
 from math import factorial
@@ -16,38 +14,14 @@ from flwr.server.strategy import Strategy
 from rizemind.authentication.authenticated_client_properties import (
     AuthenticatedClientProperties,
 )
+from rizemind.strategies.contribution.shapley.sampling.full import FullShapley
+from rizemind.strategies.contribution.shapley.sampling.sampling_strat import (
+    ShapleySamplingStrategy,
+)
+from rizemind.strategies.contribution.shapley.trainer_set import TrainerSetAggregate
 
 type CoalitionScore = tuple[list[ChecksumAddress], float]
 type PlayerScore = tuple[ChecksumAddress, float]
-
-
-class Coalition:
-    id: str
-    members: list[ChecksumAddress]
-    parameters: Parameters
-    config: dict[str, Scalar]
-    loss: float | None
-    metrics: dict[str, Scalar] | None
-
-    def __init__(
-        self,
-        id: str,
-        members: list[ChecksumAddress],
-        parameters: Parameters,
-        config: dict[str, Scalar],
-    ) -> None:
-        self.id = id
-        self.members = members
-        self.parameters = parameters
-        self.config = config
-
-    def get_loss(self):
-        return self.loss or float("Inf")
-
-    def get_metric(self, name: str, default):
-        if self.metrics:
-            return self.metrics[name] or default
-        return default
 
 
 class SupportsShapleyValueStrategy(Protocol):
@@ -66,27 +40,32 @@ class SupportsShapleyValueStrategy(Protocol):
 class ShapleyValueStrategy(Strategy):
     strategy: Strategy
     swarm: SupportsShapleyValueStrategy
-    coalitions: dict[str, Coalition]
-    coalition_to_score_fn: Callable[[Coalition], float] | None = None
+    coalition_to_score_fn: Callable[[TrainerSetAggregate], float] | None = None
     last_round_parameters: Parameters | None
     aggregate_coalition_metrics: (
-        Callable[[list[Coalition]], dict[str, Scalar]] | None
+        Callable[[list[TrainerSetAggregate]], dict[str, Scalar]] | None
     ) = None
+    shapley_sampling_strat: ShapleySamplingStrategy
+    set_aggregates: dict[str, TrainerSetAggregate]
 
     def __init__(
         self,
         strategy: Strategy,
         swarm: SupportsShapleyValueStrategy,
-        coalition_to_score_fn: Callable[[Coalition], float] | None = None,
-        aggregate_coalition_metrics_fn: Callable[[list[Coalition]], dict[str, Scalar]]
+        coalition_to_score_fn: Callable[[TrainerSetAggregate], float] | None = None,
+        aggregate_coalition_metrics_fn: Callable[
+            [list[TrainerSetAggregate]], dict[str, Scalar]
+        ]
         | None = None,
+        shapley_sampling_strat: ShapleySamplingStrategy = FullShapley(),
     ) -> None:
         log(DEBUG, "ShapleyValueStrategy: initializing")
         self.strategy = strategy
         self.swarm = swarm
         self.coalition_to_score_fn = coalition_to_score_fn
-        self.coalitions = {}
+        self.set_aggregates = {}
         self.aggregate_coalition_metrics = aggregate_coalition_metrics_fn
+        self.shapley_sampling_strat = shapley_sampling_strat
 
     def initialize_parameters(self, client_manager: ClientManager) -> Parameters | None:
         """
@@ -108,7 +87,7 @@ class ShapleyValueStrategy(Strategy):
             DEBUG,
             "configure_fit: selecting the base coalition for next round",
         )
-        coalition = self.select_coalition()
+        coalition = self.select_aggregate()
         parameters = parameters if coalition is None else coalition.parameters
         log(
             DEBUG,
@@ -117,7 +96,7 @@ class ShapleyValueStrategy(Strategy):
         self.last_round_parameters = parameters
         return self.strategy.configure_fit(server_round, parameters, client_manager)
 
-    def select_coalition(self) -> Coalition | None:
+    def select_aggregate(self) -> TrainerSetAggregate | None:
         coalitions = self.get_coalitions()
         if len(coalitions) == 0:
             log(DEBUG, "select_coalition: no coalition was found")
@@ -159,44 +138,45 @@ class ShapleyValueStrategy(Strategy):
 
     def create_coalitions(
         self, server_round: int, results: list[tuple[ClientProxy, FitRes]]
-    ) -> list[Coalition]:
+    ) -> list[TrainerSetAggregate]:
         log(DEBUG, "create_coalitions: initializing")
-        results_coalitions = [
-            list(combination)
-            for r in range(len(results) + 1)
-            for combination in itertools.combinations(results, r)
-        ]
-        self.coalitions = {}
-        for results_coalition in results_coalitions:
-            id = uuid.uuid4()
-            id = str(id)
-            members: list[ChecksumAddress] = []
-            for client, _ in results_coalition:
+        trainer_sets = self.shapley_sampling_strat.sample_trainer_sets(
+            server_round=server_round, results=results
+        )
+
+        for trainer_set in trainer_sets:
+            set_results: list[tuple[ClientProxy, FitRes]] = []
+            for client, result in results:
                 auth = AuthenticatedClientProperties.from_client(client)
-                members.append(auth.trainer_address)
-            if len(results_coalition) == 0:
-                parameters = self.last_round_parameters
+                if auth.trainer_address in trainer_set.members:
+                    set_results.append((client, result))
+
+            if trainer_set.size() == 0:
+                parameters, config = self.last_round_parameters, {}
             else:
-                parameters, _ = self.strategy.aggregate_fit(
-                    server_round, results_coalition, []
+                parameters, config = self.strategy.aggregate_fit(
+                    server_round, set_results, []
                 )
 
             if parameters is None:
-                raise Exception("Aggregated parameters is None")
-            self.coalitions[id] = Coalition(id, members, parameters, {})
+                raise ValueError(f"Aggregate is none for ID {trainer_set.id}")
+
+            self.set_aggregates[trainer_set.id] = TrainerSetAggregate(
+                trainer_set.id, trainer_set.members, parameters, config
+            )
 
         return self.get_coalitions()
 
-    def get_coalitions(self) -> list[Coalition]:
-        return list(self.coalitions.values())
+    def get_coalitions(self) -> list[TrainerSetAggregate]:
+        return list(self.set_aggregates.values())
 
-    def get_coalition(self, id: str) -> Coalition:
-        if id in self.coalitions:
-            return self.coalitions[id]
+    def get_coalition(self, id: str) -> TrainerSetAggregate:
+        if id in self.set_aggregates:
+            return self.set_aggregates[id]
         raise Exception(f"Coalition {id} not found")
 
     def compute_contributions(
-        self, coalitions: list[Coalition] | None
+        self, coalitions: list[TrainerSetAggregate] | None
     ) -> list[PlayerScore]:
         # Create a bijective mapping between addresses and a bit_based representation
         # First the coalition_and_scores is sorted based on the length of list of addresses
@@ -250,7 +230,7 @@ class ShapleyValueStrategy(Strategy):
         )
         return list(player_scores.items())
 
-    def get_coalition_score(self, coalition: Coalition) -> float:
+    def get_coalition_score(self, coalition: TrainerSetAggregate) -> float:
         score = None
         if self.coalition_to_score_fn is None:
             score = coalition.loss
@@ -281,7 +261,7 @@ class ShapleyValueStrategy(Strategy):
         self.swarm.distribute(player_scores)
 
         loss, metrics = self.evaluate_coalitions()
-        next_model = self.select_coalition()
+        next_model = self.select_aggregate()
         score = 0 if next_model is None else self.get_coalition_score(next_model)
         self.swarm.next_round(
             round_id,

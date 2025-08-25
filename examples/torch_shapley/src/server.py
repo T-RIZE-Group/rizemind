@@ -12,7 +12,9 @@ from rizemind.logging.metrics_storage_strategy import MetricsStorageStrategy
 from rizemind.strategies.contribution.shapley.decentralized.shapley_value_strategy import (
     DecentralShapleyValueStrategy,
 )
-from rizemind.strategies.contribution.shapley.shapley_value_strategy import Coalition
+from rizemind.strategies.contribution.shapley.shapley_value_strategy import (
+    TrainerSetAggregate,
+)
 from rizemind.swarm.config import SwarmConfig
 from rizemind.web3.config import Web3Config
 
@@ -30,7 +32,7 @@ def weighted_average(metrics: list[tuple[int, Metrics]]) -> Metrics:
     return {"accuracy": sum(accuracies) / sum(examples)}
 
 
-def aggregate_coalitions(coalitions: list[Coalition]) -> dict[str, Scalar]:
+def aggregate_coalitions(coalitions: list[TrainerSetAggregate]) -> dict[str, Scalar]:
     accuracies = [
         float(coalition.get_metric("accuracy", 0)) for coalition in coalitions
     ]
