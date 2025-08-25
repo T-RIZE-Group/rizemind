@@ -14,7 +14,7 @@ class TrainerSet:
         self.id = id
         self.members = members
 
-    def size(self):
+    def size(self) -> int:
         return len(self.members)
 
 

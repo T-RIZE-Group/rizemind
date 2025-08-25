@@ -159,7 +159,9 @@ class ShapleyValueStrategy(Strategy):
                 )
 
             if parameters is None:
-                raise ValueError(f"Aggregate is none for ID {trainer_set.id}")
+                raise ValueError(
+                    f"No aggregate returned for trainer set ID {trainer_set.id}"
+                )
 
             self.set_aggregates[trainer_set.id] = TrainerSetAggregate(
                 trainer_set.id, trainer_set.members, parameters, config

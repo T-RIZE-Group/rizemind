@@ -7,7 +7,7 @@ class ParticipantMapping:
     def __init__(self) -> None:
         self.participant_ids = {}
 
-    def add_participant(self, participant: ChecksumAddress):
+    def add_participant(self, participant: ChecksumAddress) -> None:
         if participant not in self.participant_ids:
             self.participant_ids[participant] = self.get_total_participants()
 
