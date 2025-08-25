@@ -16,6 +16,7 @@ from flwr.server.strategy import Strategy
 from rizemind.authentication.authenticated_client_properties import (
     AuthenticatedClientProperties,
 )
+from rizemind.exception.parse_exception import ParseException
 
 type CoalitionScore = tuple[list[ChecksumAddress], float]
 type PlayerScore = tuple[ChecksumAddress, float]
@@ -172,8 +173,11 @@ class ShapleyValueStrategy(Strategy):
             id = str(id)
             members: list[ChecksumAddress] = []
             for client, _ in results_coalition:
-                auth = AuthenticatedClientProperties.from_client(client)
-                members.append(auth.trainer_address)
+                try:
+                    auth = AuthenticatedClientProperties.from_client(client)
+                    members.append(auth.trainer_address)
+                except ParseException:
+                    pass
             if len(results_coalition) == 0:
                 parameters = self.last_round_parameters
             else:

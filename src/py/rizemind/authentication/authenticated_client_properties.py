@@ -3,6 +3,7 @@ from flwr.server.client_proxy import ClientProxy
 from pydantic import BaseModel
 
 from rizemind.configuration.transform import from_properties, to_properties
+from rizemind.exception.parse_exception import catch_parse_errors
 
 AUTHENTICATED_CLIENT_PROPERTIES_PREFIX = "rizemind.authenticated_client_properties"
 
@@ -16,6 +17,7 @@ class AuthenticatedClientProperties(BaseModel):
         )
         client.properties.update(properties)
 
+    @catch_parse_errors
     @staticmethod
     def from_client(client: ClientProxy) -> "AuthenticatedClientProperties":
         properties = client.properties
