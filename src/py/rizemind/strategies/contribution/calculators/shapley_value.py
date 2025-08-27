@@ -58,7 +58,7 @@ class ShapleyValueCalculator(ContributionCalculator):
                 weighted_sum += w * marginal_contribution
                 weight_total += w
 
-            score = (weighted_sum / weight_total) if weight_total > 0 else float("nan")
+            score = (weighted_sum / weight_total) if weight_total > 0 else 0
             # Renormalize by the total weight we actually used
             player_scores[player] = PlayerScore(trainer_address=player, score=score)
         return player_scores
