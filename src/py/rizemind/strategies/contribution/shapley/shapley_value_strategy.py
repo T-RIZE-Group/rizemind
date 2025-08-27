@@ -73,7 +73,7 @@ class ShapleyValueStrategy(Strategy):
         self.set_aggregates = TrainerSetAggregateStore()
         self.aggregate_coalition_metrics = aggregate_coalition_metrics_fn
         self.sets_sampling_strat = shapley_sampling_strat
-        self.contribution_calculator = ShapleyValueCalculator()
+        self.contribution_calculator = contribution_calculator
 
     def initialize_parameters(self, client_manager: ClientManager) -> Parameters | None:
         """
