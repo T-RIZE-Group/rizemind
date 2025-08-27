@@ -6,8 +6,8 @@ from flwr.server.client_proxy import ClientProxy
 from rizemind.authentication.authenticated_client_properties import (
     AuthenticatedClientProperties,
 )
-from rizemind.strategies.contribution.shapley.sampling.sampling_strat import (
-    ShapleySamplingStrategy,
+from rizemind.strategies.contribution.sampling.sets_sampling_strat import (
+    SetsSamplingStrategy,
 )
 from rizemind.strategies.contribution.shapley.trainer_mapping import ParticipantMapping
 from rizemind.strategies.contribution.shapley.trainer_set import (
@@ -15,7 +15,7 @@ from rizemind.strategies.contribution.shapley.trainer_set import (
 )
 
 
-class FullShapley(ShapleySamplingStrategy):
+class AllSets(SetsSamplingStrategy):
     trainer_mapping: ParticipantMapping
     current_round: int
     sets: dict[str, TrainerSet]
@@ -72,3 +72,10 @@ class FullShapley(ShapleySamplingStrategy):
         if id not in self.sets:
             raise ValueError(f"Trainer set with ID {id} not found")
         return self.sets[id]
+
+    def get_trainer_mapping(self, round_id: int) -> ParticipantMapping:
+        if round_id != self.current_round:
+            raise ValueError(
+                f"Round {round_id} is not the current round {self.current_round}"
+            )
+        return self.trainer_mapping
