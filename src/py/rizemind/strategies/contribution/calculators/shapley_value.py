@@ -52,11 +52,11 @@ class ShapleyValueCalculator(ContributionCalculator):
                     in_set_score = to_score(in_set_aggregate)
                     marginal_contribution = in_set_score - not_in_set_score
                     s = set.size()
-                w = factorial(s) * factorial(
-                    num_players - s - 1
-                )  # Shapley weight numerator
-                weighted_sum += w * marginal_contribution
-                weight_total += w
+                    w = factorial(s) * factorial(
+                        num_players - s - 1
+                    )  # Shapley weight numerator
+                    weighted_sum += w * marginal_contribution
+                    weight_total += w
 
             score = (weighted_sum / weight_total) if weight_total > 0 else 0
             # Renormalize by the total weight we actually used
