@@ -6,6 +6,9 @@ from flwr.server.strategy import Strategy
 from rizemind.authentication.authenticated_client_manager import (
     AuthenticatedClientManager,
 )
+from rizemind.authentication.authenticated_client_properties import (
+    AuthenticatedClientProperties,
+)
 from rizemind.authentication.notary.model.config import (
     parse_model_notary_config,
     prepare_model_notary_config,
@@ -24,6 +27,13 @@ class CannotTrainException(RizemindException):
     def __init__(self, address: str) -> None:
         message = f"{address} cannot train"
         super().__init__(code="cannot_train", message=message)
+
+
+class CannotRecoverSignerException(RizemindException):
+    def __init__(
+        self,
+    ) -> None:
+        super().__init__(code="cannot_recover_signer", message="Cannot recover signer")
 
 
 class EthAccountStrategy(Strategy):
@@ -97,13 +107,14 @@ class EthAccountStrategy(Strategy):
         for client, res in results:
             try:
                 signer = self._recover_signer(res, server_round)
+                properties = AuthenticatedClientProperties(trainer_address=signer)
+                properties.tag_client(client)
                 if self.swarm.can_train(signer, server_round):
-                    res.metrics["trainer_address"] = signer
                     whitelisted.append((client, res))
                 else:
                     failures.append(CannotTrainException(signer))
             except ParseException:
-                failures.append(CannotTrainException(signer))
+                failures.append(CannotRecoverSignerException())
         return self.strat.aggregate_fit(server_round, whitelisted, failures)
 
     def _recover_signer(self, res: FitRes, server_round: int):

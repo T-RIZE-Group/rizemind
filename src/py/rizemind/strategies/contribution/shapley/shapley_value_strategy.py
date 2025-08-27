@@ -3,7 +3,7 @@ import uuid
 from collections.abc import Callable
 from logging import DEBUG, INFO, WARNING
 from math import factorial
-from typing import Protocol, cast
+from typing import Protocol
 
 from bidict import bidict
 from eth_typing import ChecksumAddress
@@ -13,6 +13,10 @@ from flwr.common.typing import FitIns, Parameters, Scalar
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
+from rizemind.authentication.authenticated_client_properties import (
+    AuthenticatedClientProperties,
+)
+from rizemind.exception.parse_exception import ParseException
 
 type CoalitionScore = tuple[list[ChecksumAddress], float]
 type PlayerScore = tuple[ChecksumAddress, float]
@@ -168,10 +172,12 @@ class ShapleyValueStrategy(Strategy):
             id = uuid.uuid4()
             id = str(id)
             members: list[ChecksumAddress] = []
-            for _, fit_res in results_coalition:
-                members.append(
-                    cast(ChecksumAddress, fit_res.metrics["trainer_address"])
-                )
+            for client, _ in results_coalition:
+                try:
+                    auth = AuthenticatedClientProperties.from_client(client)
+                    members.append(auth.trainer_address)
+                except ParseException:
+                    pass
             if len(results_coalition) == 0:
                 parameters = self.last_round_parameters
             else:

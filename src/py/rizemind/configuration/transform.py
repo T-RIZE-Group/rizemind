@@ -1,5 +1,6 @@
 from typing import Any, cast
 
+from flwr.common import Properties
 from flwr.common.record.configrecord import ConfigRecord
 from flwr.common.typing import Config, ConfigRecordValues, Scalar
 
@@ -47,6 +48,11 @@ def to_config(d: dict[str, Any], prefix: str = "") -> Config:
     return flatten(normalized, prefix)
 
 
+def to_properties(d: dict[str, Any], prefix: str = "") -> Properties:
+    normalized = normalize(d)
+    return flatten(normalized, prefix)
+
+
 def unflatten(flat_dict: dict[str, Any]) -> dict[str, Any]:
     result = {}
     for compound_key, value in flat_dict.items():
@@ -60,6 +66,10 @@ def unflatten(flat_dict: dict[str, Any]) -> dict[str, Any]:
 
 def from_config(config: Config) -> dict[str, Any]:
     return unflatten(config)
+
+
+def from_properties(properties: Properties) -> dict[str, Any]:
+    return unflatten(properties)
 
 
 def _to_plain_dict(conf: Config | dict[str, Any] | ConfigRecord) -> dict[str, Any]:
