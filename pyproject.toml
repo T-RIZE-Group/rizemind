@@ -10,7 +10,6 @@ authors = [{ name = "T-RIZE Labs", email = "michael.duchesne@t-rize.io" }]
 requires-python = ">=3.12"
 license = "Apache-2.0"
 dependencies = [
-    "bidict>=0.23.1",
     "eth-account>=0.13.6",
     "mnemonic>=0.21",
     "pydantic>=2.11.3",

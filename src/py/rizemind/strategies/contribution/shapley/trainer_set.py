@@ -42,3 +42,27 @@ class TrainerSetAggregate(TrainerSet):
         if self.metrics:
             return self.metrics[name] or default
         return default
+
+
+class TrainerSetAggregateStore:
+    set_aggregates: dict[str, TrainerSetAggregate]
+
+    def __init__(self) -> None:
+        self.set_aggregates = {}
+
+    def insert(self, aggregate: TrainerSetAggregate) -> None:
+        self.set_aggregates[aggregate.id] = aggregate
+
+    def get_sets(self) -> list[TrainerSetAggregate]:
+        return list(self.set_aggregates.values())
+
+    def clear(self) -> None:
+        self.set_aggregates = {}
+
+    def get_set(self, id: str) -> TrainerSetAggregate:
+        if id in self.set_aggregates:
+            return self.set_aggregates[id]
+        raise Exception(f"Coalition {id} not found")
+
+    def is_available(self, id: str) -> bool:
+        return id in self.set_aggregates
