@@ -1,10 +1,24 @@
 from eth_typing import ChecksumAddress
-from flwr.common import Parameters, Scalar
+from flwr.common.typing import Parameters, Scalar
 
 
-class IntermediateAggregation:
+class TrainerSet:
     id: str
     members: list[ChecksumAddress]
+
+    def __init__(
+        self,
+        id: str,
+        members: list[ChecksumAddress],
+    ) -> None:
+        self.id = id
+        self.members = members
+
+    def size(self) -> int:
+        return len(self.members)
+
+
+class TrainerSetAggregate(TrainerSet):
     parameters: Parameters
     config: dict[str, Scalar]
     loss: float | None
@@ -17,8 +31,7 @@ class IntermediateAggregation:
         parameters: Parameters,
         config: dict[str, Scalar],
     ) -> None:
-        self.id = id
-        self.members = members
+        super().__init__(id, members=members)
         self.parameters = parameters
         self.config = config
 
