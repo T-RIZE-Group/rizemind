@@ -4,7 +4,9 @@ pragma solidity ^0.8.20;
 import {Initializable} from "@openzeppelin-contracts-upgradeable-5.2.0/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin-contracts-upgradeable-5.2.0/proxy/utils/UUPSUpgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin-contracts-upgradeable-5.2.0/access/AccessControlUpgradeable.sol";
+import {EIP712Upgradeable} from "@openzeppelin-contracts-upgradeable-5.2.0/utils/cryptography/EIP712Upgradeable.sol";
 import {ShapleyValueCalculator} from "./ShapleyValueCalculator.sol";
+import {IContributionCalculator} from "./types.sol";
 
 /**
  * @title ContributionCalculator
@@ -15,9 +17,11 @@ contract ContributionCalculator is
     Initializable, 
     UUPSUpgradeable, 
     AccessControlUpgradeable, 
-    ShapleyValueCalculator 
+    EIP712Upgradeable,
+    ShapleyValueCalculator,
+    IContributionCalculator
 {
-
+    string private constant _VERSION = "contribution-calculator-v1.0.0";
 
     // Events
     event ContributionResultRegistered(
@@ -51,6 +55,7 @@ contract ContributionCalculator is
 
         __UUPSUpgradeable_init();
         __AccessControl_init();
+        __EIP712_init("ContributionCalculator", _VERSION);
 
         _grantRole(DEFAULT_ADMIN_ROLE, initialAdmin);
     }
@@ -121,8 +126,22 @@ contract ContributionCalculator is
         }
     }
 
+    /**
+     * @dev The version parameter for the EIP712 domain.
+     */
+    // solhint-disable-next-line func-name-mixedcase
+    function _EIP712Version()
+        internal
+        pure
+        override(EIP712Upgradeable)
+        returns (string memory)
+    {
+        return _VERSION;
+    }
+
     /// @dev See {IERC165-supportsInterface}
     function supportsInterface(bytes4 interfaceId) public view override(AccessControlUpgradeable, ShapleyValueCalculator) virtual returns (bool) {
-        return ShapleyValueCalculator.supportsInterface(interfaceId) || AccessControlUpgradeable.supportsInterface(interfaceId);
+        return super.supportsInterface(interfaceId) || 
+               interfaceId == type(IContributionCalculator).interfaceId;
     }
 }
