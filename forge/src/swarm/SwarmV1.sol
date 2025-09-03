@@ -27,13 +27,14 @@ contract SwarmV1 is
         address aggregator,
         address[] memory initialTrainers,
         address initialTrainerSelector,
-        address initialEvaluatorSelector
+        address initialEvaluatorSelector,
+        address initialContributionCalculator
     ) external initializer {
         __EIP712_init(name, _VERSION);
         __SimpleMintCompensation_init(name, symbol, 10 ** 20);
         __FLAccessControl_init(aggregator, initialTrainers);
         __RoundTraining_init();
-        __SwarmCore_init(initialTrainerSelector, initialEvaluatorSelector);
+        __SwarmCore_init(initialTrainerSelector, initialEvaluatorSelector, initialContributionCalculator);
     }
 
     function canTrain(

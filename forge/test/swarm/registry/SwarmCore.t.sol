@@ -6,6 +6,7 @@ import {ERC1967Proxy} from "@openzeppelin-contracts-5.2.0/proxy/ERC1967/ERC1967P
 import {SwarmCore} from "../../../src/swarm/registry/SwarmCore.sol";
 import {AlwaysSampled} from "../../../src/sampling/AlwaysSampled.sol";
 import {ISelector} from "../../../src/sampling/ISelector.sol";
+import {IContributionCalculator} from "../../../src/contribution/types.sol";
 import {IERC165} from "@openzeppelin-contracts-5.2.0/utils/introspection/IERC165.sol";
 
 /// @title MockEvaluatorSelector
@@ -26,6 +27,11 @@ contract MockSwarmCore is SwarmCore {
     function updateEvaluatorSelector(address newEvaluatorSelector) external {
         _updateEvaluatorSelector(newEvaluatorSelector);
     }
+
+    /// @notice Expose the internal _updateContributionCalculator function for testing
+    function updateContributionCalculator(address newContributionCalculator) external {
+        _updateContributionCalculator(newContributionCalculator);
+    }
 }
 
 
@@ -35,29 +41,57 @@ contract MockInvalidSelector {
     // This contract intentionally doesn't implement ISelector
 }
 
+/// @title MockContributionCalculator
+/// @notice Mock contract that implements IContributionCalculator interface
+contract MockContributionCalculator {
+    function calculateContribution(uint256 roundId, uint256 trainerIndex, uint8 numberOfTrainers) external view returns (int256) {
+        return int256(1);
+    }
+    
+    function getResult(uint256 roundId, uint256 setId) external view returns (int256) {
+        return int256(1);
+    }
+    
+    function getResultOrThrow(uint256 roundId, uint256 setId) external view returns (int256) {
+        return int256(1);
+    }
+    
+    function eip712Domain() external view returns (bytes1 fields, string memory name, string memory version, uint256 chainId, address verifyingContract, bytes32 salt, uint256[] memory extensions) {
+        return (0x0, "MockCalculator", "1", block.chainid, address(this), bytes32(0), new uint256[](0));
+    }
+    
+    function supportsInterface(bytes4 interfaceId) external view returns (bool) {
+        return true;
+    }
+}
+
 contract SwarmCoreTest is Test {
     MockSwarmCore public implementation;
     ERC1967Proxy public proxy;
     MockSwarmCore public swarmCore;
     AlwaysSampled public alwaysSampled;
     MockSelector public mockEvaluatorSelector;
+    MockContributionCalculator public mockContributionCalculator;
     MockInvalidSelector public invalidEvaluatorSelector;
 
     event TrainerSelectorUpdated(address indexed previousSelector, address indexed newSelector);
     event EvaluatorSelectorUpdated(address indexed previousSelector, address indexed newSelector);
+    event ContributionCalculatorUpdated(address indexed previousCalculator, address indexed newCalculator);
 
     function setUp() public {
         // Deploy contracts
         implementation = new MockSwarmCore();
         alwaysSampled = new AlwaysSampled();
         mockEvaluatorSelector = new MockSelector();
+        mockContributionCalculator = new MockContributionCalculator();
         invalidEvaluatorSelector = new MockInvalidSelector();
         
         // Deploy proxy
         bytes memory initData = abi.encodeWithSelector(
             SwarmCore.initialize.selector,
             address(alwaysSampled),
-            address(mockEvaluatorSelector)
+            address(mockEvaluatorSelector),
+            address(mockContributionCalculator)
         );
         proxy = new ERC1967Proxy(address(implementation), initData);
         swarmCore = MockSwarmCore(address(proxy));
@@ -79,10 +113,16 @@ contract SwarmCoreTest is Test {
         assertEq(evaluatorSelector, address(mockEvaluatorSelector), "Evaluator selector should be set to MockSelector");
     }
 
+    function test_initialize_setsContributionCalculator() public view {
+        // Test that initialize sets the contribution calculator correctly
+        address contributionCalculator = swarmCore.getContributionCalculator();
+        assertEq(contributionCalculator, address(mockContributionCalculator), "Contribution calculator should be set to MockContributionCalculator");
+    }
+
     function test_initialize_canOnlyBeCalledOnce() public {
         // Test that initialize cannot be called twice
         vm.expectRevert();
-        swarmCore.initialize(address(alwaysSampled), address(mockEvaluatorSelector));
+        swarmCore.initialize(address(alwaysSampled), address(mockEvaluatorSelector), address(mockContributionCalculator));
     }
 
     function test_getTrainerSelector_returnsCorrectAddress() public view {
@@ -95,6 +135,12 @@ contract SwarmCoreTest is Test {
         // Test that getEvaluatorSelector returns the correct address
         address evaluatorSelector = swarmCore.getEvaluatorSelector();
         assertEq(evaluatorSelector, address(mockEvaluatorSelector), "Should return the correct evaluator selector address");
+    }
+
+    function test_getContributionCalculator_returnsCorrectAddress() public view {
+        // Test that getContributionCalculator returns the correct address
+        address contributionCalculator = swarmCore.getContributionCalculator();
+        assertEq(contributionCalculator, address(mockContributionCalculator), "Should return the correct contribution calculator address");
     }
 
     function test_updateTrainerSelector_updatesStorage() public {
@@ -121,6 +167,19 @@ contract SwarmCoreTest is Test {
         
         address updatedSelector = swarmCore.getEvaluatorSelector();
         assertEq(updatedSelector, newEvaluatorSelector, "Evaluator selector should be updated");
+    }
+
+    function test_updateContributionCalculator_updatesStorage() public {
+        // Test that _updateContributionCalculator updates the storage correctly
+        address newContributionCalculator = address(new MockContributionCalculator());
+
+        vm.expectEmit(true, true, false, false);
+        emit ContributionCalculatorUpdated(address(mockContributionCalculator), newContributionCalculator);
+        
+        swarmCore.updateContributionCalculator(newContributionCalculator);
+        
+        address updatedCalculator = swarmCore.getContributionCalculator();
+        assertEq(updatedCalculator, newContributionCalculator, "Contribution calculator should be updated");
     }
 
     function test_updateTrainerSelector_emitsEvent() public {
@@ -257,6 +316,44 @@ contract SwarmCoreTest is Test {
 
         vm.expectRevert(SwarmCore.InvalidEvaluatorSelector.selector);
         swarmCore.updateEvaluatorSelector(unsupportedContract);
+    }
+
+    // ============================================================================
+    // CONTRIBUTION CALCULATOR TESTS
+    // ============================================================================
+
+    function test_updateContributionCalculator_emitsEvent() public {
+        // Test that _updateContributionCalculator emits the correct event
+        address newContributionCalculator = address(new MockContributionCalculator());
+        
+        vm.expectEmit(true, true, false, false);
+        emit ContributionCalculatorUpdated(address(mockContributionCalculator), newContributionCalculator);
+        
+        swarmCore.updateContributionCalculator(newContributionCalculator);
+    }
+
+    function test_updateContributionCalculator_validatesInterfaceSupport() public {
+        // Test that _updateContributionCalculator validates interface support
+        address newContributionCalculator = address(invalidEvaluatorSelector);
+        
+        vm.expectRevert(SwarmCore.InvalidContributionCalculator.selector);
+        swarmCore.updateContributionCalculator(newContributionCalculator);
+    }
+
+    function test_updateContributionCalculator_rejectsZeroAddress() public {
+        // Test that _updateContributionCalculator rejects zero address
+        vm.expectRevert(SwarmCore.InvalidContributionCalculator.selector);
+        swarmCore.updateContributionCalculator(address(0));
+    }
+
+    function test_updateContributionCalculator_acceptsValidInterface() public {
+        // Test that _updateContributionCalculator accepts valid interface implementation
+        address newContributionCalculator = address(new MockContributionCalculator());
+
+        swarmCore.updateContributionCalculator(newContributionCalculator);
+        
+        address updatedCalculator = swarmCore.getContributionCalculator();
+        assertEq(updatedCalculator, newContributionCalculator, "Should accept valid interface implementation");
     }
 
     function test_updateTrainerSelector_preservesPreviousSelector() public {
