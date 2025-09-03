@@ -100,20 +100,14 @@ contract CalculatorFactory is Ownable {
     /// @notice Create a new calculator instance using UUPS proxy
     /// @param id The identifier of the calculator implementation to use
     /// @param salt The salt for CREATE2 deployment
-    /// @param initialAdmin The initial admin address for the calculator
+    /// @param initData The initialization data for the calculator
     /// @return instance The address of the newly created calculator instance
-    function createCalculator(bytes32 id, bytes32 salt, address initialAdmin) external returns (address instance) {
+    function createCalculator(bytes32 id, bytes32 salt, bytes memory initData) external returns (address instance) {
         if (!isCalculatorRegistered(id)) {
             revert CalculatorImplementationNotFound();
         }
 
         address implementation = calculatorImplementations[id];
-
-        // Encode initialization data for ContributionCalculator
-        bytes memory initData = abi.encodeWithSelector(
-            ContributionCalculator.initialize.selector,
-            initialAdmin
-        );
 
         // Create new UUPS proxy instance using ERC1967Proxy
         // The proxy will delegate all calls to the implementation

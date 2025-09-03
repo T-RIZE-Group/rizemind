@@ -36,7 +36,6 @@ contract ContributionCalculator is
     event AdminRoleRevoked(address indexed account, address indexed admin);
 
     // Errors
-    error Unauthorized();
     error InvalidUpgrade();
 
     /// @custom:oz-upgrades-unsafe-allow constructor

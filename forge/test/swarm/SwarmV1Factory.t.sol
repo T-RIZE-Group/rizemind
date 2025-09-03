@@ -7,11 +7,15 @@ import {SwarmV1Factory} from "@rizemind-contracts/swarm/SwarmV1Factory.sol";
 import {SelectorFactory} from "@rizemind-contracts/sampling/SelectorFactory.sol";
 import {AlwaysSampled} from "@rizemind-contracts/sampling/AlwaysSampled.sol";
 import {RandomSampling} from "@rizemind-contracts/sampling/RandomSampling.sol";
+import {CalculatorFactory} from "@rizemind-contracts/contribution/CalculatorFactory.sol";
+import {ContributionCalculator} from "@rizemind-contracts/contribution/ContributionCalculator.sol";
 
 contract SwarmV1FactoryTest is Test {
     SwarmV1 public swarmImpl;
     SwarmV1Factory public swarmFactory;
     SelectorFactory public selectorFactory;
+    CalculatorFactory public calculatorFactory;
+    ContributionCalculator public calculatorImpl;
     AlwaysSampled public trainerSelectorImpl;
     RandomSampling public evaluatorSelectorImpl;
     
@@ -22,6 +26,7 @@ contract SwarmV1FactoryTest is Test {
     // Selector IDs for testing
     bytes32  TRAINER_SELECTOR_ID;
     bytes32 EVALUATOR_SELECTOR_ID;
+    bytes32 CALCULATOR_ID;
 
     bytes32 salt = keccak256(abi.encodePacked("test"));
 
@@ -40,18 +45,28 @@ contract SwarmV1FactoryTest is Test {
         trainerSelectorImpl = new AlwaysSampled();
         evaluatorSelectorImpl = new RandomSampling();
         
+        // Deploy calculator implementation
+        calculatorImpl = new ContributionCalculator();
+        
         // Deploy SelectorFactory first
         selectorFactory = new SelectorFactory(aggregator);
         
-        // Now we can get the IDs after SelectorFactory is deployed
+        // Deploy CalculatorFactory
+        calculatorFactory = new CalculatorFactory(aggregator);
+        
+        // Now we can get the IDs after factories are deployed
         (,, string memory version,,,,) = trainerSelectorImpl.eip712Domain();
         TRAINER_SELECTOR_ID = selectorFactory.getID(version);
         (,, string memory version2,,,,) = evaluatorSelectorImpl.eip712Domain();
         EVALUATOR_SELECTOR_ID = selectorFactory.getID(version2);
+        (,, string memory version3,,,,) = calculatorImpl.eip712Domain();
+        CALCULATOR_ID = calculatorFactory.getID(version3);
         
         selectorFactory.registerSelectorImplementation(address(trainerSelectorImpl));
         selectorFactory.registerSelectorImplementation(address(evaluatorSelectorImpl));
+        calculatorFactory.registerCalculatorImplementation(address(calculatorImpl));
         swarmFactory = new SwarmV1Factory(address(swarmImpl), address(selectorFactory));
+        swarmFactory.setCalculatorFactory(address(calculatorFactory));
         vm.stopPrank();
     }
 
@@ -199,10 +214,94 @@ contract SwarmV1FactoryTest is Test {
             initData: ""
         });
         
+        SwarmV1Factory.CalculatorParams memory calculatorParams = SwarmV1Factory.CalculatorParams({
+            id: CALCULATOR_ID,
+            initData: abi.encodeWithSelector(ContributionCalculator.initialize.selector, aggregator)
+        });
+        
         return SwarmV1Factory.SwarmParams({
             swarm: swarmParams,
             trainerSelector: trainerSelectorParams,
-            evaluatorSelector: evaluatorSelectorParams
+            evaluatorSelector: evaluatorSelectorParams,
+            calculatorFactory: calculatorParams
         });
+    }
+
+    // ============================================================================
+    // CALCULATOR FACTORY TESTS
+    // ============================================================================
+
+    function testGetCalculatorFactory() public view {
+        // Should be set to calculatorFactory address from setUp
+        assertEq(swarmFactory.getCalculatorFactory(), address(calculatorFactory), "Calculator factory should be set correctly");
+    }
+
+    function testSetCalculatorFactory() public {
+        // Deploy a new calculator factory for this test
+        vm.prank(aggregator);
+        CalculatorFactory newCalculatorFactory = new CalculatorFactory(aggregator);
+        
+        vm.prank(aggregator);
+        swarmFactory.setCalculatorFactory(address(newCalculatorFactory));
+        
+        assertEq(swarmFactory.getCalculatorFactory(), address(newCalculatorFactory), "Calculator factory should be set correctly");
+    }
+
+    function testSetCalculatorFactoryEmitsEvent() public {
+        // Deploy a new calculator factory for this test
+        vm.prank(aggregator);
+        CalculatorFactory newCalculatorFactory = new CalculatorFactory(aggregator);
+        
+        vm.expectEmit(true, true, false, false);
+        emit SwarmV1Factory.CalculatorFactoryUpdated(address(calculatorFactory), address(newCalculatorFactory));
+        
+        vm.prank(aggregator);
+        swarmFactory.setCalculatorFactory(address(newCalculatorFactory));
+    }
+
+    function testSetCalculatorFactoryProtected() public {
+        vm.prank(trainers[0]);
+        vm.expectRevert();
+        swarmFactory.setCalculatorFactory(address(calculatorFactory));
+    }
+
+    function testSetCalculatorFactoryZeroAddressReverts() public {
+        vm.prank(aggregator);
+        vm.expectRevert(bytes("calculator factory cannot be null"));
+        swarmFactory.setCalculatorFactory(address(0));
+    }
+
+    function testUpdateCalculatorFactory() public {
+        // First set a calculator factory
+        vm.prank(aggregator);
+        swarmFactory.setCalculatorFactory(address(calculatorFactory));
+        
+        // Deploy a new calculator factory
+        vm.prank(aggregator);
+        CalculatorFactory newCalculatorFactory = new CalculatorFactory(aggregator);
+        
+        // Update to new calculator factory
+        vm.expectEmit(true, true, false, false);
+        emit SwarmV1Factory.CalculatorFactoryUpdated(address(calculatorFactory), address(newCalculatorFactory));
+        
+        vm.prank(aggregator);
+        swarmFactory.setCalculatorFactory(address(newCalculatorFactory));
+        
+        assertEq(swarmFactory.getCalculatorFactory(), address(newCalculatorFactory), "Calculator factory should be updated correctly");
+    }
+
+    function testGetSwarmAddressMatchesCreateSwarm() public {
+        SwarmV1Factory.SwarmParams memory params = _createSwarmParams("test", "TST");
+        
+        // Get the predicted address before creating
+        address predictedAddress = swarmFactory.getSwarmAddress(salt);
+        
+        // Create the swarm
+        vm.prank(aggregator);
+        address createdAddress = swarmFactory.createSwarm(salt, params);
+        
+        // Verify both addresses match
+        assertEq(predictedAddress, createdAddress, "getSwarmAddress should return the same address as createSwarm");
+        assertTrue(createdAddress != address(0), "Created address should not be zero");
     }
 }

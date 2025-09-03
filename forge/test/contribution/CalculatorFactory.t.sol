@@ -58,8 +58,14 @@ contract CalculatorFactoryTest is Test {
         bytes32 salt = keccak256("test-salt");
         address initialAdmin = makeAddr("initialAdmin");
         
+        // Encode initialization data
+        bytes memory initData = abi.encodeWithSelector(
+            ContributionCalculator.initialize.selector,
+            initialAdmin
+        );
+        
         // Create calculator instance
-        address instance = factory.createCalculator(id, salt, initialAdmin);
+        address instance = factory.createCalculator(id, salt, initData);
         
         assertTrue(instance != address(0));
         
@@ -75,8 +81,14 @@ contract CalculatorFactoryTest is Test {
         bytes32 salt = keccak256("test-salt");
         address initialAdmin = makeAddr("initialAdmin");
         
+        // Encode initialization data
+        bytes memory initData = abi.encodeWithSelector(
+            ContributionCalculator.initialize.selector,
+            initialAdmin
+        );
+        
         vm.expectRevert(CalculatorFactory.CalculatorImplementationNotFound.selector);
-        factory.createCalculator(id, salt, initialAdmin);
+        factory.createCalculator(id, salt, initData);
     }
 
     function test_removeCalculatorImplementation() public {
