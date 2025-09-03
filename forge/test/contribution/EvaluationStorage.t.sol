@@ -14,8 +14,8 @@ contract MockEvaluationStorage is EvaluationStorage {
         uint256 setId,
         bytes32 modelHash,
         int256 result
-    ) external returns (uint256) {
-        return _registerResult(roundId, setId, modelHash, result);
+    ) external {
+        _registerResult(roundId, setId, modelHash, result);
     }
 }
 
@@ -33,7 +33,7 @@ contract EvaluationStorageTest is Test {
         bytes32 modelHash = keccak256("test_model");
         int256 result = 100;
 
-        uint256 resultId = evaluationStorage.registerResult(roundId, setId, modelHash, result);
+        evaluationStorage.registerResult(roundId, setId, modelHash, result);
         
         int256 retrievedResult = evaluationStorage.getResult(roundId, setId);
         assertEq(retrievedResult, result);

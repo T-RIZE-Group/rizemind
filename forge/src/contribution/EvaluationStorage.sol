@@ -10,7 +10,6 @@ import {IEvaluationStorage} from "./types.sol";
  * @dev Upgradeable contract for storing evaluation results
  * @notice This contract allows admin contracts to store evaluation results
  *
- * TODO: prevent committing results from the same trainer multiple times
  */
 // aderyn-ignore-next-line(contract-locks-ether)
 contract EvaluationStorage is Initializable, IERC165, IEvaluationStorage {
@@ -31,10 +30,9 @@ contract EvaluationStorage is Initializable, IERC165, IEvaluationStorage {
 
     // Events
     event ResultRegistered(
-        uint256 indexed resultId,
         uint256 indexed setId,
         uint256 indexed roundId,
-        bytes32 modelHash,
+        bytes32 indexed modelHash,
         int256 result,
         address evaluator
     );
@@ -51,15 +49,13 @@ contract EvaluationStorage is Initializable, IERC165, IEvaluationStorage {
      * @param modelHash Hash of the model being evaluated
      * @param result The evaluation result as a uint
      * @param roundId The round ID when evaluation was performed
-     * @return resultId The ID of the registered result
      */
-    // aderyn-fp-next-line(dead-code)
     function _registerResult(
         uint256 roundId,
         uint256 setId,
         bytes32 modelHash,
         int256 result
-    ) internal returns (uint256 resultId) {
+    ) internal  {
         if (modelHash == bytes32(0)) {
             revert InvalidParameters();
         }
@@ -74,7 +70,6 @@ contract EvaluationStorage is Initializable, IERC165, IEvaluationStorage {
         }
 
         emit ResultRegistered(
-            resultId,
             setId,
             roundId,
             modelHash,

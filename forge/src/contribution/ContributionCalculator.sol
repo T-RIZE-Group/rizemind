@@ -66,16 +66,15 @@ contract ContributionCalculator is
      * @param setId The set ID for the evaluation
      * @param modelHash Hash of the model being evaluated
      * @param result The evaluation result
-     * @return resultId The ID of the registered result
      */
     function registerResult(
         uint256 roundId,
         uint256 setId,
         bytes32 modelHash,
         int256 result
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) returns (uint256 resultId) {
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
 
-        resultId = _registerResult(roundId, setId, modelHash, result);
+        _registerResult(roundId, setId, modelHash, result);
         
         emit ContributionResultRegistered(roundId, setId, modelHash, result, msg.sender);
     }

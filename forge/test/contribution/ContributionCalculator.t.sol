@@ -45,7 +45,7 @@ contract ContributionCalculatorTest is Test {
         bytes32 modelHash = keccak256("test_model");
         int256 result = 100;
 
-        uint256 resultId = calculator.registerResult(roundId, setId, modelHash, result);
+        calculator.registerResult(roundId, setId, modelHash, result);
         
         // Verify result was stored
         int256 retrievedResult = calculator.getResult(roundId, setId);
