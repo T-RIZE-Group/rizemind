@@ -81,7 +81,7 @@ contract ContributionCalculator is
     }
 
     /**
-     * @dev Grant admin role to an account (only callable by existing admin)
+     * @dev Grant admin role to an account
      * @param account The account to grant admin role to
      */
     function grantAdminRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -94,7 +94,7 @@ contract ContributionCalculator is
     }
 
     /**
-     * @dev Revoke admin role from an account (only callable by existing admin)
+     * @dev Revoke admin role from an account
      * @param account The account to revoke admin role from
      */
     function revokeAdminRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
