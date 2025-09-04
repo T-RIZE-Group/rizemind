@@ -9,8 +9,8 @@ jobs:
   publish:
     name: "Build and publish release"
     runs-on: ubuntu-latest
-    environment: trusted-publisher
-    # Granting permissions for OIDC token exchange (Trusted Publishers)
+    environment: pypi
+    # Granting permissions for OIDC token exchange
     permissions:
       id-token: write
       contents: read
