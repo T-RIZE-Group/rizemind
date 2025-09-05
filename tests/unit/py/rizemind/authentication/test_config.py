@@ -127,9 +127,30 @@ class TestAccountConfigWithMnemonicStore:
         expected = _derive_address(VALID_MNEMONIC, index)
         assert acct.address == expected
 
+    def test_both_sources_provides_same_mnemonic(self):
+        cfg = AccountConfig(
+            mnemonic=VALID_MNEMONIC,
+            mnemonic_store=MnemonicStoreConfig(
+                account_name="bob",
+                passphrase="open sesame",
+            ),
+        )
+        assert cfg.mnemonic == VALID_MNEMONIC
+
     # -- negative / edge cases ----------------------------------------------
 
-    def test_both_sources_provided_is_rejected(self):
+    def test_both_sources_provided_is_rejected(self, monkeypatch):
+        def _fake_load(self, account_name: str, passphrase: str) -> str:
+            assert account_name == "bob"
+            assert passphrase == "open sesame"
+            return "junk test test test test test test test test test test junk"
+
+        monkeypatch.setattr(
+            "rizemind.mnemonic.store.MnemonicStore.load",
+            _fake_load,
+            raising=True,
+        )
+
         with pytest.raises(ValidationError):
             AccountConfig(
                 mnemonic=VALID_MNEMONIC,
