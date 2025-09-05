@@ -4,6 +4,7 @@ from flwr.common.context import Context
 from pydantic import Field, HttpUrl, field_validator
 from pydantic_core import Url
 from rizemind.configuration.base_config import BaseConfig
+from rizemind.configuration.transform import unflatten
 from rizemind.web3.chains import RIZENET_TESTNET_CHAINID
 from web3 import HTTPProvider, Web3
 from web3.middleware import ExtraDataToPOAMiddleware
@@ -42,5 +43,5 @@ class Web3Config(BaseConfig):
     def from_context(context: Context) -> "Web3Config | None":
         if WEB3_CONFIG_STATE_KEY in context.state.config_records:
             records: Any = context.state.config_records[WEB3_CONFIG_STATE_KEY]
-            return Web3Config(**records)
+            return Web3Config(**unflatten(records))
         return None

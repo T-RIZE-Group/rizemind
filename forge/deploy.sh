@@ -1,15 +1,17 @@
 #!/bin/bash
 
 # Deploy Selector contracts using Forge scripts
-# Usage: ./deploy.sh [rpc-url] [private-key]
+# Usage: ./deploy.sh [rpc-url] [private-key] [owner]
 
 # Default values
 DEFAULT_RPC_URL="http://127.0.0.1:8545"
 DEFAULT_PRIVATE_KEY="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
-DEFAULT_OWNER=$(cast wallet address --private-key "$DEFAULT_PRIVATE_KEY")
+
 # Set variables from command line arguments or use defaults
 RPC_URL=${1:-$DEFAULT_RPC_URL}
 PRIVATE_KEY=${2:-$DEFAULT_PRIVATE_KEY}
+
+DEFAULT_OWNER=$(cast wallet address --private-key "$PRIVATE_KEY")
 OWNER=${3:-$DEFAULT_OWNER}
 
 # Set environment variable for selector factory owner

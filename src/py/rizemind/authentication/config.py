@@ -7,6 +7,7 @@ from mnemonic import Mnemonic
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from rizemind.configuration.base_config import BaseConfig
+from rizemind.configuration.transform import unflatten
 from rizemind.mnemonic.store import MnemonicStore
 
 ACCOUNT_CONFIG_STATE_KEY = "rizemind.account"
@@ -55,20 +56,24 @@ class AccountConfig(BaseConfig):
         • Ensure *exactly one* variant is supplied
         • If the keystore path is chosen, decrypt it and populate ``self.mnemonic``
         """
-        has_mnemonic = self.mnemonic is not None
-        has_mnemonic_store = self.mnemonic_store is not None
-
-        if has_mnemonic == has_mnemonic_store:
-            raise ValueError(
-                "You must supply either 'mnemonic' **or** 'mnemonic_store', but not both."
-            )
 
         if self.mnemonic_store is not None:
             store_conf = self.mnemonic_store
             store = MnemonicStore()
-            self.mnemonic = store.load(
+            mnemonic_stored = store.load(
                 account_name=store_conf.account_name,
                 passphrase=store_conf.passphrase,
+            )
+            if self.mnemonic is None:
+                self.mnemonic = mnemonic_stored
+            elif self.mnemonic != mnemonic_stored:
+                raise ValueError(
+                    "The mnemonic stored in the keystore does not match the mnemonic provided."
+                )
+
+        if self.mnemonic is None:
+            raise ValueError(
+                "You must supply either 'mnemonic' **or** 'mnemonic_store', but not both."
             )
 
         return self
@@ -90,5 +95,5 @@ class AccountConfig(BaseConfig):
     def from_context(context: Context) -> "AccountConfig | None":
         if ACCOUNT_CONFIG_STATE_KEY in context.state.config_records:
             records: Any = context.state.config_records[ACCOUNT_CONFIG_STATE_KEY]
-            return AccountConfig(**records)
+            return AccountConfig(**unflatten(records))
         return None
