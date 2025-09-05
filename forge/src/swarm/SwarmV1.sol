@@ -10,6 +10,7 @@ import {RoundTraining} from "../training/RoundTraining.sol";
 import {CertificateRegistry} from "./registry/CertificateRegistry.sol";
 import {SwarmCore} from "./registry/SwarmCore.sol";
 import {ISelector} from "../sampling/ISelector.sol";
+import {TaskAssignment} from "../scheduling/TaskAssignment.sol";
 
 contract SwarmV1 is
     FLAccessControl,
@@ -17,9 +18,15 @@ contract SwarmV1 is
     EIP712Upgradeable,
     RoundTraining,
     CertificateRegistry,
+    TaskAssignment,
     SwarmCore
 {
     string private constant _VERSION = "swarm-v1.0.0";
+    struct RoundEvaluators {
+        mapping(address => uint256) evaluators;
+        uint256 count;
+    }
+    mapping(uint256 => RoundEvaluators) private _roundEvaluators;
 
     function initialize(
         string memory name,
@@ -58,6 +65,11 @@ contract SwarmV1 is
         uint64[] calldata contributions
     ) external onlyAggregator(msg.sender) {
         _distribute(trainers, contributions);
+    }
+
+    function registerForRoundEvaluation(uint256 roundId) external {
+        RoundEvaluators storage roundEvaluators = _roundEvaluators[roundId];
+        roundEvaluators.evaluators[msg.sender] = roundEvaluators.count++;
     }
 
     function _msgSender()

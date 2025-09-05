@@ -24,7 +24,7 @@ contract SwarmV1FactoryTest is Test {
     address public nonTrainer;
 
     // Selector IDs for testing
-    bytes32  TRAINER_SELECTOR_ID;
+    bytes32 TRAINER_SELECTOR_ID;
     bytes32 EVALUATOR_SELECTOR_ID;
     bytes32 CALCULATOR_ID;
 
