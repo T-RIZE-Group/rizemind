@@ -29,7 +29,7 @@ def normalize(data: dict[str, Any]) -> dict[str, ConfigRecordValues]:
 
 
 def to_config_record(d: dict[str, Any]) -> ConfigRecord:
-    return ConfigRecord(normalize(d))
+    return ConfigRecord(cast(dict[str, ConfigRecordValues], flatten(normalize(d))))
 
 
 def flatten(d: dict[str, Any], prefix: str = "") -> Config:

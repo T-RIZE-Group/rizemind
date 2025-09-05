@@ -5,6 +5,7 @@ from eth_typing import ChecksumAddress
 from flwr.common.context import Context
 from pydantic import Field, model_validator
 from rizemind.configuration.base_config import BaseConfig
+from rizemind.configuration.transform import unflatten
 from rizemind.configuration.validators.eth_address import EthereumAddress
 from rizemind.contracts.swarm.swarm_v1.swarm_v1_factory import (
     SwarmV1Factory,
@@ -72,7 +73,7 @@ class SwarmConfig(BaseConfig):
     ) -> "SwarmConfig | None":
         if SWARM_CONFIG_STATE_KEY in context.state.config_records:
             records: Any = context.state.config_records[SWARM_CONFIG_STATE_KEY]
-            return SwarmConfig(**records)
+            return SwarmConfig(**unflatten(records))
         if fallback_address is not None:
             return SwarmConfig(address=fallback_address)
         return None
