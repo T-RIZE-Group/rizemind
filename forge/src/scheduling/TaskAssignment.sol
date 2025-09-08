@@ -16,9 +16,6 @@ contract TaskAssignment is Initializable {
         uint256 N;      // number of nodes (indices 0..N-1)
         uint256 T;      // number of tasks (indices 0..T-1)
         uint256 R;      // tasks per node (>=1)
-        uint256 a;      // multiplier (coprime with T)
-        uint256 b;      // offset in [0, T)
-        uint256 s;      // stride   (coprime with T)
     }
 
     // Storage slot for TaskAssignment namespace
@@ -33,7 +30,7 @@ contract TaskAssignment is Initializable {
     }
 
     /// @notice Initialize the contract
-    function initialize() public initializer {
+    function initialize() external virtual initializer {
         __TaskAssignment_init();
     }
 
@@ -47,13 +44,9 @@ contract TaskAssignment is Initializable {
     }
 
     function _setConfig(uint256 roundId, Config memory next) internal {
-        require(next.T > 0 && next.N > 0, "N,T > 0");
+        require(next.T > 1 && next.N > 0, "N,T > 0, T > 1");
         require(next.R > 0, "R > 0");
-        require(next.a % next.T != 0, "a % T != 0");
-        require(next.b < next.T, "b in [0,T)");
-        require(next.s % next.T != 0, "s % T != 0");
-        require(_gcd(next.a, next.T) == 1, "gcd(a,T)=1");
-        require(_gcd(next.s, next.T) == 1, "gcd(s,T)=1");
+        require(next.R <= next.T, "R <= T");
         
         TaskAssignmentStorage storage $ = _getTaskAssignmentStorage();
         $.configs[roundId] = next;
@@ -68,10 +61,11 @@ contract TaskAssignment is Initializable {
         require(nodeId < c.N, "n out of range");
 
         out = new uint256[](c.R);
-        uint256 base = _mod(_mulMod(c.a, nodeId, c.T) + c.b, c.T);
+        // a = T - 1, so base = ((T-1) * nodeId + roundId) % T
+        uint256 base = _mod((c.T - 1) * nodeId + roundId, c.T);
         for (uint256 r = 0; r < c.R; ++r) {
-            // task = (base + r*s) % T
-            out[r] = _mod(base + _mulMod(r, c.s, c.T), c.T);
+            // s = T - 1, so task = (base + r*(T-1)) % T
+            out[r] = _mod(base + r * (c.T - 1), c.T);
         }
     }
 
@@ -83,9 +77,10 @@ contract TaskAssignment is Initializable {
         require(nodeId < c.N, "nodeId out of range");
         require(taskIndex < c.R, "taskIndex out of range");
 
-        uint256 base = _mod(_mulMod(c.a, nodeId, c.T) + c.b, c.T);
-        // task = (base + taskIndex*s) % T
-        return _mod(base + _mulMod(taskIndex, c.s, c.T), c.T);
+        // a = T - 1, so base = ((T-1) * nodeId + roundId) % T
+        uint256 base = _mod((c.T - 1) * nodeId + roundId, c.T);
+        // s = T - 1, so task = (base + taskIndex*(T-1)) % T
+        return _mod(base + taskIndex * (c.T - 1), c.T);
     }
 
     /// @notice Count of nodes assigned to task t.
@@ -94,12 +89,12 @@ contract TaskAssignment is Initializable {
         TaskAssignmentStorage storage $ = _getTaskAssignmentStorage();
         Config memory c = $.configs[roundId];
         require(t < c.T, "t out of range");
-        uint256 invA = _invMod(c.a, c.T);
+        // Since a = T - 1, invA = T - 1 (since (T-1) * (T-1) ≡ 1 (mod T))
 
         for (uint256 r = 0; r < c.R; ++r) {
-            // n0 = invA * (t - b - r*s) mod T
-            uint256 residue = _mod(t + c.T - c.b + c.T - _mulMod(r, c.s, c.T), c.T);
-            uint256 n0 = _mulMod(invA, residue, c.T);
+            // n0 = (T-1) * (t - roundId - r*(T-1)) mod T
+            uint256 residue = _mod(t + c.T - roundId + c.T - r * (c.T - 1), c.T);
+            uint256 n0 = _mod((c.T - 1) * residue, c.T);
 
             if (n0 < c.N) {
                 // count for this r: n = n0 + k*T < N  -> k_max = floor((N-1 - n0)/T)
@@ -135,11 +130,11 @@ contract TaskAssignment is Initializable {
 
         nodes = new uint256[](limit);
         uint256 count = 0;
-        uint256 invA = _invMod(c.a, c.T);
+        // Since a = T - 1, invA = T - 1 (since (T-1) * (T-1) ≡ 1 (mod T))
 
         for (uint256 r = rCursor; r < c.R && count < limit; ++r) {
-            uint256 residue = _mod(t + c.T - c.b + c.T - _mulMod(r, c.s, c.T), c.T);
-            uint256 n0 = _mulMod(invA, residue, c.T);
+            uint256 residue = _mod(t + c.T - roundId + c.T - r * (c.T - 1), c.T);
+            uint256 n0 = _mod((c.T - 1) * residue, c.T);
 
             if (n0 < c.N) {
                 // nodes in this bucket: n = n0 + k*T  while n < N
@@ -169,60 +164,25 @@ contract TaskAssignment is Initializable {
     }
 
     /// @notice Check membership: is node n assigned to task t?
-    function isAssigned(uint256 roundId, uint256 n, uint256 t) external view returns (bool) {
+    function isAssigned(uint256 roundId, uint256 n, uint256 t) public view returns (bool) {
         TaskAssignmentStorage storage $ = _getTaskAssignmentStorage();
         Config memory c = $.configs[roundId];
         require(n < c.N && t < c.T, "range");
 
-        uint256 base = _mod(_mulMod(c.a, n, c.T) + c.b, c.T);
+        // a = T - 1, so base = ((T-1) * n + roundId) % T
+        uint256 base = _mod((c.T - 1) * n + roundId, c.T);
         if (base == t) return true;
 
-        // Check the R-1 remaining positions: t ≡ base + r*s (mod T)
-        uint256 diff = _mod(t + c.T - base, c.T);
-        // Solve r ≡ diff * inv(s) (mod T). But r is constrained to [0,R).
+        // Check the R-1 remaining positions: t ≡ base + r*(T-1) (mod T)
         // We'll just step R times (R is typically small).
         uint256 pos = base;
         for (uint256 r = 1; r < c.R; ++r) {
-            pos = _mod(pos + c.s, c.T);
+            pos = _mod(pos + (c.T - 1), c.T);
             if (pos == t) return true;
         }
         return false;
     }
 
-    function _gcd(uint256 x, uint256 y) private pure returns (uint256) {
-        while (y != 0) {
-            uint256 t = y;
-            y = x % y;
-            x = t;
-        }
-        return x;
-    }
-
-    function _egcd(int256 a, int256 b) private pure returns (int256 g, int256 x, int256 y) {
-        // Extended Euclid
-        int256 x0 = 1; int256 y0 = 0;
-        int256 x1 = 0; int256 y1 = 1;
-        while (b != 0) {
-            int256 q = a / b;
-            (a, b) = (b, a - q * b);
-            (x0, x1) = (x1, x0 - q * x1);
-            (y0, y1) = (y1, y0 - q * y1);
-        }
-        return (a, x0, y0);
-    }
-
-    function _invMod(uint256 a, uint256 m) private pure returns (uint256) {
-        require(m > 1, "mod>1");
-        (int256 g, int256 x, ) = _egcd(int256(a % m), int256(m));
-        require(g == 1 || g == -1, "no inverse");
-        int256 inv = x % int256(m);
-        if (inv < 0) inv += int256(m);
-        return uint256(inv);
-    }
-
-    function _mulMod(uint256 a, uint256 b, uint256 m) private pure returns (uint256) {
-        return (a % m) * (b % m) % m;
-    }
 
     function _mod(uint256 x, uint256 m) private pure returns (uint256) {
         uint256 r = x % m;

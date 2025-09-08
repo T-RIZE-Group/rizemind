@@ -11,22 +11,31 @@ import {CertificateRegistry} from "./registry/CertificateRegistry.sol";
 import {SwarmCore} from "./registry/SwarmCore.sol";
 import {ISelector} from "../sampling/ISelector.sol";
 import {TaskAssignment} from "../scheduling/TaskAssignment.sol";
+import {BaseTrainingPhases} from "../training/BaseTrainingPhases.sol";
+import {RandPerm} from "../randomness/RNGPermutations.sol";
+import {RoundTrainerRegistry} from "./registry/RoundTrainerRegistry.sol";
+import {RoundEvaluatorRegistry} from "./registry/RoundEvaluatorRegistry.sol";
+import {ContributionCalculator} from "../contribution/ContributionCalculator.sol";
 
 contract SwarmV1 is
     FLAccessControl,
     SimpleMintCompensation,
     EIP712Upgradeable,
     RoundTraining,
+    BaseTrainingPhases,
     CertificateRegistry,
+    RoundTrainerRegistry,
+    RoundEvaluatorRegistry,
     TaskAssignment,
     SwarmCore
 {
     string private constant _VERSION = "swarm-v1.0.0";
-    struct RoundEvaluators {
-        mapping(address => uint256) evaluators;
-        uint256 count;
-    }
-    mapping(uint256 => RoundEvaluators) private _roundEvaluators;
+
+    error NotIdle();
+    error NotTrainingPhase();
+    error NotEvaluatorRegistrationPhase();
+    error NotAssignedTo(uint256 roundId, uint256 evalId, address evaluator);
+    error NotEvaluationPhase();
 
     function initialize(
         string memory name,
@@ -36,12 +45,21 @@ contract SwarmV1 is
         address initialTrainerSelector,
         address initialEvaluatorSelector,
         address initialContributionCalculator
-    ) external initializer {
-        __EIP712_init(name, _VERSION);
-        __SimpleMintCompensation_init(name, symbol, 10 ** 20);
+    ) external virtual initializer {
         __FLAccessControl_init(aggregator, initialTrainers);
+        __SimpleMintCompensation_init(name, symbol, 10 ** 20);
+        __EIP712_init(name, _VERSION);
         __RoundTraining_init();
+        __BaseTrainingPhases_init();
+        __CertificateRegistry_init();
+        __RoundTrainerRegistry_init();
+        __RoundEvaluatorRegistry_init();
+        __TaskAssignment_init();
         __SwarmCore_init(initialTrainerSelector, initialEvaluatorSelector, initialContributionCalculator);
+    }
+
+    function initialize() external virtual override(RoundTrainerRegistry, RoundEvaluatorRegistry, TaskAssignment) {
+        
     }
 
     function canTrain(
@@ -67,9 +85,88 @@ contract SwarmV1 is
         _distribute(trainers, contributions);
     }
 
-    function registerForRoundEvaluation(uint256 roundId) external {
-        RoundEvaluators storage roundEvaluators = _roundEvaluators[roundId];
-        roundEvaluators.evaluators[msg.sender] = roundEvaluators.count++;
+    function startTrainingRound() external onlyAggregator(msg.sender) {
+        if (updatePhase() != IDLE_PHASE) {
+            revert NotIdle();
+        }
+        _startTrainingPhase();
+    }
+
+    function registerRoundContribution(uint256 roundId, bytes32 modelHash) external onlyTrainer(msg.sender) {
+        _registerRoundContribution(roundId, msg.sender, modelHash);
+    }
+
+    function _registerRoundContribution(uint256 roundId, address trainer, bytes32 modelHash) internal {
+        if (updatePhase() != TRAINING_PHASE) {
+            revert NotTrainingPhase();
+        }
+        _registerTrainer(roundId, trainer, modelHash);
+    }
+
+    function registerForRoundEvaluation(uint256 roundId) external onlyEvaluator(msg.sender) {
+        _registerForRoundEvaluations(roundId, msg.sender);
+    }
+
+    function _registerForRoundEvaluations(uint256 roundId, address evaluator) internal {
+        if (updatePhase() != EVALUATOR_REGISTRATION_PHASE) {
+            revert NotEvaluatorRegistrationPhase();
+        }
+        _registerEvaluator(roundId, evaluator);
+    }
+
+    function _endEvaluatorRegistrationPhase() internal override returns (bytes32) {
+        uint256 roundId = currentRound();
+        ContributionCalculator calc = ContributionCalculator(getContributionCalculator());
+        uint256 nTasks = calc.getEvaluationsRequired(roundId, uint8(getTrainerCount(roundId)));
+        uint256 nNodes = getEvaluatorCount(roundId);
+        uint256 nTasksPerNode = 1;
+        if (nTasks > nNodes) {
+            // TODO: handle potential rounding error
+            nTasksPerNode = nTasks / nNodes;
+        }
+        _setConfig(roundId, Config({
+            T: nTasks,
+            N: nNodes,
+            R: nTasksPerNode
+        }));
+        return super._endEvaluatorRegistrationPhase();
+    }
+
+    function registerEvaluation(
+        uint256 roundId,
+        uint256 evalId,
+        uint256 setId,
+        bytes32 modelHash,
+        int256 result
+    ) external {
+        _registerEvaluation(roundId, evalId, setId, modelHash, result, msg.sender);
+    }
+
+/**
+ * @param roundId   The round ID    
+ * @param taskId    The task ID
+ * @param modelHash  The model hash
+ * @param result     The evaluation result
+ * @param evaluator  The evaluator address
+ */
+    function _registerEvaluation(
+        uint256 roundId,
+        uint256 taskId,
+        uint256 setId,
+        bytes32 modelHash,
+        int256 result,
+        address evaluator
+    ) internal {
+        if (getCurrentPhase() != EVALUATION_PHASE) {
+            revert NotEvaluationPhase();
+        }
+        ContributionCalculator calc = ContributionCalculator(getContributionCalculator());
+        uint256 evaluatorId = getEvaluatorIdOrThrow(roundId, evaluator);
+        if (!isAssigned(roundId, evaluatorId, taskId)) {
+            revert NotAssignedTo(roundId, taskId, evaluator);
+        }
+        uint256 nTrainers = getTrainerCount(roundId);
+        calc.registerResult(roundId, taskId, setId, modelHash, result, uint8(nTrainers));
     }
 
     function _msgSender()

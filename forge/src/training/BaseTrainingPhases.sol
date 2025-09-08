@@ -12,10 +12,12 @@ contract BaseTrainingPhases is ITrainingPhases, Initializable {
   TrainingPhaseConfiguration private _trainingPhaseConfiguration;
   EvaluationPhaseConfiguration private _evaluationPhaseConfiguration;
 
-  bytes32 private constant IDLE_PHASE = keccak256("IDLE");
-  bytes32 private constant TRAINING_PHASE = keccak256("TRAINING");
-  bytes32 private constant EVALUATOR_REGISTRATION_PHASE = keccak256("EVALUATOR_REGISTRATION");
-  bytes32 private constant EVALUATION_PHASE = keccak256("EVALUATION");
+  bytes32 public constant IDLE_PHASE = keccak256("IDLE");
+  bytes32 public constant TRAINING_PHASE = keccak256("TRAINING");
+  bytes32 public constant EVALUATOR_REGISTRATION_PHASE = keccak256("EVALUATOR_REGISTRATION");
+  bytes32 public constant EVALUATION_PHASE = keccak256("EVALUATION");
+
+  error WrongPhase(bytes32 expected, bytes32 actual);
 
   struct TrainingPhaseStorage {
     uint256 start;
@@ -38,7 +40,11 @@ contract BaseTrainingPhases is ITrainingPhases, Initializable {
     _currentPhase = IDLE_PHASE;
   }
 
-  function getCurrentPhase() external returns (bytes32) {
+  function getCurrentPhase() public view returns (bytes32) {
+    return _currentPhase;
+  }
+
+  function updatePhase() public returns (bytes32) {
     bytes32 currentPhase = _currentPhase;
     bytes32 newPhase = _run();
     while (currentPhase != newPhase) {
@@ -55,6 +61,20 @@ contract BaseTrainingPhases is ITrainingPhases, Initializable {
 
   function isEvaluation() external view returns (bool) {
     return _currentPhase == EVALUATION_PHASE || _currentPhase == EVALUATOR_REGISTRATION_PHASE;
+  }
+
+  function isIdle() external view returns (bool) {
+    return _currentPhase == IDLE_PHASE;
+  }
+
+  function isPhase(bytes32 phase) external view returns (bool) {
+    return _currentPhase == phase;
+  }
+
+  function _requirePhase(bytes32 phase) internal view {
+    if (_currentPhase != phase) {
+      revert WrongPhase(phase, _currentPhase);
+    }
   }
 
   function _run() internal returns (bytes32 nextPhase) {
@@ -108,7 +128,7 @@ contract BaseTrainingPhases is ITrainingPhases, Initializable {
     return EVALUATOR_REGISTRATION_PHASE;
   }
 
-  function _endEvaluatorRegistrationPhase() internal returns (bytes32) {
+  function _endEvaluatorRegistrationPhase() internal virtual returns (bytes32) {
     return EVALUATION_PHASE;
   }
 
@@ -125,6 +145,21 @@ contract BaseTrainingPhases is ITrainingPhases, Initializable {
   }
 
   function _runEvaluationPhaseTransition() internal returns (bytes32) {
+    if (block.timestamp > _getEvaluationPhaseExpiry()) {
+      return _endEvaluationPhase();
+    }
+    return IDLE_PHASE;
+  }
+
+  function _getEvaluationPhaseExpiry() internal view returns (uint256) {
+    return _evaluationPhaseStorage.start + _getEvaluationPhaseTtl();
+  }
+
+  function _getEvaluationPhaseTtl() internal view returns (uint256) {
+    return _evaluationPhaseConfiguration.ttl;
+  }
+
+  function _endEvaluationPhase() internal returns (bytes32) {
     return IDLE_PHASE;
   }
 }

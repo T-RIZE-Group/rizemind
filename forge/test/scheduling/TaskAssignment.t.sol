@@ -17,10 +17,7 @@ contract TaskAssignmentTest is Test {
         TaskAssignment.Config memory config = TaskAssignment.Config({
             N: 3,  // 3 nodes
             T: 5,  // 5 tasks
-            R: 2,  // 2 tasks per node
-            a: 2,  // multiplier (coprime with T=5)
-            b: 1,  // offset
-            s: 3   // stride (coprime with T=5)
+            R: 2  // 2 tasks per node
         });
         
         taskAssignment.setConfig(0, config);
@@ -31,9 +28,6 @@ contract TaskAssignmentTest is Test {
         assertEq(cfg.N, 3);
         assertEq(cfg.T, 5);
         assertEq(cfg.R, 2);
-        assertEq(cfg.a, 2);
-        assertEq(cfg.b, 1);
-        assertEq(cfg.s, 3);
     }
 
     function test_initialization() public {
@@ -46,9 +40,6 @@ contract TaskAssignmentTest is Test {
         assertEq(emptyCfg.N, 0);
         assertEq(emptyCfg.T, 0);
         assertEq(emptyCfg.R, 0);
-        assertEq(emptyCfg.a, 0);
-        assertEq(emptyCfg.b, 0);
-        assertEq(emptyCfg.s, 0);
     }
 
     function test_tasksOfNode() public {
@@ -99,10 +90,7 @@ contract TaskAssignmentTest is Test {
         TaskAssignment.Config memory newConfig = TaskAssignment.Config({
             N: 4,  // 4 nodes
             T: 7,  // 7 tasks (prime, so any a coprime)
-            R: 1,  // 1 task per node
-            a: 3,  // multiplier (coprime with T=7)
-            b: 0,  // offset
-            s: 5   // stride (coprime with T=7)
+            R: 1  // 1 task per node
         });
         
         taskAssignment.setConfig(1, newConfig);
@@ -111,9 +99,6 @@ contract TaskAssignmentTest is Test {
         assertEq(cfg.N, 4);
         assertEq(cfg.T, 7);
         assertEq(cfg.R, 1);
-        assertEq(cfg.a, 3);
-        assertEq(cfg.b, 0);
-        assertEq(cfg.s, 5);
     }
 
     // Fuzz test tasksOfNode with different configurations and nodes
@@ -121,9 +106,6 @@ contract TaskAssignmentTest is Test {
         uint256 N,
         uint256 T,
         uint256 R,
-        uint256 a,
-        uint256 b,
-        uint256 s,
         uint256 node
     ) public {
         // Bound inputs to reasonable ranges
@@ -133,43 +115,34 @@ contract TaskAssignmentTest is Test {
         
         // Ensure T is at least 2 to avoid bound issues
         if (T < 2) T = 2;
+
+        TaskAssignment.Config memory config = TaskAssignment.Config({
+            N: N,
+            T: T,
+            R: R
+        });
+            
+        // Set the new config
+        taskAssignment.setConfig(1, config);
         
-        a = bound(a, 1, T - 1);
-        b = bound(b, 0, T - 1);
-        s = bound(s, 1, T - 1);
+        // Bound node to valid range
+        node = bound(node, 0, N - 1);
         
-        // Only test if gcd(a,T) == 1 and gcd(s,T) == 1 and values are reasonable
-        if (_gcd(a, T) == 1 && _gcd(s, T) == 1 && N <= 20 && T <= 20 && R <= 3) {
-            TaskAssignment.Config memory config = TaskAssignment.Config({
-                N: N,
-                T: T,
-                R: R,
-                a: a,
-                b: b,
-                s: s
-            });
-            
-            // Set the new config
-            taskAssignment.setConfig(1, config);
-            
-            // Bound node to valid range
-            node = bound(node, 0, N - 1);
-            
-            // Test tasksOfNode
-            uint256[] memory tasks = taskAssignment.tasksOfNode(1, node);
-            
-            // Validate results
-            assertEq(tasks.length, R, "Wrong number of tasks returned");
-            
-            // Verify all tasks are within valid range
-            for (uint256 i = 0; i < tasks.length; i++) {
-                assertTrue(tasks[i] < T, "Task out of range");
-            }
-            
-            // Note: The algorithm can produce duplicate tasks for certain configurations
-            // This is mathematically correct behavior, not a bug
-            // We'll just verify that all tasks are within valid range
+        // Test tasksOfNode
+        uint256[] memory tasks = taskAssignment.tasksOfNode(1, node);
+        
+        // Validate results
+        assertEq(tasks.length, R, "Wrong number of tasks returned");
+        
+        // Verify all tasks are within valid range
+        for (uint256 i = 0; i < tasks.length; i++) {
+            assertTrue(tasks[i] < T, "Task out of range");
         }
+        
+        // Note: The algorithm can produce duplicate tasks for certain configurations
+        // This is mathematically correct behavior, not a bug
+        // We'll just verify that all tasks are within valid range
+        
     }
 
     // Fuzz test nodesOfTask with different configurations and tasks
@@ -177,9 +150,6 @@ contract TaskAssignmentTest is Test {
         uint256 N,
         uint256 T,
         uint256 R,
-        uint256 a,
-        uint256 b,
-        uint256 s,
         uint256 task
     ) public {
         // Bound inputs to smaller, more reasonable ranges to avoid memory issues
@@ -189,55 +159,43 @@ contract TaskAssignmentTest is Test {
         
         // Ensure T is at least 2 to avoid bound issues
         if (T < 2) T = 2;
+
+        TaskAssignment.Config memory config = TaskAssignment.Config({
+            N: N,
+            T: T,
+            R: R
+        });
         
-        a = bound(a, 1, T - 1);
-        b = bound(b, 0, T - 1);
-        s = bound(s, 1, T - 1);
+        // Set the new config
+        taskAssignment.setConfig(1, config);
         
-        // Only test if gcd(a,T) == 1 and gcd(s,T) == 1 and values are reasonable
-        if (_gcd(a, T) == 1 && _gcd(s, T) == 1 && N <= 20 && T <= 20 && R <= 3) {
-            TaskAssignment.Config memory config = TaskAssignment.Config({
-                N: N,
-                T: T,
-                R: R,
-                a: a,
-                b: b,
-                s: s
-            });
-            
-            // Set the new config
-            taskAssignment.setConfig(1, config);
-            
-            // Bound task to valid range
-            task = bound(task, 0, T - 1);
-            
-            // Test nodesOfTaskPaged with a simple call to verify it doesn't crash
-            uint256 limit = bound(uint256(0), 1, N);
-            
-            // Just test that the function doesn't revert and returns reasonable values
-            (uint256[] memory nodes, uint256 nextRCursor, uint256 nextKCursor, bool isDone) = 
-                taskAssignment.nodesOfTaskPaged(1, task, limit, 0, 0);
-            
-            // Basic validation
-            assertTrue(nodes.length <= limit, "Returned more nodes than limit");
-            assertTrue(nextRCursor <= R, "Invalid nextRCursor");
-            assertTrue(isDone == true || isDone == false, "Invalid done flag");
-            
-            // Verify all returned nodes are within valid range
-            for (uint256 i = 0; i < nodes.length; i++) {
-                assertTrue(nodes[i] < N, "Node out of range");
-            }
+        // Bound task to valid range
+        task = bound(task, 0, T - 1);
+        
+        // Test nodesOfTaskPaged with a simple call to verify it doesn't crash
+        uint256 limit = bound(uint256(0), 1, N);
+        
+        // Just test that the function doesn't revert and returns reasonable values
+        (uint256[] memory nodes, uint256 nextRCursor, uint256 nextKCursor, bool isDone) = 
+            taskAssignment.nodesOfTaskPaged(1, task, limit, 0, 0);
+        
+        // Basic validation
+        assertTrue(nodes.length <= limit, "Returned more nodes than limit");
+        assertTrue(nextRCursor <= R, "Invalid nextRCursor");
+        assertTrue(isDone == true || isDone == false, "Invalid done flag");
+        
+        // Verify all returned nodes are within valid range
+        for (uint256 i = 0; i < nodes.length; i++) {
+            assertTrue(nodes[i] < N, "Node out of range");
         }
+        
     }
 
     function testFuzz_nodesOfTask_largeTest()public {
         TaskAssignment.Config memory newConfig = TaskAssignment.Config({
             N: 100,  // 100 nodes
             T: 1000, // 1000 tasks 
-            R: 15,  // 15 tasks per node
-            a: 3,  // multiplier (coprime with T=1000)
-            b: 0,  // offset
-            s: 7   // stride (coprime with T=1000)
+            R: 15  // 15 tasks per node
         });
         
         taskAssignment.setConfig(1, newConfig);
@@ -249,9 +207,6 @@ contract TaskAssignmentTest is Test {
         uint256 N,
         uint256 T,
         uint256 R,
-        uint256 a,
-        uint256 b,
-        uint256 s,
         uint256 nodeId,
         uint256 taskIndex
     ) public {
@@ -262,39 +217,30 @@ contract TaskAssignmentTest is Test {
         
         // Ensure T is at least 2 to avoid bound issues
         if (T < 2) T = 2;
+
+        TaskAssignment.Config memory config = TaskAssignment.Config({
+            N: N,
+            T: T,
+            R: R
+        });
         
-        a = bound(a, 1, T - 1);
-        b = bound(b, 0, T - 1);
-        s = bound(s, 1, T - 1);
+        // Set the new config
+        taskAssignment.setConfig(1, config);
         
-        // Only test if gcd(a,T) == 1 and gcd(s,T) == 1 and values are reasonable
-        if (_gcd(a, T) == 1 && _gcd(s, T) == 1 && N <= 20 && T <= 20 && R <= 3) {
-            TaskAssignment.Config memory config = TaskAssignment.Config({
-                N: N,
-                T: T,
-                R: R,
-                a: a,
-                b: b,
-                s: s
-            });
-            
-            // Set the new config
-            taskAssignment.setConfig(1, config);
-            
-            // Bound nodeId and taskIndex to valid ranges
-            nodeId = bound(nodeId, 0, N - 1);
-            taskIndex = bound(taskIndex, 0, R - 1);
-            
-            // Test nthTaskOfNode
-            uint256 nthTask = taskAssignment.nthTaskOfNode(1, nodeId, taskIndex);
-            
-            // Validate result
-            assertTrue(nthTask < T, "Task out of range");
-            
-            // Verify it matches the corresponding element from tasksOfNode
-            uint256[] memory allTasks = taskAssignment.tasksOfNode(1, nodeId);
-            assertEq(nthTask, allTasks[taskIndex], "nthTaskOfNode should match tasksOfNode array");
-        }
+        // Bound nodeId and taskIndex to valid ranges
+        nodeId = bound(nodeId, 0, N - 1);
+        taskIndex = bound(taskIndex, 0, R - 1);
+        
+        // Test nthTaskOfNode
+        uint256 nthTask = taskAssignment.nthTaskOfNode(1, nodeId, taskIndex);
+        
+        // Validate result
+        assertTrue(nthTask < T, "Task out of range");
+        
+        // Verify it matches the corresponding element from tasksOfNode
+        uint256[] memory allTasks = taskAssignment.tasksOfNode(1, nodeId);
+        assertEq(nthTask, allTasks[taskIndex], "nthTaskOfNode should match tasksOfNode array");
+        
     }
 
     // Helper function to test GCD
