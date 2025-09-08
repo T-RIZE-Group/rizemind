@@ -41,11 +41,13 @@ contract ContributionCalculatorTest is Test {
         vm.startPrank(admin);
         
         uint256 roundId = 1;
-        uint256 setId = 123;
+        uint256 sampleId = 2;
+        uint8 numberOfPlayers = 2;
+        uint256 setId = calculator.getMask(roundId, sampleId, numberOfPlayers);
         bytes32 modelHash = keccak256("test_model");
         int256 result = 100;
 
-        calculator.registerResult(roundId, setId, modelHash, result);
+        calculator.registerResult(roundId, setId, setId, modelHash, result, numberOfPlayers);
         
         // Verify result was stored
         int256 retrievedResult = calculator.getResult(roundId, setId);
@@ -69,7 +71,7 @@ contract ContributionCalculatorTest is Test {
                 calculator.DEFAULT_ADMIN_ROLE()
             )
         );
-        calculator.registerResult(roundId, setId, modelHash, result);
+        calculator.registerResult(roundId, setId, setId, modelHash, result, 0);
         
         vm.stopPrank();
     }
@@ -79,24 +81,20 @@ contract ContributionCalculatorTest is Test {
         vm.startPrank(admin);
         
         uint256 roundId = 1;
-        uint256 setId = 1;
         bytes32 modelHash = keccak256("test_model");
         
         // Register result for empty coalition
-        calculator.registerResult(roundId, 0, modelHash, 0);
+        calculator.registerResult(roundId, 0, 0, modelHash, 0, 2);
         
         // Register result for single trainer
-        calculator.registerResult(roundId, 1, modelHash, 100);
+        calculator.registerResult(roundId, 1, 1, modelHash, 100, 2);
         
         // Register result for both trainers
-        calculator.registerResult(roundId, 3, modelHash, 200);
+        calculator.registerResult(roundId, 3, 3, modelHash, 200, 2);
         
         vm.stopPrank();
         
-        // Calculate Shapley value
-        int256 shapleyValue = calculator.calculateContribution(roundId, 0, 2);
-        
-        // The result should be a valid number (exact value depends on the algorithm)
-        assertTrue(shapleyValue >= 0 || shapleyValue < 0); // Just check it's not an error
+        calculator.calculateContribution(roundId, 0, 2);
+
     }
 }

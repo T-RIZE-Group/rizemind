@@ -9,7 +9,6 @@ import {IEvaluationStorage} from "./types.sol";
  * @title EvaluationStorage
  * @dev Upgradeable contract for storing evaluation results
  * @notice This contract allows admin contracts to store evaluation results
- *
  */
 // aderyn-ignore-next-line(contract-locks-ether)
 contract EvaluationStorage is Initializable, IERC165, IEvaluationStorage {
@@ -55,7 +54,7 @@ contract EvaluationStorage is Initializable, IERC165, IEvaluationStorage {
         uint256 setId,
         bytes32 modelHash,
         int256 result
-    ) internal  {
+    ) internal virtual {
         if (modelHash == bytes32(0)) {
             revert InvalidParameters();
         }
@@ -81,7 +80,7 @@ contract EvaluationStorage is Initializable, IERC165, IEvaluationStorage {
     function _mergeResults(
         EvaluationResult storage evalA,
         int256 result
-    ) internal {
+    ) internal virtual{
         int256 averagedResult = (evalA.result + result) / 2;
         evalA.result = averagedResult;
     }
@@ -91,7 +90,7 @@ contract EvaluationStorage is Initializable, IERC165, IEvaluationStorage {
         uint256 setId,
         bytes32 modelHash,
         int256 result
-    ) internal {
+    ) internal virtual{
         EvaluationStorageStruct storage $ = _getEvaluationStorage();
         $.evaluationResults[roundId][setId] = EvaluationResult({
             modelHash: modelHash,
@@ -108,7 +107,7 @@ contract EvaluationStorage is Initializable, IERC165, IEvaluationStorage {
     function getResult(
         uint256 roundId,
         uint256 setId
-    ) public view returns (int256) {
+    ) public virtual view returns (int256) {
         EvaluationStorageStruct storage $ = _getEvaluationStorage();
         return $.evaluationResults[roundId][setId].result;
     }
@@ -122,7 +121,7 @@ contract EvaluationStorage is Initializable, IERC165, IEvaluationStorage {
     function getResultOrThrow(
         uint256 roundId,
         uint256 setId
-    ) public view returns (int256) {
+    ) public virtual view returns (int256) {
         EvaluationStorageStruct storage $ = _getEvaluationStorage();
         if ($.evaluationResults[roundId][setId].modelHash == bytes32(0)) {
             revert NotEvaluated(roundId, setId);
@@ -142,7 +141,7 @@ contract EvaluationStorage is Initializable, IERC165, IEvaluationStorage {
     }
 
     /// @dev See {IERC165-supportsInterface}
-    function supportsInterface(bytes4 interfaceId) public view override virtual returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public virtual view override returns (bool) {
         return interfaceId == type(IEvaluationStorage).interfaceId || 
                interfaceId == type(IERC165).interfaceId;
     }

@@ -68,12 +68,14 @@ contract ContributionCalculator is
      */
     function registerResult(
         uint256 roundId,
+        uint256 sampleId,
         uint256 setId,
         bytes32 modelHash,
-        int256 result
+        int256 result,
+        uint8 numberOfPlayers
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
 
-        _registerResult(roundId, setId, modelHash, result);
+        _registerResult(roundId, sampleId, setId, modelHash, result, numberOfPlayers);
         
         emit ContributionResultRegistered(roundId, setId, modelHash, result, msg.sender);
     }
@@ -113,6 +115,14 @@ contract ContributionCalculator is
      */
     function calculateContribution(uint256 roundId, uint256 trainerIndex, uint8 numberOfTrainers) external view returns (int256) {
         return _calcShapley(roundId, trainerIndex, numberOfTrainers);
+    }
+
+    function getEvaluationsRequired(uint256 roundId, uint8 numberOfPlayers) external view returns (uint256) {
+        return super._getEvaluationsRequired(roundId, numberOfPlayers);
+    }
+
+    function getTotalEvaluations(uint256 roundId, uint8 numberOfPlayers) external view returns (uint256) {
+        return super._getTotalEvaluations(roundId, numberOfPlayers);
     }
 
     /**
