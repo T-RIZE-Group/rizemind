@@ -217,7 +217,7 @@ class ShapleyValueStrategy(Strategy):
     def get_coalition_score(self, coalition: TrainerSetAggregate) -> float:
         score = None
         if self.coalition_to_score_fn is None:
-            score = coalition.loss
+            score = coalition.get_loss()
         else:
             score = self.coalition_to_score_fn(coalition)
         if score is None:
@@ -276,7 +276,9 @@ class ShapleyValueStrategy(Strategy):
             )
             return float("inf"), {}
 
-        coalition_losses = [coalition.loss or float("inf") for coalition in coalitions]
+        coalition_losses = [
+            coalition.get_loss() or float("inf") for coalition in coalitions
+        ]
         metrics = (
             {}
             if self.aggregate_coalition_metrics is None
