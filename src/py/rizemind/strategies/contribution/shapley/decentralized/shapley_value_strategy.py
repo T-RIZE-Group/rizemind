@@ -138,8 +138,7 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
             _, evaluate_res = result
             id = cast(str, evaluate_res.metrics["id"])
             coalition = self.get_coalition(id)
-            coalition.loss = evaluate_res.loss
-            coalition.metrics = evaluate_res.metrics
+            coalition.insert_res(evaluate_res)
 
         return self.close_round(server_round)
 

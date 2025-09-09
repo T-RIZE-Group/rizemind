@@ -1,3 +1,4 @@
+from flwr.common import Code, Status
 from flwr.common.typing import EvaluateIns, EvaluateRes, Parameters
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
@@ -41,7 +42,13 @@ class CentralShapleyValueStrategy(ShapleyValueStrategy):
                     "Evaluation cannot be None. Coalition members:", coalition.members
                 )
             loss, metrics = evaluation
-            coalition.loss = loss
-            coalition.metrics = metrics
+            coalition.insert_res(
+                EvaluateRes(
+                    loss=loss,
+                    metrics=metrics,
+                    status=Status(code=Code.OK, message=""),
+                    num_examples=0,
+                )
+            )
 
         return self.close_round(server_round)

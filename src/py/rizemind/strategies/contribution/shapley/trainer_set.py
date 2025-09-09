@@ -1,4 +1,8 @@
+import statistics
+from collections.abc import Callable
+
 from eth_typing import ChecksumAddress
+from flwr.common import EvaluateRes
 from flwr.common.typing import Parameters, Scalar
 
 
@@ -21,8 +25,7 @@ class TrainerSet:
 class TrainerSetAggregate(TrainerSet):
     parameters: Parameters
     config: dict[str, Scalar]
-    loss: float | None
-    metrics: dict[str, Scalar] | None
+    _evaluation_res: list[EvaluateRes]
 
     def __init__(
         self,
@@ -34,14 +37,36 @@ class TrainerSetAggregate(TrainerSet):
         super().__init__(id, members=members)
         self.parameters = parameters
         self.config = config
+        self._evaluation_res = []
 
-    def get_loss(self):
-        return self.loss or float("Inf")
+    def insert_res(self, eval_res: EvaluateRes):
+        self._evaluation_res.append(eval_res)
 
-    def get_metric(self, name: str, default):
-        if self.metrics:
-            return self.metrics[name] or default
-        return default
+    def get_loss(
+        self,
+        aggregator: Callable[[list[float]], float] = statistics.mean,
+    ):
+        if len(self._evaluation_res) == 0:
+            return float("Inf")
+        losses = [res.loss for res in self._evaluation_res]
+        return aggregator(losses)
+
+    def get_metric(
+        self,
+        name: str,
+        default: Scalar,
+        aggregator: Callable,
+    ):
+        if not self._evaluation_res:
+            return default
+
+        metric_values = [res.metrics.get(name) for res in self._evaluation_res]
+        valid_metrics = [v for v in metric_values if v is not None]
+
+        if len(valid_metrics) != len(self._evaluation_res):
+            return default
+
+        return aggregator(valid_metrics)
 
 
 class TrainerSetAggregateStore:

@@ -22,7 +22,6 @@ from .task import Net, get_weights
 
 
 # Define metric aggregation function
-# Define metric aggregation function
 def weighted_average(metrics: list[tuple[int, Metrics]]) -> Metrics:
     # Multiply accuracy of each client by number of examples used
     accuracies = [num_examples * float(m["accuracy"]) for num_examples, m in metrics]

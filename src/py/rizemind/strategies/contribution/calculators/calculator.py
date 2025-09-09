@@ -11,7 +11,7 @@ from rizemind.strategies.contribution.shapley.trainer_set import (
 
 
 def default_coalition_to_score(set: TrainerSetAggregate) -> float:
-    score = set.loss
+    score = set.get_loss()
     if score is None:
         raise Exception(f"Trainer set ID {set.id} not evaluated")
     return score
