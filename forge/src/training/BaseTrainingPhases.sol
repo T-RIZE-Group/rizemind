@@ -3,7 +3,22 @@ pragma solidity ^0.8.10;
 
 import {Initializable} from "@openzeppelin-contracts-upgradeable-5.2.0/proxy/utils/Initializable.sol";
 import {ITrainingPhases} from "./ITrainingPhases.sol";
+import {console} from "forge-std/console.sol";
 
+/**
+ * @title BaseTrainingPhases
+ * @author 
+ * @notice Base contract for managing training lifecycle within a round.
+ * 
+ * This contract manages the flow between different phases of a training round:
+ * 1. IDLE_PHASE - Initial state, waiting for training to begin
+ * 2. TRAINING_PHASE - Active training period where trainers submit models. Triggered with _forceStartTrainingPhase(). Ends after Time to live.
+ * 3. EVALUATOR_REGISTRATION_PHASE - Period to register for evaluation. Enters after the training phase is done. Ends after Time to live.
+ * 4. EVALUATION_PHASE - Active evaluation period where evaluators assess models. Enters after the evaluator registration phase is done. Ends after Time to live and return in idle phase.
+ * 
+ * The phases automatically transition based on configured time-to-live (TTL) values.
+ * The updatePhase() function can be called to advance through phases as time progresses.
+ */
 contract BaseTrainingPhases is ITrainingPhases, Initializable {
   bytes32 private _currentPhase;
   TrainingPhaseStorage private _trainingPhaseStorage;
@@ -36,8 +51,13 @@ contract BaseTrainingPhases is ITrainingPhases, Initializable {
     uint256 registrationTtl;
   }
 
-  function __BaseTrainingPhases_init() internal onlyInitializing {
+  function __BaseTrainingPhases_init(
+    TrainingPhaseConfiguration memory trainingConfig,
+    EvaluationPhaseConfiguration memory evaluationConfig
+  ) internal onlyInitializing {
     _currentPhase = IDLE_PHASE;
+    _trainingPhaseConfiguration = trainingConfig;
+    _evaluationPhaseConfiguration = evaluationConfig;
   }
 
   function getCurrentPhase() public view returns (bytes32) {
@@ -46,13 +66,15 @@ contract BaseTrainingPhases is ITrainingPhases, Initializable {
 
   function updatePhase() public returns (bytes32) {
     bytes32 currentPhase = _currentPhase;
-    bytes32 newPhase = _run();
+    bytes32 newPhase = _run(currentPhase);
+    
+    // aderyn-ignore-next-line(costly-loop)
     while (currentPhase != newPhase) {
       currentPhase = newPhase;
-      newPhase = _run();
+      newPhase = _run(currentPhase);
     }
     _currentPhase = newPhase;
-    return currentPhase;
+    return newPhase;
   }
 
   function isTraining() external view returns (bool) {
@@ -77,14 +99,14 @@ contract BaseTrainingPhases is ITrainingPhases, Initializable {
     }
   }
 
-  function _run() internal returns (bytes32 nextPhase) {
-    if (_currentPhase == IDLE_PHASE) {
+  function _run(bytes32 currentPhase) internal returns (bytes32 nextPhase) {
+    if (currentPhase == IDLE_PHASE) {
       nextPhase = _runIdlePhaseTransition();
-    } else if (_currentPhase == TRAINING_PHASE) {
+    } else if (currentPhase == TRAINING_PHASE) {
       nextPhase = _runTrainingPhaseTransition();
-    } else if (_currentPhase == EVALUATOR_REGISTRATION_PHASE) {
+    } else if (currentPhase == EVALUATOR_REGISTRATION_PHASE) {
       nextPhase = _runEvaluatorRegistrationPhaseTransition();
-    } else if (_currentPhase == EVALUATION_PHASE) {
+    } else if (currentPhase == EVALUATION_PHASE) {
       nextPhase = _runEvaluationPhaseTransition();
     }
   }
@@ -93,14 +115,21 @@ contract BaseTrainingPhases is ITrainingPhases, Initializable {
     return IDLE_PHASE;
   }
 
-  function _startTrainingPhase() internal returns (bytes32) {
+  function _forceStartTrainingPhase() internal returns (bytes32) {
+    _requirePhase(IDLE_PHASE);
+    bytes32 newPhase = _startTrainingPhase();
+    _currentPhase = newPhase;
+    return newPhase;
+  }
+
+  function _startTrainingPhase() internal virtual returns (bytes32) {
     _trainingPhaseStorage.start = block.timestamp;
     return TRAINING_PHASE;
   }
 
-  function _runTrainingPhaseTransition() internal returns (bytes32) {
-    if (block.timestamp > _getTrainingPhaseExpiry()) {
-      return _startEvaluationPhase();
+  function _runTrainingPhaseTransition() internal virtual returns (bytes32) {
+    if (block.timestamp >= _getTrainingPhaseExpiry()) {
+      return _endTrainingPhase();
     }
     return TRAINING_PHASE;
   }
@@ -113,16 +142,19 @@ contract BaseTrainingPhases is ITrainingPhases, Initializable {
     return _trainingPhaseConfiguration.ttl;
   }
 
-  function _startEvaluationPhase() internal returns (bytes32) {
-    
-    _evaluationPhaseStorage.start = block.timestamp;
+  function _endTrainingPhase() internal virtual returns (bytes32) {
+    return _startEvaluationPhase();
+  }
+
+  function _startEvaluationPhase() internal virtual returns (bytes32) {
+    _evaluationPhaseStorage.start = _getTrainingPhaseExpiry();
     return EVALUATOR_REGISTRATION_PHASE;
   }
 
 
-  function _runEvaluatorRegistrationPhaseTransition() internal returns (bytes32) {
+  function _runEvaluatorRegistrationPhaseTransition() internal virtual returns (bytes32) {
     uint256 registrationExpiry = _getRegistrationExpiry();
-    if (registrationExpiry < block.timestamp) {
+    if (block.timestamp >= registrationExpiry) {
       return _endEvaluatorRegistrationPhase();
     }
     return EVALUATOR_REGISTRATION_PHASE;
@@ -144,11 +176,11 @@ contract BaseTrainingPhases is ITrainingPhases, Initializable {
     return _evaluationPhaseStorage.start;
   }
 
-  function _runEvaluationPhaseTransition() internal returns (bytes32) {
+  function _runEvaluationPhaseTransition() internal virtual returns (bytes32) {
     if (block.timestamp > _getEvaluationPhaseExpiry()) {
       return _endEvaluationPhase();
     }
-    return IDLE_PHASE;
+    return EVALUATION_PHASE;
   }
 
   function _getEvaluationPhaseExpiry() internal view returns (uint256) {
@@ -159,7 +191,53 @@ contract BaseTrainingPhases is ITrainingPhases, Initializable {
     return _evaluationPhaseConfiguration.ttl;
   }
 
-  function _endEvaluationPhase() internal returns (bytes32) {
+  function _endEvaluationPhase() internal virtual returns (bytes32) {
     return IDLE_PHASE;
+  }
+
+  // ============================================================================
+  // CONFIGURATION UPDATE FUNCTIONS
+  // ============================================================================
+
+  /// @notice Update training phase configuration
+  /// @param config The training phase configuration struct
+  function _setTrainingPhaseConfiguration(TrainingPhaseConfiguration memory config) internal {
+    _trainingPhaseConfiguration = config;
+  }
+
+  /// @notice Update evaluation phase configuration
+  /// @param config The evaluation phase configuration struct
+  function _setEvaluationPhaseConfiguration(EvaluationPhaseConfiguration memory config) internal {
+    _evaluationPhaseConfiguration = config;
+  }
+
+  /// @notice Update training phase TTL only
+  /// @param ttl The time-to-live for training phase
+  function _setTrainingPhaseTtl(uint256 ttl) internal {
+    _trainingPhaseConfiguration.ttl = ttl;
+  }
+
+  /// @notice Update evaluation phase TTL only
+  /// @param ttl The time-to-live for evaluation phase
+  function _setEvaluationPhaseTtl(uint256 ttl) internal {
+    _evaluationPhaseConfiguration.ttl = ttl;
+  }
+
+  /// @notice Update registration TTL only
+  /// @param registrationTtl The time-to-live for evaluator registration phase
+  function _setRegistrationTtl(uint256 registrationTtl) internal {
+    _evaluationPhaseConfiguration.registrationTtl = registrationTtl;
+  }
+
+  /// @notice Get training phase configuration
+  /// @return The training phase configuration struct
+  function getTrainingPhaseConfiguration() internal view returns (TrainingPhaseConfiguration memory) {
+    return _trainingPhaseConfiguration;
+  }
+
+  /// @notice Get evaluation phase configuration
+  /// @return The evaluation phase configuration struct
+  function getEvaluationPhaseConfiguration() internal view returns (EvaluationPhaseConfiguration memory) {
+    return _evaluationPhaseConfiguration;
   }
 }

@@ -36,7 +36,8 @@ contract SwarmV1 is
     error NotEvaluatorRegistrationPhase();
     error NotAssignedTo(uint256 roundId, uint256 evalId, address evaluator);
     error NotEvaluationPhase();
-
+    error WrongInitialization();
+    
     function initialize(
         string memory name,
         string memory symbol,
@@ -50,7 +51,8 @@ contract SwarmV1 is
         __SimpleMintCompensation_init(name, symbol, 10 ** 20);
         __EIP712_init(name, _VERSION);
         __RoundTraining_init();
-        __BaseTrainingPhases_init();
+        // TODO: make these configurable
+        __BaseTrainingPhases_init(BaseTrainingPhases.TrainingPhaseConfiguration({ttl: 1000}), BaseTrainingPhases.EvaluationPhaseConfiguration({ttl: 1000, registrationTtl: 1000}));
         __CertificateRegistry_init();
         __RoundTrainerRegistry_init();
         __RoundEvaluatorRegistry_init();
@@ -59,7 +61,7 @@ contract SwarmV1 is
     }
 
     function initialize() external virtual override(RoundTrainerRegistry, RoundEvaluatorRegistry, TaskAssignment) {
-        
+        revert WrongInitialization();
     }
 
     function canTrain(
