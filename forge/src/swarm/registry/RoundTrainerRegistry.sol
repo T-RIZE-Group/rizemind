@@ -70,7 +70,7 @@ contract RoundTrainerRegistry is Initializable {
         
         // If this is a new trainer for this round, assign a new ID
         if (roundTrainers.trainers[trainer].id == 0) {
-            trainerId = roundTrainers.count++;
+            trainerId = ++roundTrainers.count;
             roundTrainers.trainers[trainer] = TrainerInfo({
                 id: trainerId,
                 modelHash: modelHash

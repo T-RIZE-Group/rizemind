@@ -58,7 +58,7 @@ contract RoundEvaluatorRegistry is Initializable {
         
         // If this is a new evaluator for this round, assign a new ID
         if (roundEvaluators.evaluators[evaluator] == 0) {
-            evaluatorId = roundEvaluators.count++;
+            evaluatorId = ++roundEvaluators.count;
             roundEvaluators.evaluators[evaluator] = evaluatorId;
             emit EvaluatorRegistered(roundId, evaluator, evaluatorId);
         } else {
