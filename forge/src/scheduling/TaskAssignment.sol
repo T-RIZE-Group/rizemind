@@ -7,6 +7,12 @@ import {Initializable} from "@openzeppelin-contracts-upgradeable-5.2.0/proxy/uti
 /// - Zero storage per (node, task) pair.
 /// - Set config every round; all lookups are computed on-the-fly.
 contract TaskAssignment is Initializable {
+    // Custom errors
+    error InvalidConfig(uint256 N, uint256 T, uint256 R);
+    error NodeIdOutOfRange(uint256 nodeId, uint256 maxNodes);
+    error TaskIndexOutOfRange(uint256 taskIndex, uint256 maxTasks);
+    error TaskOutOfRange(uint256 taskId, uint256 maxTasks);
+    error RangeOutOfBounds(uint256 nodeId, uint256 taskId, uint256 maxNodes, uint256 maxTasks);
     /// @dev Storage namespace for TaskAssignment
     struct TaskAssignmentStorage {
         mapping(uint256 => Config) configs; // roundId => Config
@@ -44,9 +50,15 @@ contract TaskAssignment is Initializable {
     }
 
     function _setConfig(uint256 roundId, Config memory next) internal {
-        require(next.T > 1 && next.N > 0, "N,T > 0, T > 1");
-        require(next.R > 0, "R > 0");
-        require(next.R <= next.T, "R <= T");
+        if (next.T <= 1 || next.N == 0) {
+            revert InvalidConfig(next.N, next.T, next.R);
+        }
+        if (next.R == 0) {
+            revert InvalidConfig(next.N, next.T, next.R);
+        }
+        if (next.R > next.T) {
+            revert InvalidConfig(next.N, next.T, next.R);
+        }
         
         TaskAssignmentStorage storage $ = _getTaskAssignmentStorage();
         $.configs[roundId] = next;
@@ -58,7 +70,9 @@ contract TaskAssignment is Initializable {
     function tasksOfNode(uint256 roundId, uint256 nodeId) external view returns (uint256[] memory out) {
         TaskAssignmentStorage storage $ = _getTaskAssignmentStorage();
         Config memory c = $.configs[roundId];
-        require(nodeId < c.N, "n out of range");
+        if (nodeId >= c.N) {
+            revert NodeIdOutOfRange(nodeId, c.N);
+        }
 
         out = new uint256[](c.R);
         // a = T - 1, so base = ((T-1) * nodeId + roundId) % T
@@ -74,8 +88,12 @@ contract TaskAssignment is Initializable {
     function nthTaskOfNode(uint256 roundId, uint256 nodeId, uint256 taskIndex) external view returns (uint256) {
         TaskAssignmentStorage storage $ = _getTaskAssignmentStorage();
         Config memory c = $.configs[roundId];
-        require(nodeId < c.N, "nodeId out of range");
-        require(taskIndex < c.R, "taskIndex out of range");
+        if (nodeId >= c.N) {
+            revert NodeIdOutOfRange(nodeId, c.N);
+        }
+        if (taskIndex >= c.R) {
+            revert TaskIndexOutOfRange(taskIndex, c.R);
+        }
 
         // a = T - 1, so base = ((T-1) * nodeId + roundId) % T
         uint256 base = _mod((c.T - 1) * nodeId + roundId, c.T);
@@ -88,7 +106,9 @@ contract TaskAssignment is Initializable {
     function nodeCountOfTask(uint256 roundId, uint256 t) public view returns (uint256 total) {
         TaskAssignmentStorage storage $ = _getTaskAssignmentStorage();
         Config memory c = $.configs[roundId];
-        require(t < c.T, "t out of range");
+        if (t >= c.T) {
+            revert TaskOutOfRange(t, c.T);
+        }
         // Since a = T - 1, invA = T - 1 (since (T-1) * (T-1) ≡ 1 (mod T))
 
         for (uint256 r = 0; r < c.R; ++r) {
@@ -103,86 +123,18 @@ contract TaskAssignment is Initializable {
         }
     }
 
-    /// @notice Enumerate nodes assigned to task t with pagination.
-    /// @param t Task id
-    /// @param limit Max items to return this call
-    /// @param rCursor Start r (0..R), pass 0 initially
-    /// @param kCursor Start k within current r, pass 0 initially
-    /// @return nodes chunk of node indices
-    /// @return nextRCursor next r to resume from
-    /// @return nextKCursor next k within that r
-    /// @return done whether enumeration finished
-    function nodesOfTaskPaged(
-        uint256 roundId,
-        uint256 t,
-        uint256 limit,
-        uint256 rCursor,
-        uint256 kCursor
-    )
-        external
-        view
-        returns (uint256[] memory nodes, uint256 nextRCursor, uint256 nextKCursor, bool done)
-    {
-        TaskAssignmentStorage storage $ = _getTaskAssignmentStorage();
-        Config memory c = $.configs[roundId];
-        require(t < c.T, "t out of range");
-        if (limit == 0) limit = 1;
-
-        nodes = new uint256[](limit);
-        uint256 count = 0;
-        // Since a = T - 1, invA = T - 1 (since (T-1) * (T-1) ≡ 1 (mod T))
-
-        for (uint256 r = rCursor; r < c.R && count < limit; ++r) {
-            uint256 residue = _mod(t + c.T - roundId + c.T - r * (c.T - 1), c.T);
-            uint256 n0 = _mod((c.T - 1) * residue, c.T);
-
-            if (n0 < c.N) {
-                // nodes in this bucket: n = n0 + k*T  while n < N
-                // start from kCursor if resuming this r
-                for (uint256 k = (r == rCursor ? kCursor : 0); count < limit; ++k) {
-                    uint256 n = n0 + k * c.T;
-                    if (n >= c.N) {
-                        // no more in this r
-                        k = type(uint256).max; // sentinel to break outer condition
-                        break;
-                    }
-                    nodes[count++] = n;
-                }
-
-                if (count == limit) {
-                    // pause here
-                    return (_trim(nodes, count), r, /* next k */ ((n0 + ( (r==rCursor?kCursor:0) + count )/ (c.T==0?1:c.T))), false);
-                }
-            }
-
-            // reset k cursor when moving to next r
-            kCursor = 0;
-        }
-
-        // Finished all r's
-        return (_trim(nodes, count), c.R, 0, true);
-    }
-
     /// @notice Check membership: is node n assigned to task t?
     function isAssigned(uint256 roundId, uint256 n, uint256 t) public view returns (bool) {
         TaskAssignmentStorage storage $ = _getTaskAssignmentStorage();
         Config memory c = $.configs[roundId];
-        require(n < c.N && t < c.T, "range");
-
-        // a = T - 1, so base = ((T-1) * n + roundId) % T
-        uint256 base = _mod((c.T - 1) * n + roundId, c.T);
-        if (base == t) return true;
-
-        // Check the R-1 remaining positions: t ≡ base + r*(T-1) (mod T)
-        // We'll just step R times (R is typically small).
-        uint256 pos = base;
-        for (uint256 r = 1; r < c.R; ++r) {
-            pos = _mod(pos + (c.T - 1), c.T);
-            if (pos == t) return true;
+        if (n >= c.N || t >= c.T) {
+            revert RangeOutOfBounds(n, t, c.N, c.T);
         }
-        return false;
-    }
 
+        uint256 base = _mod((c.T - 1) * n + roundId, c.T);
+        uint256 delta = _mod(base + c.T - t, c.T); // (base - t) mod T
+        return (delta < c.R);
+    }
 
     function _mod(uint256 x, uint256 m) private pure returns (uint256) {
         uint256 r = x % m;
