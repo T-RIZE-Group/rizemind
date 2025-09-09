@@ -25,7 +25,7 @@ def empty_trainer_set_aggregate(
 
 
 @pytest.fixture
-def populated_trainer_set_aggregate(
+def properly_populated_trainer_set_aggregate(
     empty_trainer_set_aggregate: TrainerSetAggregate,
 ) -> TrainerSetAggregate:
     res1 = EvaluateRes(
@@ -35,13 +35,49 @@ def populated_trainer_set_aggregate(
         metrics={"r2": 0.83},
     )
     res2 = EvaluateRes(
-        status=Status(code=Code.FIT_NOT_IMPLEMENTED, message="err"),
+        status=Status(code=Code.OK, message="ok"),
+        loss=0.4562,
+        num_examples=1200,
+        metrics={"r2": 0.91},
+    )
+    res3 = EvaluateRes(
+        status=Status(code=Code.OK, message="ok"),
+        loss=0.9124,
+        num_examples=1200,
+        metrics={"r2": 0.63},
+    )
+    empty_trainer_set_aggregate.insert_res(res1)
+    empty_trainer_set_aggregate.insert_res(res2)
+    empty_trainer_set_aggregate.insert_res(res3)
+
+    return empty_trainer_set_aggregate
+
+
+@pytest.fixture
+def improperly_populated_trainer_set_aggregate(
+    empty_trainer_set_aggregate: TrainerSetAggregate,
+) -> TrainerSetAggregate:
+    res1 = EvaluateRes(
+        status=Status(code=Code.OK, message="ok"),
+        loss=0.7967,
+        num_examples=1200,
+        metrics={"r2": 0.83},
+    )
+    res2 = EvaluateRes(
+        status=Status(code=Code.EVALUATE_NOT_IMPLEMENTED, message="err"),
+        loss=float("inf"),
+        num_examples=1200,
+        metrics={"r2": -1 * float("inf")},
+    )
+    res3 = EvaluateRes(
+        status=Status(code=Code.GET_PARAMETERS_NOT_IMPLEMENTED, message="err"),
         loss=float("inf"),
         num_examples=1200,
         metrics={},
     )
     empty_trainer_set_aggregate.insert_res(res1)
     empty_trainer_set_aggregate.insert_res(res2)
+    empty_trainer_set_aggregate.insert_res(res3)
 
     return empty_trainer_set_aggregate
 
@@ -76,24 +112,26 @@ def test_insert_res(empty_trainer_set_aggregate: TrainerSetAggregate):
     assert tsa._evaluation_res[0] == eval_res
 
 
-def test_get_loss_with_default_aggregator(
-    populated_trainer_set_aggregate: TrainerSetAggregate,
+def test_get_loss_empty(empty_trainer_set_aggregate: TrainerSetAggregate):
+    tsa = empty_trainer_set_aggregate
+    assert tsa.get_loss() == float("Inf")
+
+
+def test_get_loss_properly_populated(
+    properly_populated_trainer_set_aggregate: TrainerSetAggregate,
 ):
-    tsa = populated_trainer_set_aggregate
-
-    aggregated_loss = tsa.get_loss()
-
-    assert math.isinf(aggregated_loss)
+    tsa = properly_populated_trainer_set_aggregate
+    expected_mean = statistics.mean([0.7967, 0.4562, 0.9124])
+    assert tsa.get_loss() == pytest.approx(expected_mean)
 
 
 def test_get_loss_with_custom_aggregator(
-    populated_trainer_set_aggregate: TrainerSetAggregate,
+    properly_populated_trainer_set_aggregate: TrainerSetAggregate,
 ):
-    tsa = populated_trainer_set_aggregate
-
-    aggregated_loss = tsa.get_loss(aggregator=min)
-
-    assert aggregated_loss == pytest.approx(0.7967)
+    """Tests using a custom aggregator (max) for loss."""
+    tsa = properly_populated_trainer_set_aggregate
+    expected_max = max([0.7967, 0.4562, 0.9124])
+    assert tsa.get_loss(aggregator=max) == expected_max
 
 
 def test_get_loss_on_empty_returns_inf(
@@ -103,40 +141,47 @@ def test_get_loss_on_empty_returns_inf(
     assert math.isinf(tsa.get_loss())
 
 
-def test_get_metric_with_custom_aggregator(
-    populated_trainer_set_aggregate: TrainerSetAggregate,
+def test_get_loss_with_inf(
+    improperly_populated_trainer_set_aggregate: TrainerSetAggregate,
 ):
-    tsa = populated_trainer_set_aggregate
-
-    def safe_mean(values):
-        return statistics.mean(v for v in values if v is not None)
-
-    metric_value = tsa.get_metric(name="r2", default=-1.0, aggregator=safe_mean)
-
-    # The values for 'r2' are [0.83, None]. The safe_mean of this is 0.83.
-    assert metric_value == pytest.approx(0.83)
+    tsa = improperly_populated_trainer_set_aggregate
+    assert tsa.get_loss() == float("Inf")
 
 
-def test_get_metric_non_existing_returns_default(
-    populated_trainer_set_aggregate: TrainerSetAggregate,
-):
-    tsa = populated_trainer_set_aggregate
-
-    def filter_none(values):
-        return [v for v in values if v is not None]
-
-    # The metric 'accuracy' does not exist in any result, so the aggregator
-    # will receive [None, None] and return []. The `or default` kicks in.
-    metric_value = tsa.get_metric(name="accuracy", default=-1.0, aggregator=filter_none)
-
-    assert metric_value == -1.0
-
-
-def test_get_metric_on_empty_returns_default(
-    empty_trainer_set_aggregate: TrainerSetAggregate,
-):
+def test_get_metric_empty(empty_trainer_set_aggregate: TrainerSetAggregate):
     tsa = empty_trainer_set_aggregate
+    default_value = 0.0
+    assert (
+        tsa.get_metric("r2", default=default_value, aggregator=statistics.mean)
+        == default_value
+    )
 
-    metric_value = tsa.get_metric(name="r2", default=-1.0)
 
-    assert metric_value == -1.0
+def test_get_metric_properly_populated_with_custom_aggregator(
+    properly_populated_trainer_set_aggregate: TrainerSetAggregate,
+):
+    """Tests metric aggregation with a custom aggregator (mean)."""
+    tsa = properly_populated_trainer_set_aggregate
+    expected_mean = statistics.mean([0.83, 0.91, 0.63])
+    metric_values = tsa.get_metric("r2", default=0.0, aggregator=statistics.mean)
+    assert metric_values == pytest.approx(expected_mean)
+
+
+def test_get_metric_nonexistent(
+    properly_populated_trainer_set_aggregate: TrainerSetAggregate,
+):
+    """Tests getting a metric that does not exist in the results."""
+    tsa = properly_populated_trainer_set_aggregate
+    default_value = -1.0
+    assert (
+        tsa.get_metric("accuracy", default=default_value, aggregator=statistics.mean)
+        == -1.0
+    )
+
+
+def test_get_metric_partially_present(
+    improperly_populated_trainer_set_aggregate: TrainerSetAggregate,
+):
+    tsa = improperly_populated_trainer_set_aggregate
+
+    assert tsa.get_metric("r2", default=0.0, aggregator=min) == 0.0

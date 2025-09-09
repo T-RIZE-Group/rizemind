@@ -55,14 +55,18 @@ class TrainerSetAggregate(TrainerSet):
         self,
         name: str,
         default: Scalar,
-        aggregator: Callable = lambda x: x,
+        aggregator: Callable,
     ):
-        if len(self._evaluation_res) == 0:
+        if not self._evaluation_res:
             return default
-        return (
-            aggregator([res.metrics.get(name) for res in self._evaluation_res])
-            or default
-        )
+
+        metric_values = [res.metrics.get(name) for res in self._evaluation_res]
+        valid_metrics = [v for v in metric_values if v is not None]
+
+        if len(valid_metrics) != len(self._evaluation_res):
+            return default
+
+        return aggregator(valid_metrics)
 
 
 class TrainerSetAggregateStore:
