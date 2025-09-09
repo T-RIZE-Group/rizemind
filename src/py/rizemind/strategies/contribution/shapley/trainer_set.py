@@ -37,6 +37,7 @@ class TrainerSetAggregate(TrainerSet):
         super().__init__(id, members=members)
         self.parameters = parameters
         self.config = config
+        self._evaluation_res = []
 
     def insert_res(self, eval_res: EvaluateRes):
         self._evaluation_res.append(eval_res)
@@ -45,7 +46,7 @@ class TrainerSetAggregate(TrainerSet):
         self,
         aggregator: Callable[[list[float]], float] = statistics.mean,
     ):
-        if self._evaluation_res is None:
+        if len(self._evaluation_res) == 0:
             return float("Inf")
         losses = [res.loss for res in self._evaluation_res]
         return aggregator(losses)
@@ -56,7 +57,7 @@ class TrainerSetAggregate(TrainerSet):
         default: Scalar,
         aggregator: Callable = lambda x: x,
     ):
-        if self._evaluation_res is None:
+        if len(self._evaluation_res) == 0:
             return default
         return (
             aggregator([res.metrics.get(name) for res in self._evaluation_res])
