@@ -9,6 +9,10 @@ import {AlwaysSampled} from "@rizemind-contracts/sampling/AlwaysSampled.sol";
 import {RandomSampling} from "@rizemind-contracts/sampling/RandomSampling.sol";
 import {CalculatorFactory} from "@rizemind-contracts/contribution/CalculatorFactory.sol";
 import {ContributionCalculator} from "@rizemind-contracts/contribution/ContributionCalculator.sol";
+import {BaseAccessControl} from "@rizemind-contracts/access/BaseAccessControl.sol";
+import {SimpleMintCompensation} from "@rizemind-contracts/compensation/SimpleMintCompensation.sol";
+import {AccessControlFactory} from "@rizemind-contracts/access/AccessControlFactory.sol";
+import {CompensationFactory} from "@rizemind-contracts/compensation/CompensationFactory.sol";
 
 contract SwarmV1FactoryTest is Test {
     SwarmV1 public swarmImpl;
@@ -18,7 +22,10 @@ contract SwarmV1FactoryTest is Test {
     ContributionCalculator public calculatorImpl;
     AlwaysSampled public trainerSelectorImpl;
     RandomSampling public evaluatorSelectorImpl;
-    
+    BaseAccessControl public accessControlImpl;
+    SimpleMintCompensation public compensationImpl;
+    AccessControlFactory public accessControlFactory;
+    CompensationFactory public compensationFactory;
     address public aggregator;
     address[] public trainers;
     address public nonTrainer;
@@ -27,7 +34,8 @@ contract SwarmV1FactoryTest is Test {
     bytes32 TRAINER_SELECTOR_ID;
     bytes32 EVALUATOR_SELECTOR_ID;
     bytes32 CALCULATOR_ID;
-
+    bytes32 ACCESS_CONTROL_ID;
+    bytes32 COMPENSATION_ID;
     bytes32 salt = keccak256(abi.encodePacked("test"));
 
     function setUp() public {
@@ -40,33 +48,52 @@ contract SwarmV1FactoryTest is Test {
         // Deploy the implementation contract (SwarmV1)
         vm.startPrank(aggregator);
         swarmImpl = new SwarmV1();
-        
-        // Deploy selector implementations
+
+
+
+        // Deploy SelectorFactory
         trainerSelectorImpl = new AlwaysSampled();
         evaluatorSelectorImpl = new RandomSampling();
-        
-        // Deploy calculator implementation
-        calculatorImpl = new ContributionCalculator();
-        
-        // Deploy SelectorFactory first
         selectorFactory = new SelectorFactory(aggregator);
-        
-        // Deploy CalculatorFactory
-        calculatorFactory = new CalculatorFactory(aggregator);
-        
         // Now we can get the IDs after factories are deployed
         (,, string memory version,,,,) = trainerSelectorImpl.eip712Domain();
         TRAINER_SELECTOR_ID = selectorFactory.getID(version);
         (,, string memory version2,,,,) = evaluatorSelectorImpl.eip712Domain();
         EVALUATOR_SELECTOR_ID = selectorFactory.getID(version2);
-        (,, string memory version3,,,,) = calculatorImpl.eip712Domain();
-        CALCULATOR_ID = calculatorFactory.getID(version3);
-        
+
         selectorFactory.registerSelectorImplementation(address(trainerSelectorImpl));
         selectorFactory.registerSelectorImplementation(address(evaluatorSelectorImpl));
+
+
+        //deploy calculator factory
+        calculatorImpl = new ContributionCalculator();
+        calculatorFactory = new CalculatorFactory(aggregator);
+        (,, string memory version3,,,,) = calculatorImpl.eip712Domain();
+        CALCULATOR_ID = calculatorFactory.getID(version3);
         calculatorFactory.registerCalculatorImplementation(address(calculatorImpl));
-        swarmFactory = new SwarmV1Factory(address(swarmImpl), address(selectorFactory));
-        swarmFactory.setCalculatorFactory(address(calculatorFactory));
+
+
+        //deploy access control factory
+        accessControlImpl = new BaseAccessControl();
+        accessControlFactory = new AccessControlFactory(aggregator);
+        (,, string memory version4,,,,) = accessControlImpl.eip712Domain();
+        ACCESS_CONTROL_ID = accessControlFactory.getID(version4);
+        accessControlFactory.registerAccessControlImplementation(address(accessControlImpl));   
+
+        // deploy compensation factory
+        compensationImpl = new SimpleMintCompensation();
+        compensationFactory = new CompensationFactory(aggregator);
+        (,, string memory version5,,,,) = compensationImpl.eip712Domain();
+        COMPENSATION_ID = compensationFactory.getID(version5);
+        compensationFactory.registerCompensationImplementation(address(compensationImpl));
+        
+        swarmFactory = new SwarmV1Factory(
+            address(swarmImpl), 
+            address(selectorFactory),
+            address(calculatorFactory),
+            address(accessControlFactory),
+            address(compensationFactory)
+        );
         vm.stopPrank();
     }
 
@@ -197,6 +224,7 @@ contract SwarmV1FactoryTest is Test {
         string memory name,
         string memory symbol
     ) internal view returns (SwarmV1Factory.SwarmParams memory) {
+
         SwarmV1Factory.SwarmV1Params memory swarmParams = SwarmV1Factory.SwarmV1Params({
             name: name,
             symbol: symbol,
@@ -219,11 +247,23 @@ contract SwarmV1FactoryTest is Test {
             initData: abi.encodeWithSelector(ContributionCalculator.initialize.selector, aggregator, 2)
         });
         
+        SwarmV1Factory.AccessControlParams memory accessControlParams = SwarmV1Factory.AccessControlParams({
+            id: ACCESS_CONTROL_ID,
+            initData: abi.encodeWithSelector(BaseAccessControl.initialize.selector, aggregator, trainers, trainers)
+        });
+        
+        SwarmV1Factory.CompensationParams memory compensationParams = SwarmV1Factory.CompensationParams({
+            id: COMPENSATION_ID,
+            initData: abi.encodeWithSelector(SimpleMintCompensation.initialize.selector, "TestToken", "TST", 1000 ether, aggregator, aggregator)
+        });
+        
         return SwarmV1Factory.SwarmParams({
             swarm: swarmParams,
             trainerSelector: trainerSelectorParams,
             evaluatorSelector: evaluatorSelectorParams,
-            calculatorFactory: calculatorParams
+            calculatorFactory: calculatorParams,
+            accessControl: accessControlParams,
+            compensation: compensationParams
         });
     }
 

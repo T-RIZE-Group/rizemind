@@ -11,13 +11,27 @@ import {AlwaysSampled} from "../../src/sampling/AlwaysSampled.sol";
 import {RandomSampling} from "../../src/sampling/RandomSampling.sol";
 import {ContributionCalculator} from "../../src/contribution/ContributionCalculator.sol";
 import {BaseTrainingPhases} from "../../src/training/BaseTrainingPhases.sol";
+import {BaseAccessControl} from "../../src/access/BaseAccessControl.sol";
+import {SimpleMintCompensation} from "../../src/compensation/SimpleMintCompensation.sol";
+import {AccessControlFactory} from "../../src/access/AccessControlFactory.sol";
+import {CompensationFactory} from "../../src/compensation/CompensationFactory.sol";
+import {IERC165} from "@openzeppelin-contracts-5.2.0/utils/introspection/IERC165.sol";
 
 contract SwarmV1Test is Test {
     SwarmV1 public implementation;
     SwarmV1Factory public factory;
     SelectorFactory public selectorFactory;
     CalculatorFactory public calculatorFactory;
+    AccessControlFactory public accessControlFactory;
+    CompensationFactory public compensationFactory;
     SwarmV1 public swarm;
+    
+    // Implementation contracts
+    AlwaysSampled public trainerSelectorImpl;
+    RandomSampling public evaluatorSelectorImpl;
+    ContributionCalculator public calculatorImpl;
+    BaseAccessControl public accessControlImpl;
+    SimpleMintCompensation public compensationImpl;
     
     address public aggregator = address(0x1);
     address public trainer1 = address(0x2);
@@ -27,9 +41,16 @@ contract SwarmV1Test is Test {
     address public evaluator2 = address(0x6);
     
     address[] public initialTrainers;
+    address[] public initialEvaluators;
+    // Factory IDs
+    bytes32 TRAINER_SELECTOR_ID;
+    bytes32 EVALUATOR_SELECTOR_ID;
+    bytes32 CALCULATOR_ID;
+    bytes32 ACCESS_CONTROL_ID;
+    bytes32 COMPENSATION_ID;
     
     function setUp() public {
-             // Deploy implementation
+        // Deploy implementation
         implementation = new SwarmV1();
         
         // Deploy selector factory
@@ -38,28 +59,60 @@ contract SwarmV1Test is Test {
         // Deploy calculator factory
         calculatorFactory = new CalculatorFactory(address(this));
         
-        // Register selector implementations
-        AlwaysSampled alwaysSampledImpl = new AlwaysSampled();
-        RandomSampling randomSamplingImpl = new RandomSampling();
+        // Deploy access control factory
+        accessControlFactory = new AccessControlFactory(address(this));
         
-        selectorFactory.registerSelectorImplementation(address(alwaysSampledImpl));
-        selectorFactory.registerSelectorImplementation(address(randomSamplingImpl));
+        // Deploy compensation factory
+        compensationFactory = new CompensationFactory(address(this));
         
-        // Register calculator implementation
-        ContributionCalculator calculatorImpl = new ContributionCalculator();
+        // Deploy and register selector implementations
+        trainerSelectorImpl = new AlwaysSampled();
+        evaluatorSelectorImpl = new RandomSampling();
+        
+        (,, string memory version,,,,) = trainerSelectorImpl.eip712Domain();
+        TRAINER_SELECTOR_ID = selectorFactory.getID(version);
+        (,, string memory version2,,,,) = evaluatorSelectorImpl.eip712Domain();
+        EVALUATOR_SELECTOR_ID = selectorFactory.getID(version2);
+        
+        selectorFactory.registerSelectorImplementation(address(trainerSelectorImpl));
+        selectorFactory.registerSelectorImplementation(address(evaluatorSelectorImpl));
+        
+        // Deploy and register calculator implementation
+        calculatorImpl = new ContributionCalculator();
+        (,, string memory version3,,,,) = calculatorImpl.eip712Domain();
+        CALCULATOR_ID = calculatorFactory.getID(version3);
         calculatorFactory.registerCalculatorImplementation(address(calculatorImpl));
         
-        // Deploy factory
-        factory = new SwarmV1Factory(address(implementation), address(selectorFactory));
+        // Deploy and register access control implementation
+        accessControlImpl = new BaseAccessControl();
+        (,, string memory version4,,,,) = accessControlImpl.eip712Domain();
+        ACCESS_CONTROL_ID = accessControlFactory.getID(version4);
+        accessControlFactory.registerAccessControlImplementation(address(accessControlImpl));
         
-        // Set calculator factory
-        factory.setCalculatorFactory(address(calculatorFactory));
+        // Deploy and register compensation implementation
+        compensationImpl = new SimpleMintCompensation();
+        (,, string memory version5,,,,) = compensationImpl.eip712Domain();
+        COMPENSATION_ID = compensationFactory.getID(version5);
+        compensationFactory.registerCompensationImplementation(address(compensationImpl));
+        
+        // Deploy factory
+        factory = new SwarmV1Factory(
+            address(implementation), 
+            address(selectorFactory),
+            address(calculatorFactory),
+            address(accessControlFactory),
+            address(compensationFactory)
+        );
         
         // Set up initial trainers
         initialTrainers = new address[](3);
         initialTrainers[0] = trainer1;
         initialTrainers[1] = trainer2;
         initialTrainers[2] = trainer3;
+
+        initialEvaluators = new address[](2);
+        initialEvaluators[0] = evaluator1;
+        initialEvaluators[1] = evaluator2;
         
         address swarmAddress = factory.getSwarmAddress(keccak256("test-salt"));
 
@@ -74,16 +127,24 @@ contract SwarmV1Test is Test {
                 trainers: initialTrainers
             }),
             trainerSelector: SwarmV1Factory.SelectorParams({
-                id: keccak256("always-sampled-v1.0.0"),
+                id: TRAINER_SELECTOR_ID,
                 initData: abi.encodeWithSelector(AlwaysSampled.initialize.selector)
             }),
             evaluatorSelector: SwarmV1Factory.SelectorParams({
-                id: keccak256("random-sampling-v1.0.0"),
+                id: EVALUATOR_SELECTOR_ID,
                 initData: abi.encodeWithSelector(RandomSampling.initialize.selector, 1 ether) // 100% selection rate
             }),
             calculatorFactory: SwarmV1Factory.CalculatorParams({
-                id: keccak256("contribution-calculator-v1.0.0"),
+                id: CALCULATOR_ID,
                 initData: abi.encodeWithSelector(ContributionCalculator.initialize.selector, swarmAddress, 2)
+            }),
+            accessControl: SwarmV1Factory.AccessControlParams({
+                id: ACCESS_CONTROL_ID,
+                initData: abi.encodeWithSelector(BaseAccessControl.initialize.selector, aggregator, initialTrainers, initialEvaluators)
+            }),
+            compensation: SwarmV1Factory.CompensationParams({
+                id: COMPENSATION_ID,
+                initData: abi.encodeWithSelector(SimpleMintCompensation.initialize.selector, "TestToken", "TST", 1000 ether, aggregator, swarmAddress)
             })
         });
         
@@ -557,7 +618,7 @@ contract SwarmV1Test is Test {
 
     function test_supportsInterface() public view {
         // Test interface support
-        assertTrue(swarm.supportsInterface(0x01ffc9a7), "Should support ERC165");
+        assertTrue(swarm.supportsInterface(type(IERC165).interfaceId), "Should support ERC165");
         assertTrue(swarm.supportsInterface(swarm.canTrain.selector), "Should support canTrain");
         assertTrue(swarm.supportsInterface(swarm.distribute.selector), "Should support distribute");
     }

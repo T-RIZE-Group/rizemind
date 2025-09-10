@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {EIP712Upgradeable} from "@openzeppelin-contracts-upgradeable-5.2.0/utils/cryptography/EIP712Upgradeable.sol";
 import {ContextUpgradeable} from "@openzeppelin-contracts-upgradeable-5.2.0/utils/ContextUpgradeable.sol";
+import {IERC165} from "@openzeppelin-contracts-5.2.0/utils/introspection/IERC165.sol";
 
 import {IAccessControl} from "../access/IAccessControl.sol";
 import {SimpleMintCompensation} from "../compensation/SimpleMintCompensation.sol";
@@ -94,7 +95,9 @@ contract SwarmV1 is
         address[] memory initialTrainers,
         address initialTrainerSelector,
         address initialEvaluatorSelector,
-        address initialContributionCalculator
+        address initialContributionCalculator,
+        address initialAccessControl,
+        address initialCompensation
     ) external virtual initializer {
         __EIP712_init(name, _VERSION);
         __RoundTraining_init();
@@ -104,7 +107,7 @@ contract SwarmV1 is
         __RoundTrainerRegistry_init();
         __RoundEvaluatorRegistry_init();
         __TaskAssignment_init();
-        __SwarmCore_init(initialTrainerSelector, initialEvaluatorSelector, initialContributionCalculator, address(0), address(0));
+        __SwarmCore_init(initialTrainerSelector, initialEvaluatorSelector, initialContributionCalculator, initialAccessControl, initialCompensation);
     }
 
     function initialize() external virtual override(RoundTrainerRegistry, RoundEvaluatorRegistry, TaskAssignment) {
@@ -282,6 +285,7 @@ contract SwarmV1 is
         returns (bool)
     {
         return
+            interfaceId == type(IERC165).interfaceId ||
             RoundTraining.supportsInterface(interfaceId) ||
             CertificateRegistry.supportsInterface(interfaceId) ||
             interfaceId == this.canTrain.selector ||

@@ -7,12 +7,16 @@ import {Create2} from "@openzeppelin-contracts-5.2.0/utils/Create2.sol";
 import {SwarmV1} from "./SwarmV1.sol";
 import {SelectorFactory} from "../sampling/SelectorFactory.sol";
 import {CalculatorFactory} from "../contribution/CalculatorFactory.sol";
+import {AccessControlFactory} from "../access/AccessControlFactory.sol";
+import {CompensationFactory} from "../compensation/CompensationFactory.sol";
 
 // aderyn-ignore-next-line(centralization-risk)
 contract SwarmV1Factory is AccessControl {
     address private _logicContract;
     address private _selectorFactory;
     address private _calculatorFactory;
+    address private _accessControlFactory;
+    address private _compensationFactory;
 
     event ContractCreated(
         address indexed proxyAddress,
@@ -21,6 +25,8 @@ contract SwarmV1Factory is AccessControl {
     );
     event ProxyUpgraded(address indexed proxyAddress, address indexed newLogic);
     event CalculatorFactoryUpdated(address indexed oldFactory, address indexed newFactory);
+    event AccessControlFactoryUpdated(address indexed oldFactory, address indexed newFactory);
+    event CompensationFactoryUpdated(address indexed oldFactory, address indexed newFactory);
 
     struct SwarmV1Params {
         string name;
@@ -39,18 +45,38 @@ contract SwarmV1Factory is AccessControl {
         bytes initData;
     }
 
+    struct AccessControlParams {
+        bytes32 id;
+        bytes initData;
+    }
+
+    struct CompensationParams {
+        bytes32 id;
+        bytes initData;
+    }
+
     struct SwarmParams {
         SwarmV1Params swarm;
         SelectorParams trainerSelector;
         SelectorParams evaluatorSelector;
         CalculatorParams calculatorFactory;
+        AccessControlParams accessControl;
+        CompensationParams compensation;
     }
 
-    constructor(address logicContract, address selectorFactory) {
+    constructor(
+        address logicContract, 
+        address selectorFactory, 
+        address calculatorFactory,
+        address accessControlFactory,
+        address compensationFactory
+    ) {
         _logicContract = logicContract;
         _selectorFactory = selectorFactory;
+        _calculatorFactory = calculatorFactory;
+        _accessControlFactory = accessControlFactory;
+        _compensationFactory = compensationFactory;
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-
     }
 
     function createSwarm(
@@ -85,6 +111,20 @@ contract SwarmV1Factory is AccessControl {
             params.calculatorFactory.initData
         );
 
+        bytes32 saltAccessControl = keccak256(abi.encodePacked(salt,"access-control"));
+        address accessControl = AccessControlFactory(_accessControlFactory).createAccessControl(
+            params.accessControl.id,
+            saltAccessControl,
+            params.accessControl.initData
+        );
+
+        bytes32 saltCompensation = keccak256(abi.encodePacked(salt,"compensation"));
+        address compensation = CompensationFactory(_compensationFactory).createCompensation(
+            params.compensation.id,
+            saltCompensation,
+            params.compensation.initData
+        );
+
         SwarmV1 swarm = SwarmV1(proxy);
         swarm.initialize(
             params.swarm.name,
@@ -93,7 +133,9 @@ contract SwarmV1Factory is AccessControl {
             params.swarm.trainers,
             trainerSelector,
             evaluatorSelector,
-            calculatorFactory
+            calculatorFactory,
+            accessControl,
+            compensation
         );
 
         emit ContractCreated(proxy, msg.sender, params.swarm.name);
@@ -137,5 +179,41 @@ contract SwarmV1Factory is AccessControl {
         _calculatorFactory = calculatorFactory;
         
         emit CalculatorFactoryUpdated(oldFactory, calculatorFactory);
+    }
+
+    /// @notice Get the current access control factory address
+    /// @return The address of the access control factory
+    function getAccessControlFactory() external view returns (address) {
+        return _accessControlFactory;
+    }
+
+    /// @notice Set the access control factory address
+    /// @dev Only callable by DEFAULT_ADMIN_ROLE
+    /// @param accessControlFactory The new access control factory address
+    function setAccessControlFactory(address accessControlFactory) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(accessControlFactory != address(0), "access control factory cannot be null");
+        
+        address oldFactory = _accessControlFactory;
+        _accessControlFactory = accessControlFactory;
+        
+        emit AccessControlFactoryUpdated(oldFactory, accessControlFactory);
+    }
+
+    /// @notice Get the current compensation factory address
+    /// @return The address of the compensation factory
+    function getCompensationFactory() external view returns (address) {
+        return _compensationFactory;
+    }
+
+    /// @notice Set the compensation factory address
+    /// @dev Only callable by DEFAULT_ADMIN_ROLE
+    /// @param compensationFactory The new compensation factory address
+    function setCompensationFactory(address compensationFactory) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(compensationFactory != address(0), "compensation factory cannot be null");
+        
+        address oldFactory = _compensationFactory;
+        _compensationFactory = compensationFactory;
+        
+        emit CompensationFactoryUpdated(oldFactory, compensationFactory);
     }
 }

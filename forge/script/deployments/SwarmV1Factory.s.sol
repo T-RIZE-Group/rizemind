@@ -19,7 +19,7 @@ contract DeploySwarmV1Factory is Script {
     
         
         // Deploy the factory using the implementation address and selector factory.
-        SwarmV1Factory swarmFactory = new SwarmV1Factory(address(swarmImpl), address(selectorFactoryAddress));
+        SwarmV1Factory swarmFactory = new SwarmV1Factory(address(swarmImpl), address(selectorFactoryAddress), address(0), address(0), address(0));
 
         vm.stopBroadcast();
 
