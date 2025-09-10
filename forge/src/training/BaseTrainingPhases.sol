@@ -34,6 +34,11 @@ contract BaseTrainingPhases is ITrainingPhases, Initializable {
 
   error WrongPhase(bytes32 expected, bytes32 actual);
 
+  event PhaseTransition(bytes32 from, bytes32 to);
+  event TrainingTtlUpdated(uint256 oldTtl, uint256 newTtl);
+  event EvaluationTtlUpdated(uint256 oldTtl, uint256 newTtl);
+  event EvaluationRegistrationTtlUpdated(uint256 oldTtl, uint256 newTtl);
+
   struct TrainingPhaseStorage {
     uint256 start;
   }
@@ -70,9 +75,11 @@ contract BaseTrainingPhases is ITrainingPhases, Initializable {
     
     // aderyn-ignore-next-line(costly-loop)
     while (currentPhase != newPhase) {
+      emit PhaseTransition(currentPhase, newPhase);
       currentPhase = newPhase;
       newPhase = _run(currentPhase);
     }
+    
     _currentPhase = newPhase;
     return newPhase;
   }
@@ -214,19 +221,25 @@ contract BaseTrainingPhases is ITrainingPhases, Initializable {
   /// @notice Update training phase TTL only
   /// @param ttl The time-to-live for training phase
   function _setTrainingPhaseTtl(uint256 ttl) internal {
+    uint256 oldTtl = _trainingPhaseConfiguration.ttl;
     _trainingPhaseConfiguration.ttl = ttl;
+    emit TrainingTtlUpdated(oldTtl, ttl);
   }
 
   /// @notice Update evaluation phase TTL only
   /// @param ttl The time-to-live for evaluation phase
   function _setEvaluationPhaseTtl(uint256 ttl) internal {
+    uint256 oldTtl = _evaluationPhaseConfiguration.ttl;
     _evaluationPhaseConfiguration.ttl = ttl;
+    emit EvaluationTtlUpdated(oldTtl, ttl);
   }
 
   /// @notice Update registration TTL only
   /// @param registrationTtl The time-to-live for evaluator registration phase
   function _setRegistrationTtl(uint256 registrationTtl) internal {
+    uint256 oldTtl = _evaluationPhaseConfiguration.registrationTtl;
     _evaluationPhaseConfiguration.registrationTtl = registrationTtl;
+    emit EvaluationRegistrationTtlUpdated(oldTtl, registrationTtl);
   }
 
   /// @notice Get training phase configuration

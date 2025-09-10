@@ -12,11 +12,9 @@ import {SwarmCore} from "./registry/SwarmCore.sol";
 import {ISelector} from "../sampling/ISelector.sol";
 import {TaskAssignment} from "../scheduling/TaskAssignment.sol";
 import {BaseTrainingPhases} from "../training/BaseTrainingPhases.sol";
-import {RandPerm} from "../randomness/RNGPermutations.sol";
 import {RoundTrainerRegistry} from "./registry/RoundTrainerRegistry.sol";
 import {RoundEvaluatorRegistry} from "./registry/RoundEvaluatorRegistry.sol";
 import {ContributionCalculator} from "../contribution/ContributionCalculator.sol";
-import {console} from "forge-std/console.sol";
 
 /**
  * @title SwarmV1
@@ -157,9 +155,6 @@ contract SwarmV1 is
             // TODO: handle potential rounding error
             nTasksPerNode = nTasks / nNodes;
         }
-        console.log("nTasks", nTasks);
-        console.log("nNodes", nNodes);
-        console.log("nTasksPerNode", nTasksPerNode);
         _setConfig(roundId, Config({
             T: nTasks,
             N: nNodes,
@@ -198,7 +193,6 @@ contract SwarmV1 is
         }
         ContributionCalculator calc = ContributionCalculator(getContributionCalculator());
         uint256 evaluatorId = getEvaluatorIdOrThrow(roundId, evaluator);
-        console.log("evaluatorId", evaluatorId);
         // evaluator id starts at 1,but TaskAssigment starts at 0
         if (!isAssigned(roundId, evaluatorId - 1, taskId)) {
             revert NotAssignedTo(roundId, taskId, evaluator);
@@ -207,6 +201,7 @@ contract SwarmV1 is
         calc.registerResult(roundId, taskId, setId, modelHash, result, uint8(nTrainers));
     }
 
+    // TODO: block claiming multiple times per round
     function claimReward(uint256 roundId, address trainer) external {
         ContributionCalculator calc = ContributionCalculator(getContributionCalculator());
         uint256 trainerId = getTrainerIdOrThrow(roundId, trainer);
