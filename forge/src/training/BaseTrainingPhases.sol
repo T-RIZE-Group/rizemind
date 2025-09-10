@@ -231,13 +231,13 @@ contract BaseTrainingPhases is ITrainingPhases, Initializable {
 
   /// @notice Get training phase configuration
   /// @return The training phase configuration struct
-  function getTrainingPhaseConfiguration() internal view returns (TrainingPhaseConfiguration memory) {
+  function getTrainingPhaseConfiguration() public view returns (TrainingPhaseConfiguration memory) {
     return _trainingPhaseConfiguration;
   }
 
   /// @notice Get evaluation phase configuration
   /// @return The evaluation phase configuration struct
-  function getEvaluationPhaseConfiguration() internal view returns (EvaluationPhaseConfiguration memory) {
+  function getEvaluationPhaseConfiguration() public view returns (EvaluationPhaseConfiguration memory) {
     return _evaluationPhaseConfiguration;
   }
 }

@@ -16,7 +16,33 @@ import {RandPerm} from "../randomness/RNGPermutations.sol";
 import {RoundTrainerRegistry} from "./registry/RoundTrainerRegistry.sol";
 import {RoundEvaluatorRegistry} from "./registry/RoundEvaluatorRegistry.sol";
 import {ContributionCalculator} from "../contribution/ContributionCalculator.sol";
+import {console} from "forge-std/console.sol";
 
+/**
+ * @title SwarmV1
+ * @author 
+ * @notice SwarmV1 is the entrypoint for the Swarm Coordination.
+ * 
+ * It encapsulates the training liefecycle, access control, contribution calculation and metadata storage.
+ * 
+ * Overview of a round:
+ * 1. Aggregator calls startTrainingRound() to start the training round
+ * 2. Trainers call registerRoundContribution() to register their contributions
+ * 3. Evaluators call registerForRoundEvaluations() to register for round evaluations
+ * 4. Evaluators call registerEvaluation() to register their evaluations
+ * 5. Aggregator calls nextRound() to finish the round
+ * 
+ * The swarm has a set of whitelisted trainers and evaluators based on the FLAccessControl contract.
+ * Each round a subset of those nodes are selected by the SamplerSelector contract.
+ * 
+ * For contribution calculation, the IContributionCalculator defines the number of evaluation tasks required.
+ * These tasks are assigned an incremental task ID.
+ * 
+ * Before the evaluation starts, the evaluators registers so the TaskAssigment module distributes tasks
+ * uniformly to the evaluators.
+ * 
+ * After the evaluation is completed, the trainers can claim their rewards by calling claimReward().
+ */
 contract SwarmV1 is
     FLAccessControl,
     SimpleMintCompensation,
@@ -37,7 +63,7 @@ contract SwarmV1 is
     error NotAssignedTo(uint256 roundId, uint256 evalId, address evaluator);
     error NotEvaluationPhase();
     error WrongInitialization();
-    
+
     function initialize(
         string memory name,
         string memory symbol,
@@ -91,7 +117,8 @@ contract SwarmV1 is
         if (updatePhase() != IDLE_PHASE) {
             revert NotIdle();
         }
-        _startTrainingPhase();
+        _nextRound();
+        _forceStartTrainingPhase();
     }
 
     function registerRoundContribution(uint256 roundId, bytes32 modelHash) external onlyTrainer(msg.sender) {
@@ -120,12 +147,19 @@ contract SwarmV1 is
         uint256 roundId = currentRound();
         ContributionCalculator calc = ContributionCalculator(getContributionCalculator());
         uint256 nTasks = calc.getEvaluationsRequired(roundId, uint8(getTrainerCount(roundId)));
+        if (nTasks == 0) {
+            nTasks = calc.getEvaluationsRequired(roundId - 1, uint8(getTrainerCount(roundId - 1)));
+            calc.setEvaluationsRequired(roundId, nTasks);
+        }
         uint256 nNodes = getEvaluatorCount(roundId);
         uint256 nTasksPerNode = 1;
         if (nTasks > nNodes) {
             // TODO: handle potential rounding error
             nTasksPerNode = nTasks / nNodes;
         }
+        console.log("nTasks", nTasks);
+        console.log("nNodes", nNodes);
+        console.log("nTasksPerNode", nTasksPerNode);
         _setConfig(roundId, Config({
             T: nTasks,
             N: nNodes,
@@ -159,16 +193,30 @@ contract SwarmV1 is
         int256 result,
         address evaluator
     ) internal {
-        if (getCurrentPhase() != EVALUATION_PHASE) {
+        if (updatePhase() != EVALUATION_PHASE) {
             revert NotEvaluationPhase();
         }
         ContributionCalculator calc = ContributionCalculator(getContributionCalculator());
         uint256 evaluatorId = getEvaluatorIdOrThrow(roundId, evaluator);
-        if (!isAssigned(roundId, evaluatorId, taskId)) {
+        console.log("evaluatorId", evaluatorId);
+        // evaluator id starts at 1,but TaskAssigment starts at 0
+        if (!isAssigned(roundId, evaluatorId - 1, taskId)) {
             revert NotAssignedTo(roundId, taskId, evaluator);
         }
         uint256 nTrainers = getTrainerCount(roundId);
         calc.registerResult(roundId, taskId, setId, modelHash, result, uint8(nTrainers));
+    }
+
+    function claimReward(uint256 roundId, address trainer) external {
+        ContributionCalculator calc = ContributionCalculator(getContributionCalculator());
+        uint256 trainerId = getTrainerIdOrThrow(roundId, trainer);
+        // trainer id starts at 1,but ContributionCalculator starts at 0
+        int256 contribution = calc.calculateContribution(roundId, trainerId - 1, uint8(getTrainerCount(roundId)));
+        address[] memory trainers = new address[](1);
+        trainers[0] = trainer;
+        uint64[] memory contributions = new uint64[](1);
+        contributions[0] = uint64(uint256(contribution));
+        _distribute(trainers, contributions);
     }
 
     function _msgSender()

@@ -10,6 +10,7 @@ interface IEvaluationStorage {
 
 interface IContributionCalculator is IEvaluationStorage, IERC5267  {
     function getEvaluationsRequired(uint256 roundId, uint8 numberOfPlayers) external view returns (uint256);
+    function setEvaluationsRequired(uint256 roundId, uint256 evaluationsRequired) external;
     function getTotalEvaluations(uint256 roundId, uint8 numberOfPlayers) external view returns (uint256);
     function registerResult(uint256 roundId, uint256 sampleId, uint256 setId, bytes32 modelHash, int256 result, uint8 numberOfPlayers) external;
     function calculateContribution(uint256 roundId, uint256 trainerIndex, uint8 numberOfTrainers) external view returns (int256);

@@ -21,8 +21,8 @@ abstract contract SimpleMintCompensation is ERC20Upgradeable {
     }
 
     function _distribute(
-        address[] calldata trainers,
-        uint64[] calldata contributions
+        address[] memory trainers,
+        uint64[] memory contributions
     ) internal {
         uint256 nTrainers = trainers.length;
 

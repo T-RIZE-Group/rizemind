@@ -47,7 +47,10 @@ contract ContributionCalculator is
      * @dev Initializes the contract with the initial admin
      * @param initialAdmin The initial admin address
      */
-    function initialize(address initialAdmin) external initializer {
+    function initialize(
+        address initialAdmin,
+        uint256 initialNumSamples
+    ) external initializer {
         if (initialAdmin == address(0)) {
             revert InvalidParameters();
         }
@@ -57,6 +60,7 @@ contract ContributionCalculator is
         __EIP712_init("ContributionCalculator", _VERSION);
 
         _grantRole(DEFAULT_ADMIN_ROLE, initialAdmin);
+        _setNumSamples(0, initialNumSamples);
     }
 
     /**
@@ -78,6 +82,10 @@ contract ContributionCalculator is
         _registerResult(roundId, sampleId, setId, modelHash, result, numberOfPlayers);
         
         emit ContributionResultRegistered(roundId, setId, modelHash, result, msg.sender);
+    }
+
+    function setEvaluationsRequired(uint256 roundId, uint256 evaluationsRequired) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _setNumSamples(roundId, evaluationsRequired);
     }
 
     /**

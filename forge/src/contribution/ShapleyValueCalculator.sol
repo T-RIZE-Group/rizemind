@@ -7,8 +7,8 @@ import {IERC165} from "@openzeppelin-contracts-5.2.0/utils/introspection/IERC165
 import {IEvaluationStorage} from "./types.sol";
 import {console} from "forge-std/console.sol";
 
-// TODO: handle unevaluated sets
 contract ShapleyValueCalculator is EvaluationStorage {
+    // we index num. samples per round to make historical querying of past round accurate
     mapping(uint256 => uint256) private _numSamples;
     uint8 private constant DECIMALS = 18;
 
@@ -58,10 +58,9 @@ contract ShapleyValueCalculator is EvaluationStorage {
     ) internal virtual view returns (int256) {
         int256 weightedSum = 0;
         uint256 weightTotal = 0;
-        uint256 numSamples = _numSamples[roundId];
+        uint256 numSamples = _getNumSamples(roundId);
         for (uint256 i = 0; i < numSamples; ++i) {
             uint256 generatedMask = _getMask(roundId, i, numberOfPlayers);
-            console.log("generatedMask", generatedMask);
             uint256 playerMask = 1 << trainerIndex;
 
             uint256 withTrainerMask;
@@ -79,19 +78,11 @@ contract ShapleyValueCalculator is EvaluationStorage {
 
             int256 withResult = getResult(roundId, withTrainerMask);
             int256 withoutResult = getResult(roundId, withoutTrainerMask);
-            console.log("withResult", withResult);
-            console.log("withoutResult", withoutResult);
             int256 contribution = withResult - withoutResult;
-            console.log("contribution", contribution);
             uint256 w = weight(numberOfPlayers, popcount(withoutTrainerMask));
-            console.log("numberOfPlayers", numberOfPlayers);
-            console.log("popcount(withoutTrainerMask)", popcount(withoutTrainerMask));
-            console.log("w", w);
             weightedSum += contribution * int256(w);
             weightTotal += w;
         }
-        console.log("weightedSum", weightedSum);
-        console.log("weightTotal", weightTotal);
         return weightTotal == 0 ? int256(0) : weightedSum / int256(weightTotal);
     }
     function weight(uint256 n, uint256 s) internal view returns (uint256 w) {
@@ -133,6 +124,11 @@ contract ShapleyValueCalculator is EvaluationStorage {
                 i,
                 1 << numberOfPlayers
             );
+    }
+
+
+    function _getNumSamples(uint256 roundId) internal view returns (uint256) {
+        return _numSamples[roundId];
     }
 
     function _setNumSamples(uint256 roundId, uint256 numSamples) internal {

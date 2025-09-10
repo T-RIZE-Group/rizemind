@@ -19,6 +19,4 @@ event RoundFinished(
 
 interface ITraining {
     function currentRound() external view returns (uint256);
-
-    function nextRound(RoundSummary calldata summary) external;
 }
