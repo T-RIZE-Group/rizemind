@@ -64,6 +64,17 @@ contract SwarmV1 is
     error NotEvaluator();
     error RewardsAlreadyClaimed(uint256 roundId, address trainer);
 
+    struct SwarmV1InitializeParams {
+        string name;
+        address initialTrainerSelector;
+        address initialEvaluatorSelector;
+        address initialContributionCalculator;
+        address initialAccessControl;
+        address initialCompensation;
+        BaseTrainingPhases.TrainingPhaseConfiguration trainingPhaseConfiguration;
+        BaseTrainingPhases.EvaluationPhaseConfiguration evaluationPhaseConfiguration;
+    }
+
     modifier onlyAggregator(address aggregator) {
         if (!IAccessControl(getAccessControl()).isAggregator(aggregator)) {
             revert NotAggregator();
@@ -86,25 +97,16 @@ contract SwarmV1 is
     }
 
     function initialize(
-        string memory name,
-        string memory symbol,
-        address aggregator,
-        address[] memory initialTrainers,
-        address initialTrainerSelector,
-        address initialEvaluatorSelector,
-        address initialContributionCalculator,
-        address initialAccessControl,
-        address initialCompensation
+        SwarmV1InitializeParams memory params
     ) external virtual initializer {
-        __EIP712_init(name, _VERSION);
+        __EIP712_init(params.name, _VERSION);
         __RoundTraining_init();
-        // TODO: make these configurable
-        __BaseTrainingPhases_init(BaseTrainingPhases.TrainingPhaseConfiguration({ttl: 1000}), BaseTrainingPhases.EvaluationPhaseConfiguration({ttl: 1000, registrationTtl: 1000}));
+        __BaseTrainingPhases_init(params.trainingPhaseConfiguration, params.evaluationPhaseConfiguration);
         __CertificateRegistry_init();
         __RoundTrainerRegistry_init();
         __RoundEvaluatorRegistry_init();
         __TaskAssignment_init();
-        __SwarmCore_init(initialTrainerSelector, initialEvaluatorSelector, initialContributionCalculator, initialAccessControl, initialCompensation);
+        __SwarmCore_init(params.initialTrainerSelector, params.initialEvaluatorSelector, params.initialContributionCalculator, params.initialAccessControl, params.initialCompensation);
     }
 
     function initialize() external virtual override(RoundTrainerRegistry, RoundEvaluatorRegistry, TaskAssignment) {

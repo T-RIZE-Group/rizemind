@@ -9,6 +9,7 @@ import {SelectorFactory} from "../sampling/SelectorFactory.sol";
 import {CalculatorFactory} from "../contribution/CalculatorFactory.sol";
 import {AccessControlFactory} from "../access/AccessControlFactory.sol";
 import {CompensationFactory} from "../compensation/CompensationFactory.sol";
+import {BaseTrainingPhases} from "../training/BaseTrainingPhases.sol";
 
 // aderyn-ignore-next-line(centralization-risk)
 contract SwarmV1Factory is AccessControl {
@@ -30,9 +31,6 @@ contract SwarmV1Factory is AccessControl {
 
     struct SwarmV1Params {
         string name;
-        string symbol;
-        address aggregator;
-        address[] trainers;
     }
 
     struct SelectorParams {
@@ -62,6 +60,8 @@ contract SwarmV1Factory is AccessControl {
         CalculatorParams calculatorFactory;
         AccessControlParams accessControl;
         CompensationParams compensation;
+        BaseTrainingPhases.TrainingPhaseConfiguration trainingPhaseConfiguration;
+        BaseTrainingPhases.EvaluationPhaseConfiguration evaluationPhaseConfiguration;
     }
 
     constructor(
@@ -127,15 +127,16 @@ contract SwarmV1Factory is AccessControl {
 
         SwarmV1 swarm = SwarmV1(proxy);
         swarm.initialize(
-            params.swarm.name,
-            params.swarm.symbol,
-            params.swarm.aggregator,
-            params.swarm.trainers,
-            trainerSelector,
-            evaluatorSelector,
-            calculatorFactory,
-            accessControl,
-            compensation
+            SwarmV1.SwarmV1InitializeParams({
+                name: params.swarm.name,
+                initialTrainerSelector: trainerSelector,
+                initialEvaluatorSelector: evaluatorSelector,
+                initialContributionCalculator: calculatorFactory,
+                initialAccessControl: accessControl,
+                initialCompensation: compensation,
+                trainingPhaseConfiguration: params.trainingPhaseConfiguration,
+                evaluationPhaseConfiguration: params.evaluationPhaseConfiguration
+            })
         );
 
         emit ContractCreated(proxy, msg.sender, params.swarm.name);

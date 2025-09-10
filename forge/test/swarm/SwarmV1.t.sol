@@ -121,10 +121,7 @@ contract SwarmV1Test is Test {
         // Create swarm using factory
         SwarmV1Factory.SwarmParams memory params = SwarmV1Factory.SwarmParams({
             swarm: SwarmV1Factory.SwarmV1Params({
-                name: "TestSwarm",
-                symbol: "TSW",
-                aggregator: aggregator,
-                trainers: initialTrainers
+                name: "TestSwarm"
             }),
             trainerSelector: SwarmV1Factory.SelectorParams({
                 id: TRAINER_SELECTOR_ID,
@@ -145,6 +142,13 @@ contract SwarmV1Test is Test {
             compensation: SwarmV1Factory.CompensationParams({
                 id: COMPENSATION_ID,
                 initData: abi.encodeWithSelector(SimpleMintCompensation.initialize.selector, "TestToken", "TST", 1000 ether, aggregator, swarmAddress)
+            }),
+            trainingPhaseConfiguration: BaseTrainingPhases.TrainingPhaseConfiguration({
+                ttl: 1000
+            }),
+            evaluationPhaseConfiguration: BaseTrainingPhases.EvaluationPhaseConfiguration({
+                ttl: 1000,
+                registrationTtl: 1000
             })
         });
         

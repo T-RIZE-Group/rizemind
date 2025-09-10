@@ -13,6 +13,7 @@ import {BaseAccessControl} from "@rizemind-contracts/access/BaseAccessControl.so
 import {SimpleMintCompensation} from "@rizemind-contracts/compensation/SimpleMintCompensation.sol";
 import {AccessControlFactory} from "@rizemind-contracts/access/AccessControlFactory.sol";
 import {CompensationFactory} from "@rizemind-contracts/compensation/CompensationFactory.sol";
+import {BaseTrainingPhases} from "@rizemind-contracts/training/BaseTrainingPhases.sol";
 
 contract SwarmV1FactoryTest is Test {
     SwarmV1 public swarmImpl;
@@ -226,10 +227,7 @@ contract SwarmV1FactoryTest is Test {
     ) internal view returns (SwarmV1Factory.SwarmParams memory) {
 
         SwarmV1Factory.SwarmV1Params memory swarmParams = SwarmV1Factory.SwarmV1Params({
-            name: name,
-            symbol: symbol,
-            aggregator: aggregator,
-            trainers: trainers
+            name: name
         });
         
         SwarmV1Factory.SelectorParams memory trainerSelectorParams = SwarmV1Factory.SelectorParams({
@@ -254,7 +252,7 @@ contract SwarmV1FactoryTest is Test {
         
         SwarmV1Factory.CompensationParams memory compensationParams = SwarmV1Factory.CompensationParams({
             id: COMPENSATION_ID,
-            initData: abi.encodeWithSelector(SimpleMintCompensation.initialize.selector, "TestToken", "TST", 1000 ether, aggregator, aggregator)
+            initData: abi.encodeWithSelector(SimpleMintCompensation.initialize.selector, name, symbol, 1000 ether, aggregator, aggregator)
         });
         
         return SwarmV1Factory.SwarmParams({
@@ -263,7 +261,14 @@ contract SwarmV1FactoryTest is Test {
             evaluatorSelector: evaluatorSelectorParams,
             calculatorFactory: calculatorParams,
             accessControl: accessControlParams,
-            compensation: compensationParams
+            compensation: compensationParams,
+            trainingPhaseConfiguration: BaseTrainingPhases.TrainingPhaseConfiguration({
+                ttl: 1000
+            }),
+            evaluationPhaseConfiguration: BaseTrainingPhases.EvaluationPhaseConfiguration({
+                ttl: 1000,
+                registrationTtl: 1000
+            })
         });
     }
 
