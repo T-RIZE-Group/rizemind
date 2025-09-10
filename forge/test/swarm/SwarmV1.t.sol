@@ -63,6 +63,8 @@ contract SwarmV1Test is Test {
         
         address swarmAddress = factory.getSwarmAddress(keccak256("test-salt"));
 
+        //TODO: add evaluators to access control
+
         // Create swarm using factory
         SwarmV1Factory.SwarmParams memory params = SwarmV1Factory.SwarmParams({
             swarm: SwarmV1Factory.SwarmV1Params({
@@ -88,29 +90,12 @@ contract SwarmV1Test is Test {
         swarm = SwarmV1(factory.createSwarm(keccak256("test-salt"), params));
 
         ContributionCalculator contributionCalculator = ContributionCalculator(swarm.getContributionCalculator());
-        
-        // Add evaluators
-        vm.prank(aggregator);
-        swarm.addEvaluator(evaluator1);
-        vm.prank(aggregator);
-        swarm.addEvaluator(evaluator2);
+    
     }
 
     // ============================================================================
     // INITIALIZATION TESTS
     // ============================================================================
-
-    function test_initialize() public view {
-        // Test basic initialization
-        assertEq(swarm.name(), "TestSwarm", "Name should be set correctly");
-        assertEq(swarm.symbol(), "TSW", "Symbol should be set correctly");
-        assertTrue(swarm.hasRole(keccak256("AGGREGATOR"), aggregator), "Aggregator should have AGGREGATOR_ROLE");
-        assertTrue(swarm.hasRole(keccak256("TRAINER"), trainer1), "Trainer1 should have TRAINER_ROLE");
-        assertTrue(swarm.hasRole(keccak256("TRAINER"), trainer2), "Trainer2 should have TRAINER_ROLE");
-        assertTrue(swarm.hasRole(keccak256("TRAINER"), trainer3), "Trainer3 should have TRAINER_ROLE");
-        assertTrue(swarm.hasRole(keccak256("EVALUATOR_ROLE"), evaluator1), "Evaluator1 should have EVALUATOR_ROLE");
-        assertTrue(swarm.hasRole(keccak256("EVALUATOR_ROLE"), evaluator2), "Evaluator2 should have EVALUATOR_ROLE");
-    }
 
     function test_initialize_wrongInitialization() public {
         // Test that calling initialize() without parameters reverts
@@ -487,7 +472,7 @@ contract SwarmV1Test is Test {
         contributions[1] = 200;
         
         vm.prank(aggregator);
-        swarm.distribute(trainers, contributions);
+        swarm.distribute(1, trainers, contributions);
         
         // Should not revert
         assertTrue(true, "Distribution should succeed");

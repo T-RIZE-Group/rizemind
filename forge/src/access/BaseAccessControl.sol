@@ -2,11 +2,17 @@
 pragma solidity ^0.8.10;
 
 import {AccessControlUpgradeable} from "@openzeppelin-contracts-upgradeable-5.2.0/access/AccessControlUpgradeable.sol";
+import {EIP712} from "@openzeppelin-contracts-5.2.0/utils/cryptography/EIP712.sol";
+import {IAccessControl} from "./IAccessControl.sol";
 
-contract FLAccessControl is AccessControlUpgradeable {
+contract BaseAccessControl is AccessControlUpgradeable, IAccessControl, EIP712 {
     bytes32 constant AGGREGATOR_ROLE = keccak256("AGGREGATOR");
     bytes32 constant TRAINER_ROLE = keccak256("TRAINER");
     bytes32 constant EVALUATOR_ROLE = keccak256("EVALUATOR_ROLE");
+
+    string private constant _VERSION = "base-access-control-v1.0.0";
+
+    constructor() EIP712("BaseAccessControl", _VERSION) {}
 
     modifier onlyTrainer(address account) {
         _checkTrainer(account);
@@ -23,13 +29,25 @@ contract FLAccessControl is AccessControlUpgradeable {
         _;
     }
 
+    function initialize(
+        address aggregator,
+        address[] memory initialTrainers,
+        address[] memory initialEvaluators
+    ) external initializer {
+        __FLAccessControl_init(aggregator, initialTrainers, initialEvaluators);
+    }
+
     function __FLAccessControl_init(
         address aggregator,
-        address[] memory initialTrainers
+        address[] memory initialTrainers,
+        address[] memory initialEvaluators
     ) internal onlyInitializing {
         _grantRole(AGGREGATOR_ROLE, aggregator);
         for (uint8 i = 0; i < initialTrainers.length; i++) {
             _grantRole(TRAINER_ROLE, initialTrainers[i]);
+        }
+        for (uint8 i = 0; i < initialEvaluators.length; i++) {
+            _grantRole(EVALUATOR_ROLE, initialEvaluators[i]);
         }
     }
 
@@ -76,20 +94,12 @@ contract FLAccessControl is AccessControlUpgradeable {
     ) public view virtual override returns (bool) {
         return
             AccessControlUpgradeable.supportsInterface(interfaceId) ||
+            interfaceId == type(IAccessControl).interfaceId ||
             interfaceId == this.addTrainer.selector ||
             interfaceId == this.isTrainer.selector ||
             interfaceId == this.addAggregator.selector ||
             interfaceId == this.isAggregator.selector ||
             interfaceId == this.addEvaluator.selector ||
             interfaceId == this.isEvaluator.selector;
-    }
-}
-
-contract InitializableFLAccessControl is FLAccessControl {
-    function initialize(
-        address aggregator,
-        address[] memory trainers
-    ) public initializer {
-        __FLAccessControl_init(aggregator, trainers);
     }
 }

@@ -7,6 +7,8 @@ import {SwarmCore} from "../../../src/swarm/registry/SwarmCore.sol";
 import {AlwaysSampled} from "../../../src/sampling/AlwaysSampled.sol";
 import {ISelector} from "../../../src/sampling/ISelector.sol";
 import {IContributionCalculator} from "../../../src/contribution/types.sol";
+import {IAccessControl} from "../../../src/access/IAccessControl.sol";
+import {ICompensation} from "../../../src/compensation/types.sol";
 import {IERC165} from "@openzeppelin-contracts-5.2.0/utils/introspection/IERC165.sol";
 
 /// @title MockEvaluatorSelector
@@ -31,6 +33,16 @@ contract MockSwarmCore is SwarmCore {
     /// @notice Expose the internal _updateContributionCalculator function for testing
     function updateContributionCalculator(address newContributionCalculator) external {
         _updateContributionCalculator(newContributionCalculator);
+    }
+
+    /// @notice Expose the internal _updateAccessControl function for testing
+    function updateAccessControl(address newAccessControl) external {
+        _updateAccessControl(newAccessControl);
+    }
+
+    /// @notice Expose the internal _updateCompensation function for testing
+    function updateCompensation(address newCompensation) external {
+        _updateCompensation(newCompensation);
     }
 }
 
@@ -65,6 +77,46 @@ contract MockContributionCalculator {
     }
 }
 
+/// @title MockAccessControl
+/// @notice Mock contract that implements IAccessControl interface
+contract MockAccessControl {
+    function isTrainer(address trainer) external view returns (bool) {
+        return true;
+    }
+    
+    function isAggregator(address aggregator) external view returns (bool) {
+        return true;
+    }
+    
+    function isEvaluator(address evaluator) external view returns (bool) {
+        return true;
+    }
+    
+    function eip712Domain() external view returns (bytes1 fields, string memory name, string memory version, uint256 chainId, address verifyingContract, bytes32 salt, uint256[] memory extensions) {
+        return (0x0, "MockAccessControl", "1", block.chainid, address(this), bytes32(0), new uint256[](0));
+    }
+    
+    function supportsInterface(bytes4 interfaceId) external view returns (bool) {
+        return true;
+    }
+}
+
+/// @title MockCompensation
+/// @notice Mock contract that implements ICompensation interface
+contract MockCompensation {
+    function distribute(address[] memory recipients, uint64[] memory contributions) external {
+        // Mock implementation - does nothing
+    }
+    
+    function eip712Domain() external view returns (bytes1 fields, string memory name, string memory version, uint256 chainId, address verifyingContract, bytes32 salt, uint256[] memory extensions) {
+        return (0x0, "MockCompensation", "1", block.chainid, address(this), bytes32(0), new uint256[](0));
+    }
+    
+    function supportsInterface(bytes4 interfaceId) external view returns (bool) {
+        return true;
+    }
+}
+
 contract SwarmCoreTest is Test {
     MockSwarmCore public implementation;
     ERC1967Proxy public proxy;
@@ -72,11 +124,15 @@ contract SwarmCoreTest is Test {
     AlwaysSampled public alwaysSampled;
     MockSelector public mockEvaluatorSelector;
     MockContributionCalculator public mockContributionCalculator;
+    MockAccessControl public mockAccessControl;
+    MockCompensation public mockCompensation;
     MockInvalidSelector public invalidEvaluatorSelector;
 
     event TrainerSelectorUpdated(address indexed previousSelector, address indexed newSelector);
     event EvaluatorSelectorUpdated(address indexed previousSelector, address indexed newSelector);
     event ContributionCalculatorUpdated(address indexed previousCalculator, address indexed newCalculator);
+    event AccessControlUpdated(address indexed previousAccessControl, address indexed newAccessControl);
+    event CompensationUpdated(address indexed previousCompensation, address indexed newCompensation);
 
     function setUp() public {
         // Deploy contracts
@@ -84,6 +140,8 @@ contract SwarmCoreTest is Test {
         alwaysSampled = new AlwaysSampled();
         mockEvaluatorSelector = new MockSelector();
         mockContributionCalculator = new MockContributionCalculator();
+        mockAccessControl = new MockAccessControl();
+        mockCompensation = new MockCompensation();
         invalidEvaluatorSelector = new MockInvalidSelector();
         
         // Deploy proxy
@@ -91,7 +149,9 @@ contract SwarmCoreTest is Test {
             SwarmCore.initialize.selector,
             address(alwaysSampled),
             address(mockEvaluatorSelector),
-            address(mockContributionCalculator)
+            address(mockContributionCalculator),
+            address(mockAccessControl),
+            address(mockCompensation)
         );
         proxy = new ERC1967Proxy(address(implementation), initData);
         swarmCore = MockSwarmCore(address(proxy));
@@ -119,10 +179,22 @@ contract SwarmCoreTest is Test {
         assertEq(contributionCalculator, address(mockContributionCalculator), "Contribution calculator should be set to MockContributionCalculator");
     }
 
+    function test_initialize_setsAccessControl() public view {
+        // Test that initialize sets the access control correctly
+        address accessControl = swarmCore.getAccessControl();
+        assertEq(accessControl, address(mockAccessControl), "Access control should be set to MockAccessControl");
+    }
+
+    function test_initialize_setsCompensation() public view {
+        // Test that initialize sets the compensation correctly
+        address compensation = swarmCore.getCompensation();
+        assertEq(compensation, address(mockCompensation), "Compensation should be set to MockCompensation");
+    }
+
     function test_initialize_canOnlyBeCalledOnce() public {
         // Test that initialize cannot be called twice
         vm.expectRevert();
-        swarmCore.initialize(address(alwaysSampled), address(mockEvaluatorSelector), address(mockContributionCalculator));
+        swarmCore.initialize(address(alwaysSampled), address(mockEvaluatorSelector), address(mockContributionCalculator), address(mockAccessControl), address(mockCompensation));
     }
 
     function test_getTrainerSelector_returnsCorrectAddress() public view {
@@ -141,6 +213,18 @@ contract SwarmCoreTest is Test {
         // Test that getContributionCalculator returns the correct address
         address contributionCalculator = swarmCore.getContributionCalculator();
         assertEq(contributionCalculator, address(mockContributionCalculator), "Should return the correct contribution calculator address");
+    }
+
+    function test_getAccessControl_returnsCorrectAddress() public view {
+        // Test that getAccessControl returns the correct address
+        address accessControl = swarmCore.getAccessControl();
+        assertEq(accessControl, address(mockAccessControl), "Should return the correct access control address");
+    }
+
+    function test_getCompensation_returnsCorrectAddress() public view {
+        // Test that getCompensation returns the correct address
+        address compensation = swarmCore.getCompensation();
+        assertEq(compensation, address(mockCompensation), "Should return the correct compensation address");
     }
 
     function test_updateTrainerSelector_updatesStorage() public {
@@ -202,6 +286,52 @@ contract SwarmCoreTest is Test {
         swarmCore.updateEvaluatorSelector(newEvaluatorSelector);
     }
 
+    function test_updateAccessControl_updatesStorage() public {
+        // Test that _updateAccessControl updates the storage correctly
+        address newAccessControl = address(new MockAccessControl());
+
+        vm.expectEmit(true, true, false, false);
+        emit AccessControlUpdated(address(mockAccessControl), newAccessControl);
+        
+        swarmCore.updateAccessControl(newAccessControl);
+        
+        address updatedAccessControl = swarmCore.getAccessControl();
+        assertEq(updatedAccessControl, newAccessControl, "Access control should be updated");
+    }
+
+    function test_updateCompensation_updatesStorage() public {
+        // Test that _updateCompensation updates the storage correctly
+        address newCompensation = address(new MockCompensation());
+
+        vm.expectEmit(true, true, false, false);
+        emit CompensationUpdated(address(mockCompensation), newCompensation);
+        
+        swarmCore.updateCompensation(newCompensation);
+        
+        address updatedCompensation = swarmCore.getCompensation();
+        assertEq(updatedCompensation, newCompensation, "Compensation should be updated");
+    }
+
+    function test_updateAccessControl_emitsEvent() public {
+        // Test that _updateAccessControl emits the correct event
+        address newAccessControl = address(new MockAccessControl());
+        
+        vm.expectEmit(true, true, false, false);
+        emit AccessControlUpdated(address(mockAccessControl), newAccessControl);
+        
+        swarmCore.updateAccessControl(newAccessControl);
+    }
+
+    function test_updateCompensation_emitsEvent() public {
+        // Test that _updateCompensation emits the correct event
+        address newCompensation = address(new MockCompensation());
+        
+        vm.expectEmit(true, true, false, false);
+        emit CompensationUpdated(address(mockCompensation), newCompensation);
+        
+        swarmCore.updateCompensation(newCompensation);
+    }
+
     // ============================================================================
     // INTERFACE VALIDATION TESTS
     // ============================================================================
@@ -234,6 +364,34 @@ contract SwarmCoreTest is Test {
         swarmCore.updateEvaluatorSelector(address(0));
     }
 
+    function test_updateAccessControl_validatesInterfaceSupport() public {
+        // Test that _updateAccessControl validates interface support
+        address newAccessControl = address(invalidEvaluatorSelector);
+        
+        vm.expectRevert(SwarmCore.InvalidAccessControl.selector);
+        swarmCore.updateAccessControl(newAccessControl);
+    }
+
+    function test_updateCompensation_validatesInterfaceSupport() public {
+        // Test that _updateCompensation validates interface support
+        address newCompensation = address(invalidEvaluatorSelector);
+        
+        vm.expectRevert(SwarmCore.InvalidCompensation.selector);
+        swarmCore.updateCompensation(newCompensation);
+    }
+
+    function test_updateAccessControl_rejectsZeroAddress() public {
+        // Test that _updateAccessControl rejects zero address
+        vm.expectRevert(SwarmCore.InvalidAccessControl.selector);
+        swarmCore.updateAccessControl(address(0));
+    }
+
+    function test_updateCompensation_rejectsZeroAddress() public {
+        // Test that _updateCompensation rejects zero address
+        vm.expectRevert(SwarmCore.InvalidCompensation.selector);
+        swarmCore.updateCompensation(address(0));
+    }
+
     function test_updateTrainerSelector_acceptsValidInterface() public {
         // Test that _updateTrainerSelector accepts valid interface implementation
         address newTrainerSelector = address(new AlwaysSampled());
@@ -252,6 +410,26 @@ contract SwarmCoreTest is Test {
         
         address updatedSelector = swarmCore.getEvaluatorSelector();
         assertEq(updatedSelector, newEvaluatorSelector, "Should accept valid interface implementation");
+    }
+
+    function test_updateAccessControl_acceptsValidInterface() public {
+        // Test that _updateAccessControl accepts valid interface implementation
+        address newAccessControl = address(new MockAccessControl());
+
+        swarmCore.updateAccessControl(newAccessControl);
+        
+        address updatedAccessControl = swarmCore.getAccessControl();
+        assertEq(updatedAccessControl, newAccessControl, "Should accept valid interface implementation");
+    }
+
+    function test_updateCompensation_acceptsValidInterface() public {
+        // Test that _updateCompensation accepts valid interface implementation
+        address newCompensation = address(new MockCompensation());
+
+        swarmCore.updateCompensation(newCompensation);
+        
+        address updatedCompensation = swarmCore.getCompensation();
+        assertEq(updatedCompensation, newCompensation, "Should accept valid interface implementation");
     }
 
     // ============================================================================

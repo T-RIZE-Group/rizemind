@@ -2,11 +2,14 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
+import {ERC1967Proxy} from "@openzeppelin-contracts-5.2.0/proxy/ERC1967/ERC1967Proxy.sol";
 
-import {InitializableFLAccessControl} from "@rizemind-contracts/access/FLAccessControl.sol";
+import {BaseAccessControl} from "@rizemind-contracts/access/BaseAccessControl.sol";
 
-contract InitializableFLAccessControlTest is Test {
-    InitializableFLAccessControl public accessControl;
+contract BaseAccessControlTest is Test {
+    BaseAccessControl public implementation;
+    ERC1967Proxy public proxy;
+    BaseAccessControl public accessControl;
     address public aggregator;
     address[] public trainers;
     address public nonTrainer;
@@ -23,11 +26,23 @@ contract InitializableFLAccessControlTest is Test {
         nonTrainer = vm.addr(5);
         evaluator = vm.addr(6);
         anotherAggregator = vm.addr(7);
-        // Deploy the contract as aggregator and initialize it.
-        vm.prank(aggregator);
-        accessControl = new InitializableFLAccessControl();
-        vm.prank(aggregator);
-        accessControl.initialize(aggregator, trainers);
+        
+        // Deploy implementation contract
+        implementation = new BaseAccessControl();
+        
+        // Prepare initial evaluators array
+        address[] memory initialEvaluators = new address[](1);
+        initialEvaluators[0] = evaluator;
+        
+        // Deploy proxy with initialization data
+        bytes memory initData = abi.encodeWithSelector(
+            BaseAccessControl.initialize.selector,
+            aggregator,
+            trainers,
+            initialEvaluators
+        );
+        proxy = new ERC1967Proxy(address(implementation), initData);
+        accessControl = BaseAccessControl(address(proxy));
     }
 
     function testIsTrainer() public view {
@@ -188,8 +203,26 @@ contract InitializableFLAccessControlTest is Test {
     }
 
     function testInitializeRevertsIfCalledTwice() public {
+        address[] memory initialEvaluators = new address[](1);
+        initialEvaluators[0] = evaluator;
+        
         vm.prank(aggregator);
         vm.expectRevert();
-        accessControl.initialize(aggregator, trainers);
+        accessControl.initialize(aggregator, trainers, initialEvaluators);
+    }
+
+    function testVersionIsSetOnImplementationAndProxy() public view {
+        // Test that version can be read from implementation before proxy initialization
+        (bytes1 fields, string memory name, string memory version, uint256 chainId, address verifyingContract, bytes32 salt, uint256[] memory extensions) = implementation.eip712Domain();
+
+        assertEq(name, "BaseAccessControl", "Implementation name should be BaseAccessControl");
+        assertEq(version, "base-access-control-v1.0.0", "Implementation version should be base-access-control-v1.0.0");
+
+        // Test that version can be read from proxy before initialization
+        (bytes1 proxyFields, string memory proxyName, string memory proxyVersion, uint256 proxyChainId, address proxyVerifyingContract, bytes32 proxySalt, uint256[] memory proxyExtensions) = accessControl.eip712Domain();
+        
+        assertEq(proxyName, "BaseAccessControl", "Proxy name should be BaseAccessControl");
+        assertEq(proxyVersion, "base-access-control-v1.0.0", "Proxy version should be base-access-control-v1.0.0");
+
     }
 }

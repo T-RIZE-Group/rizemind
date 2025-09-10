@@ -10,6 +10,7 @@ contract RoundTrainerRegistry is Initializable {
     struct TrainerInfo {
         uint256 id; // Trainer's assigned ID
         bytes32 modelHash; // Hash of the trainer's model
+        bool rewardsClaimed; // Whether the trainer has claimed their rewards
     }
 
     /// @dev Structure to store trainers for a specific round
@@ -73,7 +74,8 @@ contract RoundTrainerRegistry is Initializable {
             trainerId = ++roundTrainers.count;
             roundTrainers.trainers[trainer] = TrainerInfo({
                 id: trainerId,
-                modelHash: modelHash
+                modelHash: modelHash,
+                rewardsClaimed: false
             });
             emit TrainerRegistered(roundId, trainer, trainerId);
         } else {
@@ -169,6 +171,23 @@ contract RoundTrainerRegistry is Initializable {
     function isTrainerRegistered(uint256 roundId, address trainer) public view returns (bool) {
         RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
         return $.roundTrainers[roundId].trainers[trainer].id > 0;
+    }
+
+    /// @notice Set the rewards claimed status for a trainer
+    /// @param roundId The round ID
+    /// @param trainer The trainer address
+    function _setClaimedRewards(uint256 roundId, address trainer) internal {
+        RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
+        $.roundTrainers[roundId].trainers[trainer].rewardsClaimed = true;
+    }
+
+    /// @notice Check if a trainer has claimed their rewards for a round
+    /// @param roundId The round ID
+    /// @param trainer The trainer address
+    /// @return True if the trainer has claimed their rewards
+    function hasClaimedRewards(uint256 roundId, address trainer) public view returns (bool) {
+        RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
+        return $.roundTrainers[roundId].trainers[trainer].rewardsClaimed;
     }
 
     /// @notice Returns a pointer to the storage namespace
