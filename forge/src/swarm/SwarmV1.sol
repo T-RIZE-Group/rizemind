@@ -2,11 +2,8 @@
 pragma solidity ^0.8.20;
 
 import {EIP712Upgradeable} from "@openzeppelin-contracts-upgradeable-5.2.0/utils/cryptography/EIP712Upgradeable.sol";
-import {ContextUpgradeable} from "@openzeppelin-contracts-upgradeable-5.2.0/utils/ContextUpgradeable.sol";
 import {IERC165} from "@openzeppelin-contracts-5.2.0/utils/introspection/IERC165.sol";
-
 import {IAccessControl} from "../access/IAccessControl.sol";
-import {SimpleMintCompensation} from "../compensation/SimpleMintCompensation.sol";
 import {RoundTraining} from "../training/RoundTraining.sol";
 import {CertificateRegistry} from "./registry/CertificateRegistry.sol";
 import {SwarmCore} from "./registry/SwarmCore.sol";
