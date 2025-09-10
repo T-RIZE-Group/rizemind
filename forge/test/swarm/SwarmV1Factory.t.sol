@@ -216,7 +216,7 @@ contract SwarmV1FactoryTest is Test {
         
         SwarmV1Factory.CalculatorParams memory calculatorParams = SwarmV1Factory.CalculatorParams({
             id: CALCULATOR_ID,
-            initData: abi.encodeWithSelector(ContributionCalculator.initialize.selector, aggregator)
+            initData: abi.encodeWithSelector(ContributionCalculator.initialize.selector, aggregator, 2)
         });
         
         return SwarmV1Factory.SwarmParams({

@@ -22,7 +22,7 @@ contract ContributionCalculatorTest is Test {
         // Deploy proxy
         bytes memory initData = abi.encodeWithSelector(
             ContributionCalculator.initialize.selector,
-            admin
+            admin,2
         );
         
         ERC1967Proxy proxy = new ERC1967Proxy(

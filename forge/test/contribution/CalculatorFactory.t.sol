@@ -61,7 +61,8 @@ contract CalculatorFactoryTest is Test {
         // Encode initialization data
         bytes memory initData = abi.encodeWithSelector(
             ContributionCalculator.initialize.selector,
-            initialAdmin
+            initialAdmin,
+            3
         );
         
         // Create calculator instance
