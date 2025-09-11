@@ -18,3 +18,6 @@ class TrainMetricHistory(BaseModel):
             if metric not in self.history:
                 self.history[metric] = []
             self.history[metric].append(float(v))
+
+    def items(self):
+        return self.history.items()
