@@ -78,8 +78,6 @@ class SelectorFactoryContract(BaseContract, HasAccount):
             The transaction hash of the creation transaction
         """
         account = self.get_account()
-        if account is None:
-            raise ValueError("Account is required to create selector")
 
         tx = self.contract.functions.createSelector(
             selector_id, salt, init_data
