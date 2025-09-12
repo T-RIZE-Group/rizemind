@@ -1,9 +1,8 @@
 import os
 from pathlib import Path
-from typing import Unpack, cast
+from typing import Unpack
 
 from eth_account.signers.base import BaseAccount
-from eth_account.types import TransactionDictType
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes
 from pydantic import BaseModel, Field
@@ -97,18 +96,12 @@ class AccessControlFactoryContract(BaseContract, HasAccount):
         """
         account = self.get_account()
 
-        tx = self.contract.functions.createAccessControl(
-            access_control_id, salt, init_data
-        ).build_transaction(
-            {
-                "from": account.address,
-                "nonce": self.w3.eth.get_transaction_count(account.address),
-            }
+        return self.send(
+            tx_fn=self.contract.functions.createAccessControl(
+                access_control_id, salt, init_data
+            ),
+            from_account=account,
         )
-
-        signed = account.sign_transaction(cast(TransactionDictType, tx))
-        tx_hash = self.w3.eth.send_raw_transaction(signed.raw_transaction)
-        return tx_hash
 
     def get_deployed_access_control(
         self, access_control_deploy_tx: HexBytes
@@ -133,13 +126,15 @@ class AccessControlFactoryContract(BaseContract, HasAccount):
         """Check if an access control version is registered."""
         return self.contract.functions.isAccessControlVersionRegistered(version).call()
 
-    def get_access_control_implementation(self, access_control_id: HexBytes) -> str:
+    def get_access_control_implementation(
+        self, access_control_id: HexBytes
+    ) -> ChecksumAddress:
         """Get the implementation address for an access control ID."""
         return self.contract.functions.getAccessControlImplementation(
             access_control_id
         ).call()
 
-    def register_access_control_implementation(self, implementation: str) -> str:
+    def register_access_control_implementation(self, implementation: str) -> HexBytes:
         """
         Register a new access control implementation.
 
@@ -150,25 +145,17 @@ class AccessControlFactoryContract(BaseContract, HasAccount):
             The transaction hash of the registration transaction
         """
         account = self.get_account()
-        if account is None:
-            raise ValueError(
-                "Account is required to register access control implementation"
-            )
 
-        tx = self.contract.functions.registerAccessControlImplementation(
-            implementation
-        ).build_transaction(
-            {
-                "from": account.address,
-                "nonce": self.w3.eth.get_transaction_count(account.address),
-            }
+        return self.send(
+            tx_fn=self.contract.functions.registerAccessControlImplementation(
+                implementation
+            ),
+            from_account=account,
         )
 
-        signed = account.sign_transaction(cast(TransactionDictType, tx))
-        tx_hash = self.w3.eth.send_raw_transaction(signed.raw_transaction)
-        return tx_hash.hex()
-
-    def remove_access_control_implementation(self, access_control_id: HexBytes) -> str:
+    def remove_access_control_implementation(
+        self, access_control_id: HexBytes
+    ) -> HexBytes:
         """
         Remove an access control implementation.
 
@@ -180,18 +167,12 @@ class AccessControlFactoryContract(BaseContract, HasAccount):
         """
         account = self.get_account()
 
-        tx = self.contract.functions.removeAccessControlImplementation(
-            access_control_id
-        ).build_transaction(
-            {
-                "from": account.address,
-                "nonce": self.w3.eth.get_transaction_count(account.address),
-            }
+        return self.send(
+            tx_fn=self.contract.functions.removeAccessControlImplementation(
+                access_control_id
+            ),
+            from_account=account,
         )
-
-        signed = account.sign_transaction(cast(TransactionDictType, tx))
-        tx_hash = self.w3.eth.send_raw_transaction(signed.raw_transaction)
-        return tx_hash.hex()
 
     @staticmethod
     def from_address(

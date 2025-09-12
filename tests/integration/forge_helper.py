@@ -114,6 +114,8 @@ def start_anvil(
         str(chain_id),
         "--port",
         str(port),
+        "--block-time",
+        "1",
     ]
     if extra_args:
         cmd.extend(extra_args)
@@ -121,6 +123,7 @@ def start_anvil(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
     )
     w3 = Web3(Web3.HTTPProvider(f"http://127.0.0.1:{port}"))
+
     for _ in range(wait * 10):
         if w3.is_connected():
             break
@@ -216,12 +219,15 @@ def run_script(
         f"{account}",
     ]
 
-    _run(cmd, cwd=str(forge_project_root) if forge_project_root else None, env=env)
+    try:
+        _run(cmd, cwd=str(forge_project_root) if forge_project_root else None, env=env)
+    except Exception as e:
+        raise ValueError(f"Failed to run{' '.join(cmd)}") from e
 
     w3 = Web3(Web3.HTTPProvider(rpc_url))
     chain_id = w3.eth.chain_id
 
-    filename = Path(script_path).name
+    filename = Path(script_path).name.split(":")[0]
     return (
         Path(forge_project_root)
         / "broadcast"

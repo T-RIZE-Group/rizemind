@@ -1,10 +1,10 @@
 import os
 from pathlib import Path
-from typing import Unpack, cast
+from typing import Unpack
 
 from eth_account.signers.base import BaseAccount
-from eth_account.types import TransactionDictType
 from eth_typing import ChecksumAddress
+from hexbytes import HexBytes
 from rizemind.contracts.abi import encode_with_selector
 from rizemind.contracts.abi_helper import load_abi
 from rizemind.contracts.access_control.access_control_factory import AccessControlConfig
@@ -14,7 +14,6 @@ from rizemind.contracts.base_contract import (
 )
 from rizemind.contracts.erc.erc5267.erc5267 import ERC5267
 from rizemind.contracts.has_account import HasAccount
-from hexbytes import HexBytes
 from web3.contract import Contract
 
 
@@ -68,67 +67,45 @@ class BaseAccessControl(ERC5267, HasAccount):
         aggregator: ChecksumAddress,
         trainers: list[ChecksumAddress],
         evaluators: list[ChecksumAddress],
-    ) -> str:
+    ) -> HexBytes:
         """Initialize the BaseAccessControl contract with aggregator, trainers, and evaluators."""
         account = self.get_account()
 
-        tx = self.contract.functions.initialize(
-            aggregator, trainers, evaluators
-        ).build_transaction(
-            {
-                "from": account.address,
-                "nonce": self.w3.eth.get_transaction_count(account.address),
-            }
+        return self.send(
+            tx_fn=self.contract.functions.initialize(aggregator, trainers, evaluators),
+            from_account=account,
         )
-        signed = account.sign_transaction(cast(TransactionDictType, tx))
-        tx_hash = self.w3.eth.send_raw_transaction(signed.raw_transaction)
-        return tx_hash.hex()
 
     def is_evaluator(self, address: ChecksumAddress) -> bool:
         """Check if an address is an evaluator."""
         return self.contract.functions.isEvaluator(address).call()
 
-    def add_trainer(self, trainer: ChecksumAddress) -> str:
+    def add_trainer(self, trainer: ChecksumAddress) -> HexBytes:
         """Add a new trainer (only callable by aggregator)."""
         account = self.get_account()
 
-        tx = self.contract.functions.addTrainer(trainer).build_transaction(
-            {
-                "from": account.address,
-                "nonce": self.w3.eth.get_transaction_count(account.address),
-            }
+        return self.send(
+            tx_fn=self.contract.functions.addTrainer(trainer),
+            from_account=account,
         )
-        signed = account.sign_transaction(cast(TransactionDictType, tx))
-        tx_hash = self.w3.eth.send_raw_transaction(signed.raw_transaction)
-        return tx_hash.hex()
 
-    def add_aggregator(self, aggregator: ChecksumAddress) -> str:
+    def add_aggregator(self, aggregator: ChecksumAddress) -> HexBytes:
         """Add a new aggregator (only callable by existing aggregator)."""
         account = self.get_account()
 
-        tx = self.contract.functions.addAggregator(aggregator).build_transaction(
-            {
-                "from": account.address,
-                "nonce": self.w3.eth.get_transaction_count(account.address),
-            }
+        return self.send(
+            tx_fn=self.contract.functions.addAggregator(aggregator),
+            from_account=account,
         )
-        signed = account.sign_transaction(cast(TransactionDictType, tx))
-        tx_hash = self.w3.eth.send_raw_transaction(signed.raw_transaction)
-        return tx_hash.hex()
 
-    def add_evaluator(self, evaluator: ChecksumAddress) -> str:
+    def add_evaluator(self, evaluator: ChecksumAddress) -> HexBytes:
         """Add a new evaluator (only callable by aggregator)."""
         account = self.get_account()
 
-        tx = self.contract.functions.addEvaluator(evaluator).build_transaction(
-            {
-                "from": account.address,
-                "nonce": self.w3.eth.get_transaction_count(account.address),
-            }
+        return self.send(
+            tx_fn=self.contract.functions.addEvaluator(evaluator),
+            from_account=account,
         )
-        signed = account.sign_transaction(cast(TransactionDictType, tx))
-        tx_hash = self.w3.eth.send_raw_transaction(signed.raw_transaction)
-        return tx_hash.hex()
 
     def supports_interface(self, interface_id: str) -> bool:
         """Check if the contract supports a specific interface."""

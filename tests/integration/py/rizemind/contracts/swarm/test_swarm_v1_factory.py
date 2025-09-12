@@ -26,8 +26,9 @@ def factory_config(anvil: AnvilContext):
         account=deployer.address,
     )
     artifact_path = run_script(
-        "script/deployments/SwarmV1Factory.s.sol",
+        "script/integrations/Deploy.s.sol",
         account=deployer.address,
+        env={"OWNER": deployer.address},
     )
     factory_config = SwarmV1FactoryConfig(
         name="test", local_factory_deployment_path=str(artifact_path)
