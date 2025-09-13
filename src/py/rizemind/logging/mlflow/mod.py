@@ -1,11 +1,11 @@
 import time
-from logging import warning
+from logging import WARNING
 from typing import cast
 
 import mlflow
 import pandas as pd
 from flwr.client.typing import ClientAppCallable
-from flwr.common import Context
+from flwr.common import Context, log
 from flwr.common.constant import MessageType
 from flwr.common.message import Message
 from flwr.common.recorddict_compat import recorddict_to_fitres
@@ -39,7 +39,10 @@ def mlflow_mod(msg: Message, ctx: Context, app: ClientAppCallable) -> Message:
 
     mlflow_config = MLFlowConfig.from_context(ctx=ctx)
     if mlflow_config is None:
-        warning("mlflow config was not found in client context, skipping logging.")
+        log(
+            level=WARNING,
+            msg="mlflow config was not found in client context, skipping logging.",
+        )
         return reply
 
     mlflow.set_tracking_uri(mlflow_config.mlflow_uri)

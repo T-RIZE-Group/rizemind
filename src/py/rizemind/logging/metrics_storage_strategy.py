@@ -1,7 +1,15 @@
 from enum import Enum
-from logging import warning
+from logging import WARNING
 
-from flwr.common import EvaluateIns, EvaluateRes, FitIns, FitRes, Parameters, Scalar
+from flwr.common import (
+    EvaluateIns,
+    EvaluateRes,
+    FitIns,
+    FitRes,
+    Parameters,
+    Scalar,
+    log,
+)
 from flwr.server import ClientManager
 from flwr.server.strategy import Strategy
 from rizemind.authentication.eth_account_strategy import ClientProxy
@@ -50,7 +58,10 @@ class MetricsStorageStrategy(Strategy):
         )
         if self.save_best_model:
             if parameters is None:
-                warning("No model parameter provided, best model will not be saved.")
+                log(
+                    level=WARNING,
+                    msg="No model parameter provided, best model will not be saved.",
+                )
             else:
                 self.metrics_storage.update_current_round_model(parameters)
         if MetricPhases.AGGREGATE_FIT in self.enabled_metric_phases:
