@@ -22,6 +22,7 @@ dependencies = [
     "brotli>=1.1.0",
     "zstandard>=0.23.0",
     "eth-tester>=0.13.0b1",
+    "mlflow>=3.3.2",
 ]
 
 [project.scripts]
