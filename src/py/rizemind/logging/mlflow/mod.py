@@ -85,7 +85,7 @@ def mlflow_mod(msg: Message, ctx: Context, app: ClientAppCallable) -> Message:
             mlflow.log_metric(key="training_time", value=time_diff, step=server_round)
 
             # Get metrics and log them
-            fit_res = recorddict_to_fitres(reply.content, keep_input=False)
+            fit_res = recorddict_to_fitres(reply.content, keep_input=True)
             train_metric_history_encoded = cast(
                 str, fit_res.metrics.get("train_metric_history")
             )
