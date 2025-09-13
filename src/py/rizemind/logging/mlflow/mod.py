@@ -42,15 +42,17 @@ def mlflow_mod(msg: Message, ctx: Context, app: ClientAppCallable) -> Message:
         warning("mlflow config was not found in client context, skipping logging.")
         return reply
 
+    mlflow.set_tracking_uri(mlflow_config.mlflow_uri)
+    mlflow_experiment_name = mlflow_config.experiment_name
     mlflow_run_name = f"{mlflow_config.run_name}_client_id_{ctx.node_id}"
 
     if msg.metadata.message_type == MessageType.TRAIN:
-        mlflow.set_experiment("RealMLP-Federated")
+        mlflow.set_experiment(experiment_name=mlflow_experiment_name)
 
         runs_df = cast(
             pd.DataFrame,
             mlflow.search_runs(
-                experiment_names=["RealMLP-Federated"],
+                experiment_names=[mlflow_experiment_name],
                 filter_string=f"tags.mlflow.runName = '{mlflow_run_name}'",
                 run_view_type=ViewType.ALL,
                 order_by=["attributes.end_time DESC"],
