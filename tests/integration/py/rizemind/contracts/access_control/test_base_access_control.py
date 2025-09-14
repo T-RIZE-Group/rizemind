@@ -1,5 +1,3 @@
-import os
-
 import pytest
 from eth_typing import ChecksumAddress
 from rizemind.contracts.access_control.access_control_factory import (

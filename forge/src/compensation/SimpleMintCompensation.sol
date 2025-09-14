@@ -59,6 +59,11 @@ contract SimpleMintCompensation is ERC20Upgradeable, ICompensation, EIP712, Acce
         _distribute(roundId, recipients, contributions);
     }
 
+    function getTargetRewardsPerRound() external view returns (uint256) {
+        SimpleMintCompensationStorage storage $ = _getSimpleMintCompensationStorage();
+        return $.targetRewardsPerRound;
+    }
+
     function _distribute(
         uint256 roundId,
         address[] memory recipients,

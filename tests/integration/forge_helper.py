@@ -116,6 +116,8 @@ def start_anvil(
         str(port),
         "--block-time",
         "1",
+        "--accounts",
+        "100",
     ]
     if extra_args:
         cmd.extend(extra_args)

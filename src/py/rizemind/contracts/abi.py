@@ -36,8 +36,6 @@ def decode_events_from_tx(
     contract_addr = event.address.lower()
     receipt = w3.eth.wait_for_transaction_receipt(deploy_tx)
     # Filter logs by address + topic0 to avoid MismatchedABI warnings.
-    print("logs", receipt["logs"])
-    print("topic0", topic0)
     candidate_logs: list[LogReceipt] = [
         log
         for log in receipt["logs"]
