@@ -131,7 +131,7 @@ contract SwarmV1Test is Test {
                 id: EVALUATOR_SELECTOR_ID,
                 initData: abi.encodeWithSelector(RandomSampling.initialize.selector, 1 ether) // 100% selection rate
             }),
-            calculatorFactory: SwarmV1Factory.CalculatorParams({
+            contributionCalculator: SwarmV1Factory.CalculatorParams({
                 id: CALCULATOR_ID,
                 initData: abi.encodeWithSelector(ContributionCalculator.initialize.selector, swarmAddress, 2)
             }),

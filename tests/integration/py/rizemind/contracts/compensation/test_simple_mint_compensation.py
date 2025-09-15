@@ -201,7 +201,6 @@ def test_eip712_domain(deploy_simple_mint_compensation: Deployment):
 def test_distribute_compensation(deploy_simple_mint_compensation: Deployment):
     """Test distributing compensation to multiple recipients."""
     compensation, admin, swarm_address, w3 = deploy_simple_mint_compensation
-    target_rewards = 1000000 * 10**18
     # Distribute with empty recipients (should not fail but do nothing)
     initial_supply = compensation.total_supply()
 

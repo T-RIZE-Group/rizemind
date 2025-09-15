@@ -102,7 +102,7 @@ class CompensationFactoryContract(BaseContract, HasAccount):
         self, compensation_deploy_tx: HexBytes
     ) -> ChecksumAddress:
         logs = decode_events_from_tx(
-            deploy_tx=compensation_deploy_tx,
+            tx_hash=compensation_deploy_tx,
             event=self.contract.events.CompensationInstanceCreated(),
             w3=self.w3,
         )

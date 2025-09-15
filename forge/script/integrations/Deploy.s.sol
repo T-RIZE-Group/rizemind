@@ -209,7 +209,7 @@ contract DeployAll is Script {
                 id: evaluatorSelectorId,
                 initData: abi.encodeWithSelector(RandomSampling.initialize.selector, 1 ether) // 100% selection rate
             }),
-            calculatorFactory: SwarmV1Factory.CalculatorParams({
+            contributionCalculator: SwarmV1Factory.CalculatorParams({
                 id: calculatorId,
                 initData: abi.encodeWithSelector(ContributionCalculator.initialize.selector, testSwarmAddress, 2)
             }),

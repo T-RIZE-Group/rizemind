@@ -1,6 +1,7 @@
 from eth_abi.abi import encode as abi_encode
 from hexbytes import HexBytes
 from web3 import Web3
+from web3.constants import ADDRESS_ZERO
 from web3.contract.contract import ContractEvent
 from web3.types import EventData, LogReceipt
 
@@ -13,36 +14,49 @@ def encode_with_selector(signature: str, arg_types: list[str], args: list) -> He
 
 def decode_events_from_tx(
     *,
-    deploy_tx: HexBytes,
+    tx_hash: HexBytes,
     event: ContractEvent,
     w3: Web3,
 ) -> list[EventData]:
     """
-    Return decoded instances of `event` found in `deploy_tx`, filtering by contract address and topic0.
+    Decode all instances of the given `event` emitted in the transaction `tx_hash`.
 
     Parameters
     ----------
-    deploy_tx : HexBytes
-        The transaction receipt (from `w3.eth.wait_for_transaction_receipt`).
+    tx_hash : HexBytes
+        Transaction hash to wait on and inspect (from `w3.eth.wait_for_transaction_receipt`).
     event : ContractEvent
-        Bound event class, e.g. `my_contract.events.AccessControlInstanceCreated`.
+        Bound event class (e.g., `my_contract.events.AccessControlInstanceCreated`).
+        Must have `.address` set (the emitting contract) and `.topic` (the event's topic0).
+    w3 : Web3
+        A Web3 instance.
 
     Returns
     -------
-    List[EventData]
+    list[EventData]
         Decoded event objects (each has `.args` with decoded fields).
     """
-    topic0 = Web3.to_bytes(hexstr=event.topic)
-    contract_addr = event.address.lower()
-    receipt = w3.eth.wait_for_transaction_receipt(deploy_tx)
-    # Filter logs by address + topic0 to avoid MismatchedABI warnings.
-    candidate_logs: list[LogReceipt] = [
-        log
-        for log in receipt["logs"]
-        if log["address"].lower() == contract_addr
-        and len(log.get("topics", [])) > 0
-        and log["topics"][0] == topic0
-    ]
+    # Resolve identifying filters
+    topic0 = Web3.to_bytes(hexstr=event.topic)  # canonical bytes for topic0
+    contract_address = Web3.to_checksum_address(event.address)
 
-    # Decode only the matching logs
+    # Fetch the transaction receipt once
+    receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+    # Pre-filter logs by contract address and topic0 to avoid MismatchedABI warnings
+    candidate_logs: list[LogReceipt] = []
+    for log in receipt["logs"]:
+        if (
+            Web3.to_checksum_address(log.get("address", ADDRESS_ZERO))
+            != contract_address
+        ):
+            continue
+
+        topics = log.get("topics", [])
+        if not topics:
+            continue
+        if topics[0] != topic0:
+            continue
+        candidate_logs.append(log)
+
+    # Decode the matching logs into EventData objects
     return [event().process_log(log) for log in candidate_logs]

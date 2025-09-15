@@ -104,7 +104,7 @@
             ]
           },
           {
-            "name": "calculatorFactory",
+            "name": "contributionCalculator",
             "type": "tuple",
             "internalType": "struct SwarmV1Factory.CalculatorParams",
             "components": [

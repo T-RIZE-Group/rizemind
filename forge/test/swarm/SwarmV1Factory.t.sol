@@ -259,7 +259,7 @@ contract SwarmV1FactoryTest is Test {
             swarm: swarmParams,
             trainerSelector: trainerSelectorParams,
             evaluatorSelector: evaluatorSelectorParams,
-            calculatorFactory: calculatorParams,
+            contributionCalculator: calculatorParams,
             accessControl: accessControlParams,
             compensation: compensationParams,
             trainingPhaseConfiguration: BaseTrainingPhases.TrainingPhaseConfiguration({

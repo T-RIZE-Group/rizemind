@@ -57,7 +57,7 @@ contract SwarmV1Factory is AccessControl {
         SwarmV1Params swarm;
         SelectorParams trainerSelector;
         SelectorParams evaluatorSelector;
-        CalculatorParams calculatorFactory;
+        CalculatorParams contributionCalculator;
         AccessControlParams accessControl;
         CompensationParams compensation;
         BaseTrainingPhases.TrainingPhaseConfiguration trainingPhaseConfiguration;
@@ -106,9 +106,9 @@ contract SwarmV1Factory is AccessControl {
 
         bytes32 saltCalculatorFactory = keccak256(abi.encodePacked(salt,"calculator-factory"));
         address calculatorFactory = CalculatorFactory(_calculatorFactory).createCalculator(
-            params.calculatorFactory.id,
+            params.contributionCalculator.id,
             saltCalculatorFactory,
-            params.calculatorFactory.initData
+            params.contributionCalculator.initData
         );
 
         bytes32 saltAccessControl = keccak256(abi.encodePacked(salt,"access-control"));

@@ -25,7 +25,7 @@ class BaseAccessControlConfig(AccessControlConfig):
     trainers: list[ChecksumAddress]
     evaluators: list[ChecksumAddress]
 
-    def get_init_data(self) -> HexBytes:
+    def get_init_data(self, *, swarm_address: ChecksumAddress) -> HexBytes:
         """
         Generate initialization data for BaseAccessControl.
 

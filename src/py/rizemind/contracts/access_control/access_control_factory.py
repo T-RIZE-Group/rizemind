@@ -42,7 +42,7 @@ class AccessControlConfig(BaseModel):
         """
         return get_id(f"{self.name}-v{self.version}")
 
-    def get_init_data(self) -> HexBytes:
+    def get_init_data(self, *, swarm_address: ChecksumAddress) -> HexBytes:
         """
         Generate initialization data for BaseAccessControl.
 
@@ -62,10 +62,12 @@ class AccessControlConfig(BaseModel):
 
     def get_access_control_params(
         self,
+        *,
+        swarm_address: ChecksumAddress,
     ) -> AccessControlParams:
         return AccessControlParams(
             id=self.get_access_control_id(),
-            init_data=self.get_init_data(),
+            init_data=self.get_init_data(swarm_address=swarm_address),
         )
 
 
@@ -107,7 +109,7 @@ class AccessControlFactoryContract(BaseContract, HasAccount):
         self, access_control_deploy_tx: HexBytes
     ) -> ChecksumAddress:
         logs = decode_events_from_tx(
-            deploy_tx=access_control_deploy_tx,
+            tx_hash=access_control_deploy_tx,
             event=self.contract.events.AccessControlInstanceCreated(),
             w3=self.w3,
         )

@@ -22,6 +22,7 @@ def deploy_access_control(anvil: AnvilContext):
     aggregator = anvil.account_conf.get_account(0)
     trainers = [anvil.account_conf.get_account(i).address for i in range(1, 4)]
     evaluators = [anvil.account_conf.get_account(i).address for i in range(4, 7)]
+    swarm_address = anvil.account_conf.get_account(7).address
     artifact_path = run_script(
         "script/integrations/Deploy.s.sol:DeployAll",
         account=aggregator.address,
@@ -41,7 +42,7 @@ def deploy_access_control(anvil: AnvilContext):
     deploy_tx = factory.create_access_control(
         access_control_id=config.get_access_control_id(),
         salt=w3.keccak(text="test-base-access-control"),
-        init_data=config.get_init_data(),
+        init_data=config.get_init_data(swarm_address=swarm_address),
     )
     ac = factory.get_deployed_access_control(deploy_tx)
     fl_access = BaseAccessControl.from_address(address=ac, w3=w3)

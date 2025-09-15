@@ -105,7 +105,7 @@ class CalculatorFactoryContract(BaseContract, HasAccount):
         self, calculator_deploy_tx: HexBytes
     ) -> ChecksumAddress:
         logs = decode_events_from_tx(
-            deploy_tx=calculator_deploy_tx,
+            tx_hash=calculator_deploy_tx,
             event=self.contract.events.CalculatorInstanceCreated(),
             w3=self.w3,
         )
