@@ -3,6 +3,8 @@ from typing import Literal
 from flwr.common import Scalar
 from pydantic import BaseModel
 
+TRAIN_METRIC_HISTORY_KEY = "rizemind.logging.train_metric_history"
+
 
 class TrainMetricHistory(BaseModel):
     history: dict[str, list[float]]
@@ -21,3 +23,10 @@ class TrainMetricHistory(BaseModel):
 
     def items(self):
         return self.history.items()
+
+    def serialize(self) -> dict[str, str]:
+        return {TRAIN_METRIC_HISTORY_KEY: self.model_dump_json()}
+
+    @classmethod
+    def deserialize(cls, serialized_train_metric_history: str) -> "TrainMetricHistory":
+        return TrainMetricHistory.model_validate_json(serialized_train_metric_history)

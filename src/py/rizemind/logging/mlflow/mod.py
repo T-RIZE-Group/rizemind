@@ -11,7 +11,10 @@ from flwr.common.message import Message
 from flwr.common.recorddict_compat import recorddict_to_fitres
 from mlflow.entities import RunStatus, ViewType
 from rizemind.logging.mlflow.config import MLFlowConfig
-from rizemind.logging.train_metric_history import TrainMetricHistory
+from rizemind.logging.train_metric_history import (
+    TRAIN_METRIC_HISTORY_KEY,
+    TrainMetricHistory,
+)
 
 ###
 # Mlflow Mod Organization
@@ -86,11 +89,11 @@ def mlflow_mod(msg: Message, ctx: Context, app: ClientAppCallable) -> Message:
 
             # Get metrics and log them
             fit_res = recorddict_to_fitres(reply.content, keep_input=True)
-            train_metric_history_encoded = cast(
-                str, fit_res.metrics.get("train_metric_history")
+            serialized_train_metric_history = cast(
+                str, fit_res.metrics.get(TRAIN_METRIC_HISTORY_KEY)
             )
-            train_metric_history = TrainMetricHistory.model_validate_json(
-                json_data=train_metric_history_encoded
+            train_metric_history = TrainMetricHistory.deserialize(
+                serialized_train_metric_history=serialized_train_metric_history
             )
             epochs_this_round = 0
             for metric, phases in train_metric_history.model_dump().items():
