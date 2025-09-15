@@ -4,7 +4,7 @@ from flwr.common import Context
 from rizemind.configuration.base_config import BaseConfig
 from rizemind.configuration.transform import unflatten
 
-MLFLOW_CONFIG_KEY = "mlflow.config"
+MLFLOW_CONFIG_KEY = "rizemind.mlflow.config"
 
 
 class MLFlowConfig(BaseConfig):
