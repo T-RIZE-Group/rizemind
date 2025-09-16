@@ -3,6 +3,9 @@ import os
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.criterion import Criterion
 
+from rizemind.authentication.authenticated_client_properties import (
+    AuthenticatedClientProperties,
+)
 from rizemind.authentication.signatures.auth import recover_auth_signer
 from rizemind.authentication.train_auth import (
     parse_train_auth_res,
@@ -38,6 +41,8 @@ class CanTrainCriterion(Criterion):
                 domain=self.domain,
                 signature=auth.signature,
             )
+            properties = AuthenticatedClientProperties(trainer_address=signer)
+            properties.tag_client(client)
             return self.swarm.can_train(signer, self.round_id)
         except (ParseException, ValueError):
             return False

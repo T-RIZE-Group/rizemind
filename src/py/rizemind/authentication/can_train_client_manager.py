@@ -36,7 +36,7 @@ class AndCriterion(Criterion):
         return future_a.result() and future_b.result()
 
 
-class AuthenticatedClientManager(ClientManager):
+class CanTrainClientManager(ClientManager):
     """Wraps another ClientManager and injects authentication Criterion."""
 
     round_id: int

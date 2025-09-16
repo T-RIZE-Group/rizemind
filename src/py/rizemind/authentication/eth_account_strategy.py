@@ -3,11 +3,11 @@ from flwr.common.typing import FitRes
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
 
-from rizemind.authentication.authenticated_client_manager import (
-    AuthenticatedClientManager,
-)
 from rizemind.authentication.authenticated_client_properties import (
     AuthenticatedClientProperties,
+)
+from rizemind.authentication.can_train_client_manager import (
+    CanTrainClientManager,
 )
 from rizemind.authentication.notary.model.config import (
     parse_model_notary_config,
@@ -81,7 +81,7 @@ class EthAccountStrategy(Strategy):
         return self.strat.initialize_parameters(client_manager)
 
     def configure_fit(self, server_round, parameters, client_manager):
-        auth_cm = AuthenticatedClientManager(client_manager, server_round, self.swarm)
+        auth_cm = CanTrainClientManager(client_manager, server_round, self.swarm)
         client_instructions = self.strat.configure_fit(
             server_round, parameters, auth_cm
         )
@@ -107,8 +107,6 @@ class EthAccountStrategy(Strategy):
         for client, res in results:
             try:
                 signer = self._recover_signer(res, server_round)
-                properties = AuthenticatedClientProperties(trainer_address=signer)
-                properties.tag_client(client)
                 if self.swarm.can_train(signer, server_round):
                     whitelisted.append((client, res))
                 else:
@@ -128,7 +126,7 @@ class EthAccountStrategy(Strategy):
         )
 
     def configure_evaluate(self, server_round, parameters, client_manager):
-        auth_cm = AuthenticatedClientManager(client_manager, server_round, self.swarm)
+        auth_cm = CanTrainClientManager(client_manager, server_round, self.swarm)
         return self.strat.configure_evaluate(server_round, parameters, auth_cm)
 
     def aggregate_evaluate(self, server_round, results, failures):
