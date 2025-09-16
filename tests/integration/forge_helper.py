@@ -116,11 +116,17 @@ def start_anvil(
         str(port),
         "--block-time",
         "1",
+        "--block-base-fee-per-gas",
+        "0",
+        "--gas-price",
+        "0",
+        "--disable-min-priority-fee",
         "--accounts",
         "100",
     ]
     if extra_args:
         cmd.extend(extra_args)
+
     proc: subprocess.Popen[str] = subprocess.Popen(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
     )
@@ -132,7 +138,7 @@ def start_anvil(
         time.sleep(0.1)
     else:
         proc.terminate()
-        raise RuntimeError("Anvil didn't start")
+        raise RuntimeError(f"Anvil didn't start {' '.join(cmd)}")
     if proc.poll() is not None:
         raise RuntimeError(
             f"Anvil failed to start. Output:\n{proc.stdout.read() if proc.stdout else ''}"
