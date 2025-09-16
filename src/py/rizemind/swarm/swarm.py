@@ -1,7 +1,7 @@
 from eth_account.signers.base import BaseAccount
 from eth_typing import ChecksumAddress
-from rizemind.contracts.access_control.fl_access_control.FlAccessControl import (
-    FlAccessControl,
+from rizemind.contracts.access_control.base_access_control.base_access_control import (
+    BaseAccessControl,
 )
 from rizemind.contracts.erc.erc5267.erc5267 import (
     ERC5267,
@@ -21,7 +21,7 @@ from web3 import Web3
 
 class Swarm:
     address: ChecksumAddress
-    access_control: FlAccessControl
+    access_control: BaseAccessControl
     training: RoundTraining
     swarm: SwarmV1
     contribution: TrainersContributedEventHelper
@@ -34,11 +34,13 @@ class Swarm:
     ) -> None:
         self.address = address
         self.w3 = w3
-        self.access_control = FlAccessControl.from_address(w3=w3, address=address)
+
+        self.swarm = SwarmV1.from_address(w3=w3, address=address, account=account)
+
+        self.access_control = BaseAccessControl.from_address(w3=w3, address=address)
         self.training = RoundTraining.from_address(
             w3=w3, address=address, account=account
         )
-        self.swarm = SwarmV1.from_address(w3=w3, address=address, account=account)
         self.contribution = TrainersContributedEventHelper.from_address(
             w3=w3, address=address
         )
@@ -48,7 +50,7 @@ class Swarm:
         )
 
     def can_train(self, trainer: ChecksumAddress, round_id: int) -> bool:
-        return self.access_control.is_trainer(trainer)
+        return self.swarm.can_train(trainer, round_id)
 
     def is_aggregator(self, trainer: ChecksumAddress, round_id: int) -> bool:
         return self.access_control.is_aggregator(trainer)

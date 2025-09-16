@@ -2,8 +2,9 @@ import json
 from pathlib import Path
 from typing import Any
 
-from eth_typing import ABIError
+from eth_typing import ABIError, ABIEvent, HexStr
 from eth_utils.abi import (
+    event_abi_to_log_topic,
     filter_abi_by_type,
     function_abi_to_4byte_selector,
 )
@@ -40,7 +41,22 @@ class ErrorRegistry:
         return self.errors[selector]
 
 
+class EventsRegistry:
+    events: dict[HexStr, ABIEvent]
+
+    def __init__(self):
+        self.events = {}
+
+    def register(self, event: ABIEvent):
+        topic = event_abi_to_log_topic(event)
+        self.events[Web3.to_hex(topic)] = event
+
+    def get(self, topic: bytes) -> ABIEvent:
+        return self.events[Web3.to_hex(topic)]
+
+
 error_registry = ErrorRegistry()
+events_registry = EventsRegistry()
 
 
 class AbiNotFoundError(RizemindException):
@@ -66,5 +82,9 @@ def load_abi(path: Path) -> Abi:
     errors = filter_abi_by_type("error", abi)
     for error in errors:
         error_registry.register(error)
+
+    events = filter_abi_by_type("event", abi)
+    for event in events:
+        events_registry.register(event)
 
     return abi
