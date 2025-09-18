@@ -8,6 +8,7 @@ from flwr.common import (
     Scalar,
     parameters_to_ndarrays,
 )
+
 from rizemind.logging.base_metric_storage import BaseMetricStorage
 
 

@@ -10,6 +10,7 @@ from flwr.common.constant import MessageType
 from flwr.common.message import Message
 from flwr.common.recorddict_compat import recorddict_to_fitres
 from mlflow.entities import RunStatus, ViewType
+
 from rizemind.logging.mlflow.config import MLFlowConfig
 from rizemind.logging.train_metric_history import (
     TRAIN_METRIC_HISTORY_KEY,
