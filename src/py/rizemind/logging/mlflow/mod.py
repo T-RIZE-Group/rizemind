@@ -20,7 +20,7 @@ from rizemind.logging.train_metric_history import (
 def mlflow_mod(msg: Message, ctx: Context, call_next: ClientAppCallable) -> Message:
     """Logs metrics on an incoming TRAIN message to an Mlflow server.
 
-    The mlflow_mod relies on the `TRAIN_METRIC_HISTORY_KEY` as a standardized
+    The `mlflow_mod` relies on the `TRAIN_METRIC_HISTORY_KEY` as a standardized
     metric type and reads the content of this metric for logging.
     In addition to the metrics available in `TRAIN_METRIC_HISTORY_KEY`,
     `mlflow_mod` automatically logs training_time and epochs.
