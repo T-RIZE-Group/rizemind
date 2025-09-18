@@ -9,8 +9,8 @@ from flwr.server.strategy import FedAvg
 from rizemind.authentication.config import AccountConfig
 from rizemind.authentication.eth_account_strategy import EthAccountStrategy
 from rizemind.configuration.toml_config import TomlConfig
-from rizemind.logging.metrics_storage import MetricsStorage
-from rizemind.logging.metrics_storage_strategy import MetricsStorageStrategy
+from rizemind.logging.metric_storage import MetricStorage
+from rizemind.logging.metric_storage_strategy import MetricStorageStrategy
 from rizemind.strategies.contribution.shapley.decentralized.shapley_value_strategy import (
     DecentralShapleyValueStrategy,
 )
@@ -85,13 +85,13 @@ def server_fn(context: Context) -> ServerAppComponents:
     server_config = ServerConfig(
         num_rounds=int(context.run_config["num-server-rounds"])
     )
-    metrics_storage = MetricsStorage(
+    metrics_storage = MetricStorage(
         Path(str(context.run_config["metrics-storage-path"])),
         "torch-dyn-diff-privacy-shapley",
     )
     metrics_storage.write_config(context.run_config)
     metrics_storage.write_config(toml_config.data)
-    metrics_strategy = MetricsStorageStrategy(authStrategy, metrics_storage)
+    metrics_strategy = MetricStorageStrategy(authStrategy, metrics_storage)
     return ServerAppComponents(config=server_config, strategy=metrics_strategy)
 
 

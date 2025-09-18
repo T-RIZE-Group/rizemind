@@ -19,8 +19,8 @@ packages = ["."]
 publisher = "trize"
 
 [tool.flwr.app.components]
-serverapp = "src.server_app:app"
-clientapp = "src.client_app:app"
+serverapp = "src.server:app"
+clientapp = "src.client:app"
 
 [tool.flwr.app.config]
 fraction-evaluate = 0.4
