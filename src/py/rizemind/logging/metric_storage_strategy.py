@@ -12,6 +12,7 @@ from flwr.common import (
 )
 from flwr.server import ClientManager
 from flwr.server.strategy import Strategy
+
 from rizemind.authentication.eth_account_strategy import ClientProxy
 from rizemind.logging.base_metric_storage import BaseMetricStorage
 

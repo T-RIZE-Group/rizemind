@@ -7,6 +7,7 @@ import numpy as np
 import polars as pl
 from flwr.common import Parameters, Scalar, parameters_to_ndarrays
 from flwr.common.typing import UserConfigValue
+
 from rizemind.logging.base_metric_storage import BaseMetricStorage
 
 
