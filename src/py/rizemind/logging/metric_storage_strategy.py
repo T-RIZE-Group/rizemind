@@ -69,9 +69,9 @@ class MetricStorageStrategy(Strategy):
         """Aggregate fit results and log metrics.
 
         If the `save_best_model` is enabled, then the aggregated parameters will
-            be kept in memory to be used later on if they represent the best model.
+        be kept in memory to be used later on if they represent the best model.
         If logging is enabled with `AGGREGATE_FIT`, then it will log the metrics to
-            the given metric storage.
+        the given metric storage.
 
         Args:
             server_round: The current round of federated learning.
@@ -112,9 +112,9 @@ class MetricStorageStrategy(Strategy):
         """Aggregate evaluation results and log metrics.
 
         If the `save_best_model` is enabled, then the last best evaluation is compared
-            with the current evaluation to log the parameters of the best model.
+        with the current evaluation to log the parameters of the best model.
         If logging is enabled with `AGGREGATE_EVALUATE`, then it will log the metrics to
-            the given metric storage.
+        the given metric storage.
 
         Args:
             server_round: The current round of federated learning.
@@ -151,7 +151,7 @@ class MetricStorageStrategy(Strategy):
         """Evaluate model parameters on the server and log metrics.
 
         If logging is enabled with `EVALUATE`, then it will log the metrics to
-            the given metric storage.
+        the given metric storage.
 
         Args:
             server_round: The current round of federated learning.
