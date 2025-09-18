@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from flwr.common import Parameters, Scalar
 
 
-class BaseMetricsStorage(ABC):
+class BaseMetricStorage(ABC):
     @abstractmethod
     def write_metrics(self, server_round: int, metrics: dict[str, Scalar]):
         pass

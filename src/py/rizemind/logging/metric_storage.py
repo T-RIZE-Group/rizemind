@@ -7,10 +7,10 @@ import numpy as np
 import polars as pl
 from flwr.common import Parameters, Scalar, parameters_to_ndarrays
 from flwr.common.typing import UserConfigValue
-from rizemind.logging.base_metrics_storage import BaseMetricsStorage
+from rizemind.logging.base_metric_storage import BaseMetricStorage
 
 
-class MetricsStorage(BaseMetricsStorage):
+class MetricStorage(BaseMetricStorage):
     def __init__(self, dir: Path, app_name: str) -> None:
         current_time = datetime.now().strftime("%Y-%m-%d-%H-%m-%S")
         self.dir = dir.joinpath(app_name, current_time)
