@@ -32,7 +32,7 @@ class RoundMetrics(BaseModel):
 class RoundSummary(BaseModel):
     round_id: int
     finished: bool
-    metrics: RoundMetrics | None
+    metrics: RoundMetrics | None = None
 
 
 class RoundTraining(HasAccount, BaseContract):
