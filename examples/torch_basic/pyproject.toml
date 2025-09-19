@@ -18,8 +18,8 @@ packages = ["."]
 publisher = "flwrlabs"
 
 [tool.flwr.app.components]
-serverapp = "torch_basic.server_app:app"
-clientapp = "torch_basic.client_app:app"
+serverapp = "torch_basic.server:app"
+clientapp = "torch_basic.client:app"
 
 [tool.flwr.app.config]
 num-server-rounds = 10

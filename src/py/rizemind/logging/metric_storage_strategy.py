@@ -13,7 +13,7 @@ from flwr.common import (
 from flwr.server import ClientManager
 from flwr.server.strategy import Strategy
 from rizemind.authentication.eth_account_strategy import ClientProxy
-from rizemind.logging.base_metrics_storage import BaseMetricsStorage
+from rizemind.logging.base_metric_storage import BaseMetricStorage
 
 
 class MetricPhases(Enum):
@@ -22,11 +22,11 @@ class MetricPhases(Enum):
     EVALUATE = 3
 
 
-class MetricsStorageStrategy(Strategy):
+class MetricStorageStrategy(Strategy):
     def __init__(
         self,
         strategy: Strategy,
-        metrics_storage: BaseMetricsStorage,
+        metrics_storage: BaseMetricStorage,
         enabled_metric_phases: list[MetricPhases] = [
             MetricPhases.AGGREGATE_FIT,
             MetricPhases.AGGREGATE_EVALUATE,

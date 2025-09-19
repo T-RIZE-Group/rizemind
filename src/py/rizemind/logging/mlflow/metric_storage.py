@@ -8,10 +8,10 @@ from flwr.common import (
     Scalar,
     parameters_to_ndarrays,
 )
-from rizemind.logging.base_metrics_storage import BaseMetricsStorage
+from rizemind.logging.base_metric_storage import BaseMetricStorage
 
 
-class MLFLowMetricStorage(BaseMetricsStorage):
+class MLFLowMetricStorage(BaseMetricStorage):
     def __init__(self, experiment_name: str, run_name: str, mlflow_uri: str):
         self.experiment_name = experiment_name
         self.run_name = run_name
