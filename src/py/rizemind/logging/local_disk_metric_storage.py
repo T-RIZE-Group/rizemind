@@ -28,10 +28,10 @@ class LocalDiskMetricStorage(BaseMetricStorage):
           - weights.npz  (Parameters of the best model)
 
     Attributes:
-        dir (Path): The root directory for storing all run artifacts.
-        config_file (Path): The path to the JSON file for storing configuration.
-        metrics_file (Path): The path to the CSV file for storing metrics.
-        weights_file (Path): The path to the .npz file for storing the best model's weights.
+        dir: The root directory for storing all run artifacts.
+        config_file: The path to the JSON file for storing configuration.
+        metrics_file: The path to the CSV file for storing metrics.
+        weights_file: The path to the .npz file for storing the best model's weights.
     """
 
     def __init__(self, dir: Path, app_name: str) -> None:
