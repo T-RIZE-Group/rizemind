@@ -51,7 +51,7 @@ class BaseMetricStorage(ABC):
         encountered throughout the entire federated learning process. It should
         compare the provided loss with a stored minimum loss and overwrite the
         saved "best model" if the new one is better.
-        
+
         Args:
             server_round (int): The server round that produced this model.
             loss (float): The loss value of the current model, used as the
