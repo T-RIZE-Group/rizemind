@@ -9,6 +9,7 @@ members = [
     "torch-diff-privacy",
     "torch-dyn-diff-privacy-shapley",
     "torch-shapley",
+    "workflow-demo",
 ]
 
 [[package]]
@@ -1946,6 +1947,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pyee"
+version = "13.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/95/03/1fd98d5841cd7964a27d729ccf2199602fe05eb7a405c1462eb7277945ed/pyee-13.0.0.tar.gz", hash = "sha256:b391e3c5a434d1f5118a25615001dbc8f669cf410ab67d04c4d4e07c55481c37", size = 31250 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9b/4d/b9add7c84060d4c1906abe9a7e5359f2a60f7a9a4f67268b2766673427d8/pyee-13.0.0-py3-none-any.whl", hash = "sha256:48195a3cddb3b1515ce0695ed76036b5ccc2ef3a9f963ff9f77aec0139845498", size = 15730 },
+]
+
+[[package]]
 name = "pygments"
 version = "2.19.2"
 source = { registry = "https://pypi.org/simple" }
@@ -2188,6 +2201,7 @@ dependencies = [
     { name = "mnemonic" },
     { name = "numpy" },
     { name = "pydantic" },
+    { name = "pyee" },
     { name = "tomli" },
     { name = "typer" },
     { name = "web3" },
@@ -2226,6 +2240,7 @@ requires-dist = [
     { name = "mnemonic", specifier = ">=0.21" },
     { name = "numpy", specifier = ">=1.26.4" },
     { name = "pydantic", specifier = ">=2.11.3" },
+    { name = "pyee", specifier = ">=13.0.0" },
     { name = "tomli", specifier = ">=2.2.1" },
     { name = "typer", specifier = ">=0.12.5" },
     { name = "web3", specifier = ">=7.10.0" },
@@ -3082,6 +3097,25 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/86/eb/20b6cdf273913d0ad05a6a14aed4b9a85591c18a987a3d47f20fa13dcc47/websockets-15.0.1-cp313-cp313-win32.whl", hash = "sha256:ba9e56e8ceeeedb2e080147ba85ffcd5cd0711b89576b83784d8605a7df455fa", size = 176393 },
     { url = "https://files.pythonhosted.org/packages/1b/6c/c65773d6cab416a64d191d6ee8a8b1c68a09970ea6909d16965d26bfed1e/websockets-15.0.1-cp313-cp313-win_amd64.whl", hash = "sha256:e09473f095a819042ecb2ab9465aee615bd9c2028e4ef7d933600a8401c79561", size = 176837 },
     { url = "https://files.pythonhosted.org/packages/fa/a8/5b41e0da817d64113292ab1f8247140aac61cbf6cfd085d6a0fa77f4984f/websockets-15.0.1-py3-none-any.whl", hash = "sha256:f7a866fbc1e97b5c617ee4116daaa09b722101d4a3c170c787450ba409f9736f", size = 169743 },
+]
+
+[[package]]
+name = "workflow-demo"
+version = "0.1.0"
+source = { virtual = "examples/workflow" }
+dependencies = [
+    { name = "flwr", extra = ["simulation"] },
+    { name = "flwr-datasets", extra = ["vision"] },
+    { name = "torch" },
+    { name = "torchvision" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "flwr", extras = ["simulation"], specifier = ">=1.18.0" },
+    { name = "flwr-datasets", extras = ["vision"], specifier = ">=0.5.0" },
+    { name = "torch", specifier = ">=2.7.0" },
+    { name = "torchvision", specifier = ">=0.22.0" },
 ]
 
 [[package]]

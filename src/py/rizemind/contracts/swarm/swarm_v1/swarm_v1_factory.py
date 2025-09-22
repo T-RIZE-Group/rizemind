@@ -204,7 +204,6 @@ class SwarmV1Factory:
         logs = decode_events_from_tx(
             tx_hash=tx_hash, event=factory.events.ContractCreated, w3=w3
         )
-        print(logs)
         assert len(logs) == 1, "no events discovered, factory might not be deployed"
         contract_created = logs[0]
         proxy_address = contract_created["args"]["proxyAddress"]

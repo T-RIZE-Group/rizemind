@@ -1,11 +1,11 @@
-from typing import Any
+from typing import Annotated, Any
 
 from eth_account.signers.base import BaseAccount
 from eth_typing import ChecksumAddress
 from flwr.common.context import Context
-from pydantic import Field, model_validator
+from pydantic import Field, SkipValidation, model_validator
 from rizemind.configuration.base_config import BaseConfig
-from rizemind.configuration.validators.eth_address import EthereumAddress
+from rizemind.configuration.validators.eth_address import EthereumAddressOrNone
 from rizemind.contracts.swarm.swarm_v1.swarm_v1_factory import (
     SwarmV1Factory,
     SwarmV1FactoryConfig,
@@ -23,18 +23,22 @@ class SwarmConfigException(RizemindException):
 
 
 class SwarmConfig(BaseConfig):
-    address: EthereumAddress | None = Field(
+    address: EthereumAddressOrNone | None = Field(
         default=None, description="Ethereum address for the swarm contract"
     )
-    factory_v1: SwarmV1FactoryConfig | None = Field(
+    factory_v1: Annotated[SwarmV1FactoryConfig | None, SkipValidation] = Field(
         default=None,
         description="ModelFactoryV1Config object to deploy on Aggregator side",
     )
 
     @model_validator(mode="after")
     def _one_of_address_or_factory(self) -> "SwarmConfig":
-        if (self.address is None) == (self.factory_v1 is None):  # XOR
-            raise ValueError("One of `address` or `factory_v1` must be provided.")
+        # Only validate factory_v1 if address is absent
+        if self.address is None:
+            # Accept dict or instance; this enforces SwarmV1FactoryConfig now
+            self.factory_v1 = SwarmV1FactoryConfig.model_validate(self.factory_v1)
+        else:
+            self.factory_v1 = None
         return self
 
     def get(self, *, account: BaseAccount | None = None, w3: Web3) -> Swarm:
@@ -44,20 +48,21 @@ class SwarmConfig(BaseConfig):
             address=Web3.to_checksum_address(self.address), w3=w3, account=account
         )
 
-    def deploy(
-        self, *, deployer: BaseAccount, w3: Web3, trainers: list[ChecksumAddress] = []
-    ) -> Swarm:
+    def deploy(self, *, deployer: BaseAccount, w3: Web3) -> Swarm:
         if self.factory_v1 is None:
             raise SwarmConfigException("factory_v1")
         factory = SwarmV1Factory(self.factory_v1)
-        deployment = factory.deploy(deployer, trainers, w3)
+        deployment = factory.deploy(deployer, w3)
         return Swarm(w3=w3, address=deployment.address, account=deployer)
 
     def get_or_deploy(
-        self, *, deployer: BaseAccount, w3: Web3, trainers: list[ChecksumAddress] = []
+        self,
+        *,
+        deployer: BaseAccount,
+        w3: Web3,
     ) -> Swarm:
         if self.factory_v1 is not None:
-            return self.deploy(deployer=deployer, w3=w3, trainers=trainers)
+            return self.deploy(deployer=deployer, w3=w3)
 
         if self.address is not None:
             return Swarm(
@@ -65,6 +70,9 @@ class SwarmConfig(BaseConfig):
             )
 
         raise Exception("No address or factory settings found")
+
+    def store_in_context(self, context: Context) -> None:
+        self._store_in_context(context, SWARM_CONFIG_STATE_KEY)
 
     @staticmethod
     def from_context(

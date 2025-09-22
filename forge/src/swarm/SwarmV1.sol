@@ -14,6 +14,7 @@ import {RoundTrainerRegistry} from "./registry/RoundTrainerRegistry.sol";
 import {RoundEvaluatorRegistry} from "./registry/RoundEvaluatorRegistry.sol";
 import {ContributionCalculator} from "../contribution/ContributionCalculator.sol";
 import {ICompensation} from "../compensation/types.sol";
+import {TrainerContributed} from "../contribution/types.sol";
 
 /**
  * @title SwarmV1
@@ -122,6 +123,15 @@ contract SwarmV1 is
         return accessControl.isTrainer(trainer) && selector.isSelected(trainer, roundId);
     }
 
+    function canEvaluate(
+        address evaluator,
+        uint256 roundId
+    ) public view returns (bool) {
+        ISelector selector = ISelector(getEvaluatorSelector());
+        IAccessControl accessControl = IAccessControl(getAccessControl());
+        return accessControl.isEvaluator(evaluator) && selector.isSelected(evaluator, roundId);
+    }
+
     function updateTrainerSelector(address newTrainerSelector) external onlyAggregator(msg.sender) {
         _updateTrainerSelector(newTrainerSelector);
     }
@@ -146,7 +156,18 @@ contract SwarmV1 is
         _forceStartTrainingPhase();
     }
 
-    function registerRoundContribution(uint256 roundId, bytes32 modelHash) external onlyTrainer(msg.sender) {
+    function _endTrainingPhase() internal override returns (bytes32) {
+        uint256 numberOfTrainers = getTrainerCount(currentRound());
+        if (numberOfTrainers <= 0) {
+            return TRAINING_PHASE;
+        }
+        return super._endTrainingPhase();
+    }
+
+    function registerRoundContribution(uint256 roundId, bytes32 modelHash) external {
+        if (!canTrain(msg.sender, roundId)) {
+            revert NotTrainer();
+        }
         _registerRoundContribution(roundId, msg.sender, modelHash);
     }
 
@@ -160,12 +181,16 @@ contract SwarmV1 is
         _registerTrainer(roundId, trainer, modelHash);
     }
 
-    function registerForRoundEvaluation(uint256 roundId) external onlyEvaluator(msg.sender) {
+    function registerForRoundEvaluation(uint256 roundId) external {
+        if (!canEvaluate(msg.sender, roundId)) {
+            revert NotEvaluator();
+        }
         _registerForRoundEvaluations(roundId, msg.sender);
     }
 
     function _registerForRoundEvaluations(uint256 roundId, address evaluator) internal {
-        if (updatePhase() != EVALUATOR_REGISTRATION_PHASE) {
+        bytes32 phase = updatePhase();
+        if (phase == EVALUATION_PHASE || phase == IDLE_PHASE) {
             revert NotEvaluatorRegistrationPhase();
         }
         _registerEvaluator(roundId, evaluator);
@@ -173,13 +198,18 @@ contract SwarmV1 is
 
     function _endEvaluatorRegistrationPhase() internal override returns (bytes32) {
         uint256 roundId = currentRound();
+        uint256 nNodes = getEvaluatorCount(roundId);
+        uint256 nTrainers = getTrainerCount(roundId);
+        if (nNodes == 0) { // we're going to trigger a TaskAssigment#InvalidConfig error
+            return EVALUATOR_REGISTRATION_PHASE;
+        }
         ContributionCalculator calc = ContributionCalculator(getContributionCalculator());
-        uint256 nTasks = calc.getEvaluationsRequired(roundId, uint8(getTrainerCount(roundId)));
+        uint256 nTasks = calc.getEvaluationsRequired(roundId, uint8(nTrainers));
         if (nTasks == 0) {
-            nTasks = calc.getEvaluationsRequired(roundId - 1, uint8(getTrainerCount(roundId - 1)));
+            nTasks = calc.getEvaluationsRequired(roundId - 1, uint8(nTrainers));
             calc.setEvaluationsRequired(roundId, nTasks);
         }
-        uint256 nNodes = getEvaluatorCount(roundId);
+    
         uint256 nTasksPerNode = 1;
         if (nTasks > nNodes) {
             // TODO: handle potential rounding error
@@ -244,6 +274,7 @@ contract SwarmV1 is
         uint256 trainerId = getTrainerIdOrThrow(roundId, trainer);
         // trainer id starts at 1,but ContributionCalculator starts at 0
         int256 contribution = calc.calculateContribution(roundId, trainerId - 1, uint8(getTrainerCount(roundId)));
+        emit TrainerContributed(trainer, contribution);
         _setClaimedRewards(roundId, trainer);
         address[] memory trainers = new address[](1);
         trainers[0] = trainer;

@@ -1,13 +1,20 @@
+import os
+from logging import WARNING
+
 from eth_account.signers.base import BaseAccount
+from flwr.common import log
 from flwr.common.typing import FitRes
+from flwr.server import ClientManager
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
 
 from rizemind.authentication.authenticated_client_properties import (
     AuthenticatedClientProperties,
 )
-from rizemind.authentication.can_train_client_manager import (
-    CanTrainClientManager,
+from rizemind.authentication.can_evaluate_criterion import CanEvaluateCriterion
+from rizemind.authentication.can_train_criterion import CanTrainCriterion
+from rizemind.authentication.client_manager import (
+    ClientManagerWithCriterion,
 )
 from rizemind.authentication.notary.model.config import (
     parse_model_notary_config,
@@ -18,7 +25,13 @@ from rizemind.authentication.notary.model.model_signature import (
     recover_model_signer,
     sign_parameters_model,
 )
+from rizemind.authentication.signatures.auth import recover_auth_signer
+from rizemind.authentication.train_auth import (
+    parse_train_auth_res,
+    prepare_train_auth_ins,
+)
 from rizemind.authentication.typing import SupportsEthAccountStrategy
+from rizemind.contracts.erc.erc5267.typings import EIP712Domain
 from rizemind.exception.base_exception import RizemindException
 from rizemind.exception.parse_exception import ParseException
 
@@ -55,7 +68,7 @@ class EthAccountStrategy(Strategy):
     .. code-block:: python
 
         strategy = SomeBaseStrategy()
-        model_registry = SwarmV1.from_address(address="0xMY_MODEL_ADDRESS")
+        model_registry = SwarmV1.from_address(address="0xMY_SWARM_ADDRESS")
         eth_strategy = EthAccountStrategy(strategy, model_registry)
     """
 
@@ -63,6 +76,7 @@ class EthAccountStrategy(Strategy):
     swarm: SupportsEthAccountStrategy
     address: str
     account: BaseAccount
+    domain: EIP712Domain
 
     def __init__(
         self,
@@ -73,40 +87,71 @@ class EthAccountStrategy(Strategy):
         super().__init__()
         self.strat = strat
         self.swarm = swarm
-        domain = self.swarm.get_eip712_domain()
-        self.address = domain.verifyingContract
+        self.domain = self.swarm.get_eip712_domain()
+        self.address = self.domain.verifyingContract
         self.account = account
 
     def initialize_parameters(self, client_manager):
         return self.strat.initialize_parameters(client_manager)
 
     def configure_fit(self, server_round, parameters, client_manager):
-        auth_cm = CanTrainClientManager(client_manager, server_round, self.swarm)
+        self._authenticate_clients(client_manager, server_round)
+        auth_cm = ClientManagerWithCriterion(
+            client_manager, server_round, CanTrainCriterion(server_round, self.swarm)
+        )
         client_instructions = self.strat.configure_fit(
             server_round, parameters, auth_cm
         )
-        domain = self.swarm.get_eip712_domain()
         for _, fit_ins in client_instructions:
             signature = sign_parameters_model(
                 account=self.account,
-                domain=domain,
+                domain=self.domain,
                 parameters=fit_ins.parameters,
                 round=server_round,
             )
             notary_config = prepare_model_notary_config(
                 round_id=server_round,
-                domain=domain,
+                domain=self.domain,
                 signature=signature,
                 model_hash=hash_parameters(fit_ins.parameters),
             )
             fit_ins.config = fit_ins.config | notary_config
         return client_instructions
 
+    def _authenticate_clients(self, client_manager: ClientManager, server_round: int):
+        nonce = os.urandom(32)
+        ins = prepare_train_auth_ins(
+            round_id=server_round, nonce=nonce, domain=self.domain
+        )
+
+        for [id, client] in client_manager.all().items():
+            try:
+                res = client.get_properties(ins, timeout=60, group_id=server_round)
+                auth = parse_train_auth_res(res)
+                signer = recover_auth_signer(
+                    round=server_round,
+                    nonce=nonce,
+                    domain=self.domain,
+                    signature=auth.signature,
+                )
+                properties = AuthenticatedClientProperties(trainer_address=signer)
+                properties.tag_client(client)
+            except ParseException:
+                pass
+
     def aggregate_fit(self, server_round, results, failures):
         whitelisted: list[tuple[ClientProxy, FitRes]] = []
         for client, res in results:
             try:
                 signer = self._recover_signer(res, server_round)
+                auth = AuthenticatedClientProperties.from_client(client)
+                if auth.trainer_address != signer:
+                    log(
+                        WARNING,
+                        "notaried model signer mismatch with authentication signer",
+                        auth.trainer_address,
+                        signer,
+                    )
                 if self.swarm.can_train(signer, server_round):
                     whitelisted.append((client, res))
                 else:
@@ -117,6 +162,13 @@ class EthAccountStrategy(Strategy):
 
     def _recover_signer(self, res: FitRes, server_round: int):
         notary_config = parse_model_notary_config(res.metrics)
+        if notary_config.model_hash != hash_parameters(res.parameters):
+            log(
+                WARNING,
+                "model hash mismatch between received and notaried model",
+                notary_config.model_hash,
+                hash_parameters(res.parameters),
+            )
         eip712_domain = self.swarm.get_eip712_domain()
         return recover_model_signer(
             model=res.parameters,
@@ -126,7 +178,10 @@ class EthAccountStrategy(Strategy):
         )
 
     def configure_evaluate(self, server_round, parameters, client_manager):
-        auth_cm = CanTrainClientManager(client_manager, server_round, self.swarm)
+        self._authenticate_clients(client_manager, server_round)
+        auth_cm = ClientManagerWithCriterion(
+            client_manager, server_round, CanEvaluateCriterion(server_round, self.swarm)
+        )
         return self.strat.configure_evaluate(server_round, parameters, auth_cm)
 
     def aggregate_evaluate(self, server_round, results, failures):

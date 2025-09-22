@@ -3,6 +3,7 @@ from flwr.common.typing import Parameters, Scalar
 
 
 class TrainerSet:
+    order: int
     id: str
     members: list[ChecksumAddress]
 
@@ -10,9 +11,11 @@ class TrainerSet:
         self,
         id: str,
         members: list[ChecksumAddress],
+        order: int = 0,
     ) -> None:
         self.id = id
         self.members = members
+        self.order = order
 
     def size(self) -> int:
         return len(self.members)
@@ -30,8 +33,9 @@ class TrainerSetAggregate(TrainerSet):
         members: list[ChecksumAddress],
         parameters: Parameters,
         config: dict[str, Scalar],
+        order: int = 0,
     ) -> None:
-        super().__init__(id, members=members)
+        super().__init__(id, members=members, order=order)
         self.parameters = parameters
         self.config = config
 
@@ -63,6 +67,9 @@ class TrainerSetAggregateStore:
         if id in self.set_aggregates:
             return self.set_aggregates[id]
         raise Exception(f"Coalition {id} not found")
+
+    def get_set_by_order(self, order: int) -> list[TrainerSetAggregate]:
+        return [set for set in self.set_aggregates.values() if set.order == order]
 
     def is_available(self, id: str) -> bool:
         return id in self.set_aggregates

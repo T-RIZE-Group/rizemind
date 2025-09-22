@@ -5,6 +5,7 @@ from pydantic import Field, HttpUrl, field_validator
 from pydantic_core import Url
 from rizemind.configuration.base_config import BaseConfig
 from rizemind.web3.chains import RIZENET_TESTNET_CHAINID
+from rizemind.web3.middlewares.errors import RizemindErrorsMiddleware
 from web3 import AsyncHTTPProvider, AsyncWeb3, HTTPProvider, Web3
 from web3.main import BaseWeb3
 from web3.middleware import ExtraDataToPOAMiddleware
@@ -29,7 +30,11 @@ class Web3Config(BaseConfig):
 
     def get_web3(self, *, web3_factory=Web3) -> Web3:
         w3 = web3_factory(self.web3_provider())
-        self.inject_poa_middlewares(w3)
+        if w3.eth.chain_id in poaChains:
+            w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
+        w3.middleware_onion.add(
+            RizemindErrorsMiddleware, name="rizemind_error_middleware"
+        )
         return w3
 
     def web3_provider(self) -> HTTPProvider:
@@ -42,18 +47,19 @@ class Web3Config(BaseConfig):
             url = "https://testnet.rizenet.io"
         return str(url)
 
-    def inject_poa_middlewares(self, w3: BaseWeb3):
-        if w3.eth.chain_id in poaChains:
-            w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
-
-    def get_async_web3(self, *, web3_factory=AsyncWeb3) -> AsyncWeb3:
+    async def get_async_web3(self, *, web3_factory=AsyncWeb3) -> AsyncWeb3:
         w3 = web3_factory(self.async_web3_provider())
-        self.inject_poa_middlewares(w3)
+        chain_id = await w3.eth.chain_id
+        if chain_id in poaChains:
+            w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
         return w3
 
     def async_web3_provider(self) -> AsyncHTTPProvider:
         url = self.get_rpc_url()
         return AsyncHTTPProvider(str(url))
+
+    def store_in_context(self, context: Context) -> None:
+        self._store_in_context(context, WEB3_CONFIG_STATE_KEY)
 
     @staticmethod
     def from_context(context: Context) -> "Web3Config | None":

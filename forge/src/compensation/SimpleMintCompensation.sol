@@ -2,7 +2,6 @@
 pragma solidity ^0.8.10;
 
 import {CompensationSent} from "./types.sol";
-import {TrainerContributed} from "../contribution/types.sol";
 import {ERC20Upgradeable} from "@openzeppelin-contracts-upgradeable-5.2.0/token/ERC20/ERC20Upgradeable.sol";
 import {ICompensation} from "./types.sol";
 import {EIP712} from "@openzeppelin-contracts-5.2.0/utils/cryptography/EIP712.sol";
@@ -78,7 +77,6 @@ contract SimpleMintCompensation is ERC20Upgradeable, ICompensation, EIP712, Acce
             address recipient = recipients[i];
             uint64 contribution = contributions[i];
             totalContributions += contribution;
-            emit TrainerContributed(recipient, contribution);
             uint256 rewards = _calculateRewards(contribution);
             _mint(recipient, rewards);
             emit CompensationSent(recipient, rewards);

@@ -81,7 +81,7 @@ class BaseAccessControl(ERC5267, HasAccount):
         return self.contract.functions.isEvaluator(address).call()
 
     def add_trainer(self, trainer: ChecksumAddress) -> HexBytes:
-        """Add a new trainer (only callable by aggregator)."""
+        """Add a new trainer"""
         account = self.get_account()
 
         return self.send(
@@ -90,7 +90,7 @@ class BaseAccessControl(ERC5267, HasAccount):
         )
 
     def add_aggregator(self, aggregator: ChecksumAddress) -> HexBytes:
-        """Add a new aggregator (only callable by existing aggregator)."""
+        """Add a new aggregator"""
         account = self.get_account()
 
         return self.send(
@@ -99,7 +99,7 @@ class BaseAccessControl(ERC5267, HasAccount):
         )
 
     def add_evaluator(self, evaluator: ChecksumAddress) -> HexBytes:
-        """Add a new evaluator (only callable by aggregator)."""
+        """Add a new evaluator"""
         account = self.get_account()
 
         return self.send(

@@ -22,6 +22,7 @@ dependencies = [
     "brotli>=1.1.0",
     "zstandard>=0.23.0",
     "eth-tester>=0.13.0b1",
+    "pyee>=13.0.0",
 ]
 
 [project.scripts]
@@ -132,4 +133,5 @@ members = [
     "examples/torch_diff_privacy",
     "examples/torch_dyn_diff_privacy_shapley",
     "examples/torch_shapley",
+    "examples/workflow"
 ]

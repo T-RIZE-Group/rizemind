@@ -1,3 +1,4 @@
+import copy
 import os
 from functools import reduce
 from pathlib import Path
@@ -15,6 +16,18 @@ def replace_env_vars(obj: dict[str, Any] | str) -> dict[str, Any] | str:
     elif isinstance(obj, list):
         return [replace_env_vars(item) for item in obj]
     return obj
+
+
+def _safe_copy(value: Any) -> Any:
+    """
+    Return a deep copy of mutable objects, or the original value for immutable objects.
+
+    :param value: The value to potentially copy
+    :return: A copy of mutable objects, or the original value for immutable objects
+    """
+    if isinstance(value, dict | list):
+        return copy.deepcopy(value)
+    return value
 
 
 class TomlConfig:
@@ -71,25 +84,29 @@ class TomlConfig:
     @property
     def data(self) -> dict:
         """
-        Return the loaded TOML dictionary.
+        Return a deep copy of the loaded TOML dictionary.
 
-        :return: The entire TOML configuration as a dictionary.
+        :return: A deep copy of the entire TOML configuration as a dictionary.
         :rtype: dict
         """
-        return self._data
+        return _safe_copy(self._data)
 
     def get(self, keys: list[str] | str, default: Any | None = None) -> Any:
         """
         Retrieve a nested value from the config safely.
+        Returns a deep copy of mutable objects (dicts, lists) to prevent external modification.
 
         :param keys: list of keys representing the path to the value.
         :param default: Default value to return if the key path does not exist.
-        :return: The value at the given key path or the default value.
+        :return: A copy of the value at the given key path or the default value.
         """
         if isinstance(keys, str):
             keys = keys.split(".")
-        return reduce(
+
+        result = reduce(
             lambda d, key: d.get(key, default) if isinstance(d, dict) else default,
             keys,
             self._data,
         )
+
+        return _safe_copy(result)

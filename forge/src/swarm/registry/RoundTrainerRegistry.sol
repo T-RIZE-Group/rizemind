@@ -31,7 +31,7 @@ contract RoundTrainerRegistry is Initializable {
     /// @param roundId The round ID
     /// @param trainer The trainer address
     /// @param trainerId The assigned trainer ID
-    event TrainerRegistered(uint256 indexed roundId, address indexed trainer, uint256 trainerId);
+    event TrainerRegistered(uint256 indexed roundId, address indexed trainer, uint256 indexed trainerId);
 
     /// @notice Emitted when a trainer's model hash is updated
     /// @param roundId The round ID

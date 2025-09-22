@@ -16,4 +16,4 @@ interface IContributionCalculator is IEvaluationStorage, IERC5267  {
     function calculateContribution(uint256 roundId, uint256 trainerIndex, uint8 numberOfTrainers) external view returns (int256);
 }
 
-event TrainerContributed(address indexed trainer, uint256 contribution);
+event TrainerContributed(address indexed trainer, int256 contribution);

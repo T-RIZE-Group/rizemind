@@ -1,0 +1,334 @@
+[
+  {
+    "type": "function",
+    "name": "cfg",
+    "inputs": [
+      {
+        "name": "roundId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct TaskAssignment.Config",
+        "components": [
+          {
+            "name": "N",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "T",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "R",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "initialize",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "isAssigned",
+    "inputs": [
+      {
+        "name": "roundId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "n",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "t",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "nodeCountOfTask",
+    "inputs": [
+      {
+        "name": "roundId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "t",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "total",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "nthTaskOfNode",
+    "inputs": [
+      {
+        "name": "roundId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "nodeId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "taskIndex",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "setConfig",
+    "inputs": [
+      {
+        "name": "roundId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "next",
+        "type": "tuple",
+        "internalType": "struct TaskAssignment.Config",
+        "components": [
+          {
+            "name": "N",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "T",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "R",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "tasksOfNode",
+    "inputs": [
+      {
+        "name": "roundId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "nodeId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "out",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "ConfigUpdated",
+    "inputs": [
+      {
+        "name": "cfg",
+        "type": "tuple",
+        "indexed": false,
+        "internalType": "struct TaskAssignment.Config",
+        "components": [
+          {
+            "name": "N",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "T",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "R",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Initialized",
+    "inputs": [
+      {
+        "name": "version",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "InvalidConfig",
+    "inputs": [
+      {
+        "name": "N",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "T",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "R",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidInitialization",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NodeIdOutOfRange",
+    "inputs": [
+      {
+        "name": "nodeId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxNodes",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NotInitializing",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "RangeOutOfBounds",
+    "inputs": [
+      {
+        "name": "nodeId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "taskId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxNodes",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxTasks",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "TaskIndexOutOfRange",
+    "inputs": [
+      {
+        "name": "taskIndex",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxTasks",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "TaskOutOfRange",
+    "inputs": [
+      {
+        "name": "taskId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxTasks",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  }
+]

@@ -32,6 +32,16 @@ class ErrorRegistry:
 
     def __init__(self):
         self.errors = {}
+        self.errors[ERROR_SELECTOR] = {
+            "name": "Error",
+            "inputs": [{"name": "error", "type": "string"}],
+            "type": "error",
+        }
+        self.errors[PANIC_SELECTOR] = {
+            "name": "Panic",
+            "inputs": [{"name": "error", "type": "uint256"}],
+            "type": "error",
+        }
 
     def register(self, error: ABIError):
         selector = function_abi_to_4byte_selector(error)

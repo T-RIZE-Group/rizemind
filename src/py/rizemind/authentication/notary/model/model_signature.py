@@ -2,6 +2,7 @@ from eth_account import Account
 from eth_account.signers.base import BaseAccount
 from eth_typing import ChecksumAddress
 from flwr.common.typing import Parameters
+from hexbytes import HexBytes
 from rizemind.authentication.signatures.eip712 import (
     EIP712DomainRequiredFields,
     prepare_eip712_message,
@@ -16,7 +17,7 @@ ModelTypeAbi = [
 ]
 
 
-def hash_parameters(parameters: Parameters) -> bytes:
+def hash_parameters(parameters: Parameters) -> HexBytes:
     """
     Hashes the Parameters dataclass using keccak256.
 

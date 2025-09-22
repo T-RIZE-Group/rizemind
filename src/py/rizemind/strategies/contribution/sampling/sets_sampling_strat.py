@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
+from eth_typing import ChecksumAddress
 from flwr.common import FitRes
-from flwr.server.client_proxy import ClientProxy
 from rizemind.strategies.contribution.shapley.trainer_mapping import ParticipantMapping
 from rizemind.strategies.contribution.shapley.trainer_set import (
     TrainerSet,
@@ -11,7 +11,7 @@ from rizemind.strategies.contribution.shapley.trainer_set import (
 class SetsSamplingStrategy(ABC):
     @abstractmethod
     def sample_trainer_sets(
-        self, server_round: int, results: list[tuple[ClientProxy, FitRes]]
+        self, server_round: int, results: list[tuple[ChecksumAddress, FitRes]]
     ) -> list[TrainerSet]:
         pass
 

@@ -100,6 +100,7 @@ def model_notary_mod(
                     parameters=fit_res.parameters,
                     round=model_notary_config.round_id,
                 )
+
                 notary_config = prepare_model_notary_config(
                     round_id=model_notary_config.round_id,
                     domain=domain,
@@ -108,6 +109,7 @@ def model_notary_mod(
                 )
                 fit_res.metrics = concat(fit_res.metrics, notary_config)
                 reply.content = fitres_to_recorddict(fit_res, False)
+
         except (ParseException, MissingConfigNotaryModError):
             log(
                 level=logging.ERROR,

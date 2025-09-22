@@ -84,9 +84,10 @@ def test_select_propagates_swarm_decision(
 
     swarm = _DummySwarm(domain, result=swarm_allows_training)
 
-    client = MagicMock(spec_set=["get_properties"])
+    client = MagicMock(spec_set=["get_properties", "properties"])
     get_prop_res = prepare_train_auth_res(signature=sig)
     client.get_properties.return_value = get_prop_res
+    client.properties = {}
 
     criterion = CanTrainCriterion(round_id=rnd, swarm=swarm)
     outcome = criterion.select(client)

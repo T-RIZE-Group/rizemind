@@ -1,39 +1,13 @@
 import asyncio
 import contextlib
 import random
-from collections.abc import AsyncIterator
 
+from rizemind.web3.indexer.blocks.latest_block_bus import LatestBlockBus
 from web3 import AsyncWeb3
 
 CONFIRMATIONS = 6
 MIN_POLL = 0.5  # seconds
 MAX_POLL = 4.0  # seconds
-
-
-class LatestBlockBus:
-    """Fan-out latest block number; drops intermediates, never grows a queue."""
-
-    def __init__(self):
-        self._cond = asyncio.Condition()
-        self._version = 0
-        self._latest_block: int | None = None
-
-    async def publish(self, latest_block: int):
-        async with self._cond:
-            if self._latest_block is None or latest_block > self._latest_block:
-                self._latest_block = latest_block
-                self._version += 1
-                self._cond.notify_all()
-
-    async def stream(self, since_version: int = 0) -> AsyncIterator[tuple[int, int]]:
-        while True:
-            async with self._cond:
-                while self._version == since_version:
-                    await self._cond.wait()
-                since_version = self._version
-                assert self._latest_block is not None
-                lb = self._latest_block
-            yield since_version, lb  # yield outside the lock
 
 
 class BlockWatcher:
@@ -59,6 +33,9 @@ class BlockWatcher:
                     if last_seen is None or latest == last_seen
                     else min(MAX_POLL, interval * 1.2)
                 )
+            except asyncio.CancelledError:
+                # Re-raise cancellation to allow proper task shutdown
+                raise
             except Exception:
                 # transient RPC errors → back off with jitter
                 interval = min(MAX_POLL, max(MIN_POLL, interval * 1.5))

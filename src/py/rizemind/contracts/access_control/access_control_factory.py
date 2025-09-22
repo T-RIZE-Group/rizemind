@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import os
 from pathlib import Path
 from typing import Unpack
@@ -26,9 +27,10 @@ def get_id(version: str) -> HexBytes:
     return Web3.keccak(text=version)
 
 
-class AccessControlParams(BaseModel):
-    id: bytes = Field(..., description="The access control id")
-    init_data: bytes = Field(..., description="The access control init data")
+@dataclass(frozen=True)
+class AccessControlParams:
+    id: bytes
+    init_data: bytes
 
 
 class AccessControlConfig(BaseModel):

@@ -3,7 +3,6 @@ pragma solidity ^0.8.10;
 
 import {Initializable} from "@openzeppelin-contracts-upgradeable-5.2.0/proxy/utils/Initializable.sol";
 import {ITrainingPhases} from "./ITrainingPhases.sol";
-import {console} from "forge-std/console.sol";
 
 /**
  * @title BaseTrainingPhases

@@ -1,7 +1,7 @@
 import asyncio
 import contextlib
 
-from rizemind.web3.indexer.block_watcher import LatestBlockBus
+from rizemind.web3.indexer.blocks.latest_block_bus import LatestBlockBus
 from rizemind.web3.indexer.logs.event_bus import EventBus
 from web3 import AsyncWeb3
 from web3.types import FilterParams

@@ -73,6 +73,9 @@ class AccountConfig(BaseConfig):
 
         return self
 
+    def store_in_context(self, context: Context) -> None:
+        self._store_in_context(context, ACCOUNT_CONFIG_STATE_KEY)
+
     def get_account(self, i: int | None = None) -> BaseAccount:
         if i is None:
             i = self.default_account_index

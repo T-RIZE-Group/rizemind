@@ -1,0 +1,59 @@
+[project]
+name = "workflow-demo"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "flwr-datasets[vision]>=0.5.0",
+    "flwr[simulation]>=1.18.0",
+    "torch>=2.7.0",
+    "torchvision>=0.22.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.flwr.app]
+publisher = "trizelabs"
+
+[tool.flwr.app.components]
+serverapp = "src.server:app"
+clientapp = "src.client:app"
+
+[tool.flwr.app.config]
+num-server-rounds = 3
+min-available-clients = 1
+local-epochs = 1
+batch-size = 32
+learning-rate = 0.005
+fraction-fit = 1
+verbose = false
+fraction-evaluate = 1
+num-supernodes = 5
+metrics-storage-path = 'logs'
+
+
+[tool.flwr.federations]
+default = "local-simulation-gpu"
+
+[tool.flwr.federations.local-simulation]
+options.num-supernodes = 5
+
+[tool.flwr.federations.local-simulation-gpu]
+options.num-supernodes = 3
+options.backend.client-resources.num-cpus = 2 # each ClientApp assumes to use 2CPUs
+options.backend.client-resources.num-gpus = 0.10 # at most 5 ClientApp will run in a given GPU
+
+[tool.web3.swarm]
+address = "$DEPLOYED_SWARM_ADDRESS"
+
+[tool.web3.swarm.factory_v1]
+name = "test_model"
+local_factory_deployment_path = "../../forge/broadcast/SwarmV1Factory.s.sol/31337/run-latest.json"
+
+[tool.eth.account]
+mnemonic = "test test test test test test test test test test test junk"
+
+[tool.web3]
+url = "http://127.0.0.1:8545"

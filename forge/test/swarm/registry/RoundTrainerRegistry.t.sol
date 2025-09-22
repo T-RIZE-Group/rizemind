@@ -41,7 +41,7 @@ contract RoundTrainerRegistryTest is Test {
     bytes32 public modelHash3 = keccak256("model3");
     bytes32 public updatedModelHash = keccak256("updated_model");
 
-    event TrainerRegistered(uint256 indexed roundId, address indexed trainer, uint256 trainerId);
+    event TrainerRegistered(uint256 indexed roundId, address indexed trainer, uint256 indexed trainerId);
     event ModelHashUpdated(uint256 indexed roundId, address indexed trainer, bytes32 modelHash);
 
     function setUp() public {
@@ -87,7 +87,7 @@ contract RoundTrainerRegistryTest is Test {
         address trainer = trainer1;
         bytes32 modelHash = modelHash1;
 
-        vm.expectEmit(true, true, false, false);
+        vm.expectEmit(true, true, true, false);
         emit TrainerRegistered(roundId, trainer, 1);
 
         uint256 trainerId = registry.registerTrainer(roundId, trainer, modelHash);
@@ -103,17 +103,17 @@ contract RoundTrainerRegistryTest is Test {
         uint256 roundId = 1;
 
         // Register first trainer
-        vm.expectEmit(true, true, false, false);
+        vm.expectEmit(true, true, true, false);
         emit TrainerRegistered(roundId, trainer1, 1);
         uint256 id1 = registry.registerTrainer(roundId, trainer1, modelHash1);
 
         // Register second trainer
-        vm.expectEmit(true, true, false, false);
+        vm.expectEmit(true, true, true, false);
         emit TrainerRegistered(roundId, trainer2, 2);
         uint256 id2 = registry.registerTrainer(roundId, trainer2, modelHash2);
 
         // Register third trainer
-        vm.expectEmit(true, true, false, false);
+        vm.expectEmit(true, true, true, false);
         emit TrainerRegistered(roundId, trainer3, 3);
         uint256 id3 = registry.registerTrainer(roundId, trainer3, modelHash3);
 
@@ -138,7 +138,7 @@ contract RoundTrainerRegistryTest is Test {
         bytes32 modelHash = modelHash1;
 
         // Register trainer first time
-        vm.expectEmit(true, true, false, false);
+        vm.expectEmit(true, true, true, false);
         emit TrainerRegistered(roundId, trainer, 1);
         uint256 firstId = registry.registerTrainer(roundId, trainer, modelHash);
 
@@ -157,12 +157,12 @@ contract RoundTrainerRegistryTest is Test {
         uint256 round2 = 2;
 
         // Register trainer for round 1
-        vm.expectEmit(true, true, false, false);
+        vm.expectEmit(true, true, true, false);
         emit TrainerRegistered(round1, trainer1, 1);
         uint256 id1 = registry.registerTrainer(round1, trainer1, modelHash1);
 
         // Register different trainer for round 2
-        vm.expectEmit(true, true, false, false);
+        vm.expectEmit(true, true, true, false);
         emit TrainerRegistered(round2, trainer2, 1);
         uint256 id2 = registry.registerTrainer(round2, trainer2, modelHash2);
 
@@ -413,7 +413,7 @@ contract RoundTrainerRegistryTest is Test {
         address trainer = trainer1;
         bytes32 modelHash = modelHash1;
 
-        vm.expectEmit(true, true, false, false);
+        vm.expectEmit(true, true, true, false);
         emit TrainerRegistered(roundId, trainer, 1);
 
         registry.registerTrainer(roundId, trainer, modelHash);
@@ -425,7 +425,7 @@ contract RoundTrainerRegistryTest is Test {
         bytes32 modelHash = modelHash1;
 
         // First registration should emit event
-        vm.expectEmit(true, true, false, false);
+        vm.expectEmit(true, true, true, false);
         emit TrainerRegistered(roundId, trainer, 1);
         registry.registerTrainer(roundId, trainer, modelHash);
 

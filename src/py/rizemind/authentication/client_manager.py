@@ -5,9 +5,6 @@ from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.criterion import Criterion
 
-from rizemind.authentication.can_train_criterion import CanTrainCriterion
-from rizemind.authentication.typing import SupportsEthAccountStrategy
-
 
 class AlwaysTrueCriterion(Criterion):
     def select(self, client: ClientProxy) -> bool:
@@ -36,21 +33,18 @@ class AndCriterion(Criterion):
         return future_a.result() and future_b.result()
 
 
-class CanTrainClientManager(ClientManager):
+class ClientManagerWithCriterion(ClientManager):
     """Wraps another ClientManager and injects authentication Criterion."""
 
     round_id: int
-    swarm: SupportsEthAccountStrategy
+    criterion: Criterion
 
     def __init__(
-        self,
-        base_manager: ClientManager,
-        round_id: int,
-        swarm: SupportsEthAccountStrategy,
+        self, base_manager: ClientManager, round_id: int, criterion: Criterion
     ) -> None:
         self._base = base_manager
         self.round_id = round_id
-        self.swarm = swarm
+        self.criterion = criterion
 
     def sample(
         self,
@@ -58,11 +52,10 @@ class CanTrainClientManager(ClientManager):
         min_num_clients: int | None = None,
         criterion: Any | None = None,
     ) -> list[ClientProxy]:
-        authenticated_criterion = CanTrainCriterion(self.round_id, self.swarm)
         clients = self._base.sample(
             num_clients,
             min_num_clients,
-            AndCriterion(authenticated_criterion, criterion),
+            AndCriterion(self.criterion, criterion),
         )
         return clients
 
