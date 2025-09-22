@@ -22,3 +22,5 @@ poetry.lock
 **/.swp
 
 **/*.csv
+
+.cursor

@@ -20,12 +20,13 @@ class LocalDiskMetricStorage(BaseMetricStorage):
     application folder.
 
     The generated directory structure is as follows:
+
     - <dir>/
-      - <app_name>/
-        - <YYYY-MM-DD-HH-MM-SS>/
-          - config.json  (Federated learning configuration settings)
-          - metrics.csv  (Round-by-round metrics)
-          - weights.npz  (Parameters of the best model)
+        - <app_name>/
+            - <YYYY-MM-DD-HH-MM-SS>/
+                - config.json  (Federated learning configuration settings)
+                - metrics.csv  (Round-by-round metrics)
+                - weights.npz  (Parameters of the best model)
 
     Attributes:
         dir: The root directory for storing all run artifacts.

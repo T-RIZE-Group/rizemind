@@ -29,8 +29,7 @@ def mlflow_mod(msg: Message, ctx: Context, call_next: ClientAppCallable) -> Mess
     Args:
         msg: The incoming message from the ServerApp to the ClientApp.
         ctx: Context of the run.
-        call_next: The function that gets executed next to generate
-            the response to the incoming message and context.
+        call_next: The next callable in the chain to process the message.
 
     Returns:
         The response message sent from the ClientApp to the ServerApp.

@@ -7,5 +7,4 @@ References
    :caption: Contents:
 
    toml-config/index
-   authentication/signing-client
-   authentication/signed-strategy
+   logging/index
