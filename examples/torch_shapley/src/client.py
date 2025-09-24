@@ -2,7 +2,7 @@ import torch
 from eth_account import Account
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
-from rizemind.authentication.authentication_mod import authentication_mod
+from rizemind.authentication import authentication_mod
 from rizemind.authentication.config import ACCOUNT_CONFIG_STATE_KEY, AccountConfig
 from rizemind.authentication.notary.model.mod import model_notary_mod
 from rizemind.configuration.toml_config import TomlConfig

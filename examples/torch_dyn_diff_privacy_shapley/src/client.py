@@ -10,7 +10,7 @@ from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context, Scalar
 from opacus import GradSampleModule, PrivacyEngine
 from opacus.optimizers import DPOptimizer
-from rizemind.authentication.authentication_mod import authentication_mod
+from rizemind.authentication import authentication_mod
 from rizemind.authentication.config import ACCOUNT_CONFIG_STATE_KEY, AccountConfig
 from rizemind.authentication.notary.model.config import parse_model_notary_config
 from rizemind.authentication.notary.model.mod import model_notary_mod
