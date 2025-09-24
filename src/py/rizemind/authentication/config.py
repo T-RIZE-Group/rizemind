@@ -14,24 +14,35 @@ ACCOUNT_CONFIG_STATE_KEY = "rizemind.account"
 
 
 class MnemonicStoreConfig(BaseModel):
+    """A Pydantic model to store mnemonics."""
+
     account_name: str = Field(..., description="account name")
     passphrase: str = Field(..., description="Pass-phrase that unlocks the keystore")
 
 
 class AccountConfig(BaseConfig):
-    """
-    Accept **one** of the two authentication sources:
+    """Ethereum account configuration.
+
+    Accepts **one** of two authentication sources: direct mnemonic string or a
+    keystore reference. For example:
 
     1.  Direct mnemonic string
-
+        ```toml
         [tool.eth.account]
         mnemonic = "test test … junk"
+        ```
 
     2.  Keystore reference
-
+        ```toml
         [tool.eth.account.mnemonic_store]
         account_name = "bob"
         passphrase   = "open sesame"
+        ```
+
+    Attributes:
+        mnemonic: BIP-39 seed phrase. Leave empty if using mnemonic_store.
+        mnemonic_store: Keystore configuration.
+        default_account_index: The default HD wallet account index to use.
     """
 
     mnemonic: str | None = Field(
@@ -45,6 +56,7 @@ class AccountConfig(BaseConfig):
     @field_validator("mnemonic")
     @classmethod
     def _validate_mnemonic(cls, value: str) -> str:
+        """Validate a mnemonic phrase."""
         mnemo = Mnemonic("english")
         if not mnemo.check(value):
             raise ValueError("Invalid mnemonic phrase")
@@ -52,9 +64,14 @@ class AccountConfig(BaseConfig):
 
     @model_validator(mode="after")
     def _populate_and_sanity_check(self) -> "AccountConfig":
-        """
-        • Ensure *exactly one* variant is supplied
-        • If the keystore path is chosen, decrypt it and populate ``self.mnemonic``
+        """Ensure exactly one variant is supplied.
+
+        If the keystore path is chosen, decrypt it and populate ``self.mnemonic``.
+
+        Raises:
+            ValueError: If both or neither of ``mnemonic`` and ``mnemonic_store``
+                are provided, or if the provided mnemonic does not match the one
+                in the keystore.
         """
 
         if self.mnemonic_store is not None:
@@ -79,6 +96,18 @@ class AccountConfig(BaseConfig):
         return self
 
     def get_account(self, i: int | None = None) -> BaseAccount:
+        """Get the i-th HD wallet account.
+
+        Args:
+            i: The account index. If not supplied, the ``default_account_index``
+                from the config will be used.
+
+        Returns:
+            The account.
+
+        Raises:
+            ValueError: If no account index is provided and no default is configured.
+        """
         if i is None:
             i = self.default_account_index
 
@@ -93,6 +122,14 @@ class AccountConfig(BaseConfig):
 
     @staticmethod
     def from_context(context: Context) -> "AccountConfig | None":
+        """Get the ``AccountConfig`` from the context if it exists.
+
+        Args:
+            context: The Flower context.
+
+        Returns:
+            The config if it exists, otherwise ``None``.
+        """
         if ACCOUNT_CONFIG_STATE_KEY in context.state.config_records:
             records: Any = context.state.config_records[ACCOUNT_CONFIG_STATE_KEY]
             return AccountConfig(**unflatten(records))

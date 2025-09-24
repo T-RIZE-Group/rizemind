@@ -16,8 +16,7 @@ class ModelNotaryConfig(BaseModel):
     This configuration bundles a model's cryptographic hash with its digital signature and the
     `EIP712 Domain`, enabling verifiable notarization for a specific round.
 
-    @TODO -> requires improvement
-    Args:
+    Attributes:
         domain: EIP712 Domain
         round_id: The specific federated learning round number this notarization applies to.
         model_hash: The cryptographic hash of the model's parameters.
@@ -76,6 +75,9 @@ def parse_model_notary_config(config: dict[str, Any]) -> ModelNotaryConfig:
     Returns:
         ModelNotaryConfig: A`ModelNotaryConfig` populated with the data from
         the input dictionary.
+
+    Raises:
+        ParseException: If the notary configuration cannot be parsed.
     """
     config = from_config(config)
     return ModelNotaryConfig(**config["rizemind"]["notary"]["model"])

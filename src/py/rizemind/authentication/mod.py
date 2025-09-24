@@ -24,6 +24,8 @@ from rizemind.swarm.config import SwarmConfig
 
 
 class NoAccountAuthenticationModError(RizemindException):
+    """No account configuration is available in the context state."""
+
     def __init__(self):
         super().__init__(
             code="no_account_config",
@@ -32,6 +34,8 @@ class NoAccountAuthenticationModError(RizemindException):
 
 
 class NoSwarmAuthenticationModError(RizemindException):
+    """No swarm configuration is available in the context state."""
+
     def __init__(self):
         super().__init__(
             code="no_swarm_config",
@@ -40,6 +44,8 @@ class NoSwarmAuthenticationModError(RizemindException):
 
 
 class WrongSwarmAuthenticationModError(RizemindException):
+    """The requested swarm domain does not match the configured domain."""
+
     def __init__(self, expected: ChecksumAddress | None, received: ChecksumAddress):
         super().__init__(
             code="wrong_swarm_domain",
@@ -49,17 +55,40 @@ class WrongSwarmAuthenticationModError(RizemindException):
 
 def authentication_mod(
     msg: Message,
-    ctxt: Context,
+    ctx: Context,
     call_next: ClientAppCallable,
 ) -> Message:
+    """Handle authentication for GET_PROPERTIES messages.
+
+    Invokes the next callable to populate the context, then, for messages
+    carrying training-auth instructions, verifies the swarm domain and
+    returns a signed authentication response.
+
+    Args:
+        msg: Incoming message to process.
+        ctx: Flower context carrying client state.
+        call_next: Next app callable to delegate to.
+
+    Returns:
+        The resulting message. If authentication applies, this is a
+        GET_PROPERTIES response containing the signature; otherwise, the
+        delegated reply.
+
+    Raises:
+        NoAccountAuthenticationModError: Account configuration is missing
+            from context.
+        NoSwarmAuthenticationModError: Swarm configuration is missing
+            from context.
+        WrongSwarmAuthenticationModError: Request domain differs from the
+            configured swarm domain.
     """
-    Weird behavior, but if you don't `call_next`, then ctxt won't contain values defined
-    in the `client_fn`
-    """
-    reply = call_next(msg, ctxt)
+    # Weird behavior, but if you don't `call_next`,
+    # then ctx won't contain values defined
+    # in the `client_fn`
+    reply = call_next(msg, ctx)
 
     if msg.metadata.message_type == MessageTypeLegacy.GET_PROPERTIES:
-        account_config = AccountConfig.from_context(ctxt)
+        account_config = AccountConfig.from_context(ctx)
         if account_config is None:
             raise NoAccountAuthenticationModError()
         account = account_config.get_account()
@@ -67,7 +96,7 @@ def authentication_mod(
         try:
             train_auth_ins = parse_train_auth_ins(get_properties_ins)
             swarm_config = SwarmConfig.from_context(
-                ctxt, fallback_address=train_auth_ins.domain.verifyingContract
+                ctx, fallback_address=train_auth_ins.domain.verifyingContract
             )
             if swarm_config is None:
                 raise NoSwarmAuthenticationModError()
