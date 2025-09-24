@@ -6,6 +6,6 @@ References
    :maxdepth: 1
    :caption: Contents:
 
+   authentication/index
+   logging/index
    toml-config/index
-   authentication/signing-client
-   authentication/signed-strategy

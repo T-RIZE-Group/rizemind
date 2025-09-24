@@ -16,12 +16,14 @@ from flwr.common.recorddict_compat import (
     getpropertiesins_to_recorddict,
     recorddict_to_getpropertiesres,
 )
-from rizemind.authentication.authentication_mod import (
-    NoAccountAuthenticationModError,
-    WrongSwarmAuthenticationModError,
+from rizemind.authentication import (
     authentication_mod,
 )
 from rizemind.authentication.config import ACCOUNT_CONFIG_STATE_KEY, AccountConfig
+from rizemind.authentication.mod import (
+    NoAccountAuthenticationModError,
+    WrongSwarmAuthenticationModError,
+)
 from rizemind.authentication.signatures.auth import recover_auth_signer
 from rizemind.authentication.train_auth import (
     TrainAuthInsConfig,

@@ -10,34 +10,32 @@ from flwr.common.constant import MessageType
 from flwr.common.message import Message
 from flwr.common.recorddict_compat import recorddict_to_fitres
 from mlflow.entities import RunStatus, ViewType
+
 from rizemind.logging.mlflow.config import MLFlowConfig
 from rizemind.logging.train_metric_history import (
     TRAIN_METRIC_HISTORY_KEY,
     TrainMetricHistory,
 )
 
-###
-# Mlflow Mod Organization
-#
-# Mlflow requires two parameters to distinguish each run:
-# 1. Experiment Name: Which is the name given to the whole operation. Many
-# runs are performed under the same experiment name, and usually the dataset
-# and model architecture remains the same in an experiment.
-# 2. Run Name: Which is a single name given to a full execution of a training
-# cycle. After the end of each run, it is expected that the model is fully tr
-# -ained.
-#
-# Therefore, for the name of the experiment, we chose "RealMLP-Federated" to
-# indicate the model and style of the training operation. This value is shared
-# among the clients, but the Run ID must be persistent between each run, there
-# -fore it is an information that must be sent over by the server, since client's
-# are stateless in flower.
-###
 
+def mlflow_mod(msg: Message, ctx: Context, call_next: ClientAppCallable) -> Message:
+    """Logs metrics on an incoming TRAIN message to an Mlflow server.
 
-def mlflow_mod(msg: Message, ctx: Context, app: ClientAppCallable) -> Message:
+    The `mlflow_mod` relies on the `TRAIN_METRIC_HISTORY_KEY` as a standardized
+    metric type and reads the content of this metric for logging.
+    In addition to the metrics available in `TRAIN_METRIC_HISTORY_KEY`,
+    `mlflow_mod` automatically logs training_time and epochs.
+
+    Args:
+        msg: The incoming message from the ServerApp to the ClientApp.
+        ctx: Context of the run.
+        call_next: The next callable in the chain to process the message.
+
+    Returns:
+        The response message sent from the ClientApp to the ServerApp.
+    """
     start_time = time.time()
-    reply: Message = app(msg, ctx)
+    reply: Message = call_next(msg, ctx)
     time_diff = time.time() - start_time
 
     mlflow_config = MLFlowConfig.from_context(ctx=ctx)

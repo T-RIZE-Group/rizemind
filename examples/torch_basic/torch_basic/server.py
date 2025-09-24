@@ -4,7 +4,7 @@ from typing import cast
 from flwr.common import Context, Metrics, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
-from rizemind.logging.metric_storage import MetricStorage
+from rizemind.logging.local_disk_metric_storage import LocalDiskMetricStorage
 from rizemind.logging.metric_storage_strategy import MetricStorageStrategy
 
 from .task import Net, get_weights
@@ -42,7 +42,7 @@ def server_fn(context: Context):
     )
     config = ServerConfig(num_rounds=num_rounds)
 
-    metrics_storage = MetricStorage(
+    metrics_storage = LocalDiskMetricStorage(
         Path(str(context.run_config["metrics-storage-path"])), "torch-basic"
     )
     metrics_storage.write_config(context.run_config)

@@ -24,12 +24,16 @@ from rizemind.exception.parse_exception import ParseException
 
 
 class CannotTrainException(RizemindException):
+    """An attempt was made to train with an unauthorized address."""
+
     def __init__(self, address: str) -> None:
         message = f"{address} cannot train"
         super().__init__(code="cannot_train", message=message)
 
 
 class CannotRecoverSignerException(RizemindException):
+    """The signer of a model update could not be recovered."""
+
     def __init__(
         self,
     ) -> None:
@@ -37,25 +41,22 @@ class CannotRecoverSignerException(RizemindException):
 
 
 class EthAccountStrategy(Strategy):
-    """
-    A federated learning strategy that verifies model authenticity using Ethereum-based signatures.
+    """A federated learning strategy that verifies model authenticity.
 
-    This class wraps an existing Flower Strategy and ensures that only authorized clients
-    can contribute training updates. It does so by verifying cryptographic signatures against
-    a blockchain-based model registry. If a client is not authorized, it is added to the
-    failures list with a :class:`CannotTrainException`.
+    This strategy wraps an existing Flower Strategy to ensure that only authorized
+    clients can contribute training updates. It verifies cryptographic signatures
+    against a blockchain-based model registry. If a client is not authorized, it
+    is added to the failures list with a `CannotTrainException`.
 
-    :param strat: The base Flower Strategy to wrap.
-    :type strat: Strategy
-    :param model: The blockchain-based model registry.
-    :type model: ModelRegistryV1
+    Attributes:
+        strat: The base Flower Strategy to wrap.
+        swarm: The blockchain-based model registry.
+        address: The contract address of the swarm.
+        account: The Ethereum account used for signing.
 
-    **Example Usage:**
-
-    .. code-block:: python
-
-        strategy = SomeBaseStrategy()
-        model_registry = SwarmV1.from_address(address="0xMY_MODEL_ADDRESS")
+    Example Usage:
+        strategy = SomeBaseStrategy()\n
+        model_registry = SwarmV1.from_address(address="0xMY_MODEL_ADDRESS")\n
         eth_strategy = EthAccountStrategy(strategy, model_registry)
     """
 
@@ -70,6 +71,13 @@ class EthAccountStrategy(Strategy):
         swarm: SupportsEthAccountStrategy,
         account: BaseAccount,
     ):
+        """Initializes the EthAccountStrategy.
+
+        Args:
+            strat: The base Flower Strategy to wrap.
+            swarm: The blockchain-based model registry.
+            account: The Ethereum account used for signing.
+        """
         super().__init__()
         self.strat = strat
         self.swarm = swarm
@@ -78,9 +86,25 @@ class EthAccountStrategy(Strategy):
         self.account = account
 
     def initialize_parameters(self, client_manager):
+        """Initializes model parameters."""
         return self.strat.initialize_parameters(client_manager)
 
     def configure_fit(self, server_round, parameters, client_manager):
+        """Prepare fit instructions and attach notary metadata.
+
+        Wraps the base strategy's `configure_fit` to use
+        `AuthenticatedClientManager` and appends a signed notary payload to each
+        client's config so that clients can sign their updates.
+
+        Args:
+            server_round: The current server round.
+            parameters: The global model parameters to send to clients.
+            client_manager: The Flower client manager.
+
+        Returns:
+            The list of client instructions produced by the wrapped strategy
+            with notary metadata attached to each instruction's config.
+        """
         auth_cm = AuthenticatedClientManager(client_manager, server_round, self.swarm)
         client_instructions = self.strat.configure_fit(
             server_round, parameters, auth_cm
@@ -103,6 +127,24 @@ class EthAccountStrategy(Strategy):
         return client_instructions
 
     def aggregate_fit(self, server_round, results, failures):
+        """Aggregate fit results from authorized clients only.
+
+        Recovers the signer address from each client's fit result, tags the
+        client with the recovered address, and filters out contributions from
+        non-authorized addresses. Unauthorized attempts are recorded as
+        failures. Delegates final aggregation to the wrapped strategy.
+
+        Args:
+            server_round: The current server round.
+            results: A list of tuples `(ClientProxy, FitRes)` received from
+                clients.
+            failures: A list that will be extended with failures that occur
+                during processing.
+
+        Returns:
+            The aggregated result as returned by the wrapped strategy's
+            `aggregate_fit`.
+        """
         whitelisted: list[tuple[ClientProxy, FitRes]] = []
         for client, res in results:
             try:
@@ -118,6 +160,18 @@ class EthAccountStrategy(Strategy):
         return self.strat.aggregate_fit(server_round, whitelisted, failures)
 
     def _recover_signer(self, res: FitRes, server_round: int):
+        """Recovers the signer's address from a client's response.
+
+        Args:
+            res: The client's fit response.
+            server_round: The current server round.
+
+        Returns:
+            The Ethereum address of the signer.
+
+        Raises:
+            ParseException: If the notary configuration cannot be parsed.
+        """
         notary_config = parse_model_notary_config(res.metrics)
         eip712_domain = self.swarm.get_eip712_domain()
         return recover_model_signer(
@@ -128,11 +182,47 @@ class EthAccountStrategy(Strategy):
         )
 
     def configure_evaluate(self, server_round, parameters, client_manager):
+        """Prepare evaluation instructions using authenticated client manager.
+
+        Wraps the base strategy's `configure_evaluate` with
+        `AuthenticatedClientManager` and delegates to the wrapped strategy.
+
+        Args:
+            server_round: The current server round.
+            parameters: The global model parameters to send to clients.
+            client_manager: The Flower client manager.
+
+        Returns:
+            The list of client evaluation instructions produced by the wrapped
+            strategy.
+        """
         auth_cm = AuthenticatedClientManager(client_manager, server_round, self.swarm)
         return self.strat.configure_evaluate(server_round, parameters, auth_cm)
 
     def aggregate_evaluate(self, server_round, results, failures):
+        """Aggregate evaluation results by delegating to the wrapped strategy.
+
+        Args:
+            server_round: The current server round.
+            results: A list of tuples `(ClientProxy, EvaluateRes)` received
+                from clients.
+            failures: A list of failures encountered during evaluation.
+
+        Returns:
+            The aggregated evaluation result as returned by the wrapped
+            strategy's `aggregate_evaluate`.
+        """
         return self.strat.aggregate_evaluate(server_round, results, failures)
 
     def evaluate(self, server_round, parameters):
+        """Evaluate the current global model via the wrapped strategy.
+
+        Args:
+            server_round: The current server round.
+            parameters: The global model parameters to evaluate.
+
+        Returns:
+            The evaluation result as returned by the wrapped strategy's
+            `evaluate`.
+        """
         return self.strat.evaluate(server_round, parameters)

@@ -1,12 +1,13 @@
 from eth_account import Account
 from eth_account.signers.base import BaseAccount
 from eth_typing import ChecksumAddress
+from web3 import Web3
+
 from rizemind.authentication.signatures.eip712 import (
     EIP712DomainRequiredFields,
     prepare_eip712_message,
 )
 from rizemind.authentication.signatures.signature import Signature
-from web3 import Web3
 
 AuthTypeName = "Auth"
 AuthTypeAbi = [
@@ -17,25 +18,21 @@ AuthTypeAbi = [
 
 def sign_auth_message(
     *,
-    account: BaseAccount,
     round: int,
     nonce: bytes,
     domain: EIP712DomainRequiredFields,
+    account: BaseAccount,
 ) -> Signature:
-    """
-    Signs an authentication message using the EIP-712 standard.
+    """Signs an authentication message using the EIP-712 standard.
 
     Args:
-        account (BaseAccount): The account that will sign the message
-        version (str): The version string for the domain
-        round (int): The current round number
-        nonce (HexStr): A unique nonce for this authentication
-        chainid (int): The blockchain network ID
-        contract (ChecksumAddress): The verifying contract address
-        name (str): The domain name
+        round: The current round number.
+        nonce: A unique nonce for this authentication.
+        domain: The EIP712 required fields.
+        account: The account that will sign the message.
 
     Returns:
-        SignedMessage: The signed authentication message
+        The signed authentication message.
     """
     eip712_message = prepare_eip712_message(
         domain,
@@ -54,20 +51,16 @@ def recover_auth_signer(
     domain: EIP712DomainRequiredFields,
     signature: Signature,
 ) -> ChecksumAddress:
-    """
-    Recovers the address that signed an authentication message.
+    """Recovers the address that signed an authentication message.
 
     Args:
-        version (str): The version string for the domain
-        round (int): The round number from the signed message
-        nonce (bytes): The nonce from the signed message
-        chainid (int): The blockchain network ID
-        contract (ChecksumAddress): The verifying contract address
-        name (str): The domain name
-        signature (tuple): The signature components (v, r, s)
+        round: The round number from the signed message.
+        nonce: The nonce from the signed message.
+        domain: The EIP712 required fields.
+        signature: The signature of the message.
 
     Returns:
-        ChecksumAddress: The address that signed the message
+        The address that signed the message.
     """
     eip712_message = prepare_eip712_message(
         domain,
