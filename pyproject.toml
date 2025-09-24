@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "rizemind"
 dynamic = ["version"]
-description = "RIZEMIND: building decentralized collective intelligence"
+description = "Rizemind: building decentralized collective intelligence"
 authors = [{ name = "T-RIZE Labs", email = "michael.duchesne@t-rize.io" }]
 requires-python = ">=3.12"
 license = "Apache-2.0"
