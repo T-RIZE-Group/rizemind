@@ -85,7 +85,7 @@ def server_fn(context: Context) -> ServerAppComponents:
     server_config = ServerConfig(
         num_rounds=int(context.run_config["num-server-rounds"])
     )
-    metrics_storage = MetricStorage(
+    metrics_storage = LocalDiskMetricStorage(
         Path(str(context.run_config["metrics-storage-path"])),
         "torch-dyn-diff-privacy-shapley",
     )
