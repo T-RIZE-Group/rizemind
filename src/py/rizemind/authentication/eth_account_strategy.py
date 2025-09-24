@@ -55,12 +55,9 @@ class EthAccountStrategy(Strategy):
         account: The Ethereum account used for signing.
 
     Example Usage:
-
-    ```python
-        strategy = SomeBaseStrategy()
-        model_registry = SwarmV1.from_address(address="0xMY_MODEL_ADDRESS")
+        strategy = SomeBaseStrategy()\n
+        model_registry = SwarmV1.from_address(address="0xMY_MODEL_ADDRESS")\n
         eth_strategy = EthAccountStrategy(strategy, model_registry)
-    ```
     """
 
     strat: Strategy

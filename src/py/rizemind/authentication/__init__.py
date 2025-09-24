@@ -9,11 +9,7 @@ Typical usage example:
     from rizemind.authentication import EthAccountStrategy, AccountConfig, authentication_mod
 
     # Server: wrap a base strategy
-    eth_strategy = EthAccountStrategy(
-        strat=base_strategy,
-        swarm=swarm,  # e.g., SwarmV1 instance
-        account=AccountConfig(...).get_account(0),
-    )
+    eth_strategy = EthAccountStrategy(strat=base_strategy, swarm=swarm, account=AccountConfig(...).get_account(0))
 
     # Client: add authentication middleware to the app chain
     app = ClientApp(client_fn, mods=[authentication_mod, model_notary_mod])

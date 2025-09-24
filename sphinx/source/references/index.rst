@@ -6,5 +6,6 @@ References
    :maxdepth: 1
    :caption: Contents:
 
-   toml-config/index
+   authentication/index
    logging/index
+   toml-config/index

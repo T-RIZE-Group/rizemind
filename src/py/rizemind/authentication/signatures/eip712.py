@@ -5,7 +5,6 @@ from eth_account.messages import SignableMessage, encode_typed_data
 from eth_typing import ChecksumAddress
 
 
-# @TODO check with mick for "domain separator"
 class EIP712DomainRequiredFields(Protocol):
     """Protocol defining the required fields for an EIP-712 domain.
 
