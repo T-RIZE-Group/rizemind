@@ -1,8 +1,7 @@
-train_auth
-==========
+Training Authentication
+=======================
 
 .. automodule:: rizemind.authentication.train_auth
    :members:
-   :undoc-members:
    :show-inheritance:
-   :noindex:
+   :no-index:

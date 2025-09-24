@@ -2,6 +2,5 @@ Auth
 ====
 
 .. automodule:: rizemind.authentication.signatures.auth
-   :members:
-   :undoc-members:
+    :members:
    :show-inheritance:

@@ -1,5 +1,5 @@
-Authentication
-==============
+Authentication Module
+=====================
 
 .. automodule:: rizemind.authentication
    :no-members:

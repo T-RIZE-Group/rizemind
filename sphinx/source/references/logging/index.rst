@@ -1,5 +1,5 @@
-Logging
-=======
+Logging Module
+==============
 
 .. automodule:: rizemind.logging
    :no-members:

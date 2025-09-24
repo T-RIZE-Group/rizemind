@@ -4,4 +4,4 @@ EIP712
 .. automodule:: rizemind.authentication.signatures.eip712
    :members:
    :show-inheritance:
-   :noindex:
+   :no-index:

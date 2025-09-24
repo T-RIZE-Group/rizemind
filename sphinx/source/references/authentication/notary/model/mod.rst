@@ -2,6 +2,5 @@ Notary Module
 =============
 
 .. automodule:: rizemind.authentication.notary.model.mod
-   :members:
-   :undoc-members:
+    :members:
    :show-inheritance:

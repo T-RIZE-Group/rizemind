@@ -2,6 +2,6 @@ mod
 ======
 
 .. automodule:: rizemind.authentication.mod
-   :members:
-   :undoc-members:
+    :members:
    :show-inheritance:
+   
