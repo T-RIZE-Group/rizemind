@@ -8,4 +8,5 @@ References
 
    authentication/index
    configuration/index
+   exception/index
    logging/index
