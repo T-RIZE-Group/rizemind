@@ -6,6 +6,7 @@ Pydantic-based configuration models, and integration with Flower's configuration
 system through data transformation utilities.
 
 The module offers two main configuration approaches:
+
 - `TomlConfig`: For loading configuration from TOML files with environment
   variable substitution
 - `BaseConfig`: A Pydantic-based model for structured configuration with
@@ -16,22 +17,21 @@ convert between different configuration formats used by the Flower federated
 learning framework.
 
 Typical usage example:
+    >>> # Load configuration from TOML file
+    >>> config = TomlConfig("config.toml")
+    >>> database_host = config.get("database.host", "localhost")
+    >>> # Use Pydantic-based configuration
+    >>> class MyConfig(BaseConfig):
+    >>>   host: str = "localhost"
+    >>>   port: int = 8080
+    >>> my_config = MyConfig(host="example.com")
+    >>> flower_config = my_config.to_config_record()
 
-    # Load configuration from TOML file
-    config = TomlConfig("config.toml")
-    database_host = config.get("database.host", "localhost")
-
-    # Use Pydantic-based configuration
-    class MyConfig(BaseConfig):
-        host: str = "localhost"
-        port: int = 8080
-
-    my_config = MyConfig(host="example.com")
-    flower_config = my_config.to_config_record()
-
-    # Transform configuration data
-    nested_config = {"db": {"host": "localhost", "port": 5432}}
-    flat_config = flatten(nested_config)  # {"db.host": "localhost", "db.port": 5432}
+    >>> # Transform configuration data
+    >>> nested_config = {"db": {"host": "localhost", "port": 5432}}
+    >>> flat_config = flatten(
+    ...     nested_config
+    ... )  # {"db.host": "localhost", "db.port": 5432}
 """
 
 from rizemind.configuration.base_config import BaseConfig

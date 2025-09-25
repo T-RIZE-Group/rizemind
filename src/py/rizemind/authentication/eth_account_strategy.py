@@ -19,8 +19,7 @@ from rizemind.authentication.notary.model.model_signature import (
     sign_parameters_model,
 )
 from rizemind.authentication.typing import SupportsEthAccountStrategy
-from rizemind.exception.base_exception import RizemindException
-from rizemind.exception.parse_exception import ParseException
+from rizemind.exception import ParseException, RizemindException
 
 
 class CannotTrainException(RizemindException):

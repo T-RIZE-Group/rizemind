@@ -24,8 +24,7 @@ from rizemind.authentication.notary.model.model_signature import (
     sign_parameters_model,
 )
 from rizemind.configuration.transform import concat
-from rizemind.exception.base_exception import RizemindException
-from rizemind.exception.parse_exception import ParseException
+from rizemind.exception import ParseException, RizemindException
 from rizemind.swarm.config import SwarmConfig
 from rizemind.web3.config import Web3Config
 

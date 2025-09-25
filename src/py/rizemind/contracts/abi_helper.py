@@ -4,7 +4,7 @@ from typing import Any
 
 from web3 import Web3
 
-from rizemind.exception.base_exception import RizemindException
+from rizemind.exception import RizemindException
 
 
 class AbiNotFoundError(RizemindException):

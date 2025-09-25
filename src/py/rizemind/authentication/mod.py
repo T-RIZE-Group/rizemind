@@ -18,8 +18,7 @@ from rizemind.authentication.train_auth import (
     parse_train_auth_ins,
     prepare_train_auth_res,
 )
-from rizemind.exception.base_exception import RizemindException
-from rizemind.exception.parse_exception import ParseException
+from rizemind.exception import ParseException, RizemindException
 from rizemind.swarm.config import SwarmConfig
 
 

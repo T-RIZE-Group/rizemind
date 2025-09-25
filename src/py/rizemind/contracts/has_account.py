@@ -1,6 +1,6 @@
 from eth_account.signers.base import BaseAccount
 
-from rizemind.exception.base_exception import RizemindException
+from rizemind.exception import RizemindException
 
 
 class NoAccountConnected(RizemindException):
