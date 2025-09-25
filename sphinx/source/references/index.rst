@@ -7,5 +7,5 @@ References
    :caption: Contents:
 
    authentication/index
+   configuration/index
    logging/index
-   toml-config/index
