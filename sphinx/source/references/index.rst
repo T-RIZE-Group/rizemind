@@ -9,3 +9,4 @@ References
    authentication/index
    configuration/index
    logging/index
+   mnemonic/index
