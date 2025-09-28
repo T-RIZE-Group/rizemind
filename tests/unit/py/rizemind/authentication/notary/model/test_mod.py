@@ -34,7 +34,7 @@ from rizemind.exception.base_exception import RizemindException
 from rizemind.exception.parse_exception import ParseException
 from rizemind.swarm.config import SWARM_CONFIG_STATE_KEY, SwarmConfig
 from rizemind.swarm.swarm import Swarm
-from rizemind.web3.config import Web3Config
+from rizemind.web3 import Web3Config
 from web3 import Web3
 
 

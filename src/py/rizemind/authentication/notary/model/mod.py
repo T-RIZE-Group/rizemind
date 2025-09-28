@@ -27,7 +27,7 @@ from rizemind.configuration.transform import concat
 from rizemind.exception.base_exception import RizemindException
 from rizemind.exception.parse_exception import ParseException
 from rizemind.swarm.config import SwarmConfig
-from rizemind.web3.config import Web3Config
+from rizemind.web3 import Web3Config
 
 
 class MissingConfigNotaryModError(RizemindException):
