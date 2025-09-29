@@ -11,7 +11,7 @@ from rizemind.cli.account.options import AccountNameOption, MnemonicOption
 from rizemind.contracts.swarm.swarm_v1.swarm_v1_factory import SwarmV1FactoryConfig
 from rizemind.swarm.certificate.certificate import Certificate, CompressedCertificate
 from rizemind.swarm.config import SwarmConfig
-from rizemind.web3.config import Web3Config
+from rizemind.web3 import Web3Config
 
 swarm = typer.Typer(help="Federation management commands")
 

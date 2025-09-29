@@ -10,3 +10,5 @@ References
    configuration/index
    logging/index
    mnemonic/index
+   web3/index
+   exception/index
