@@ -4,14 +4,13 @@ from eth_account.signers.base import BaseAccount
 from eth_typing import ChecksumAddress
 from flwr.common.context import Context
 from pydantic import Field, model_validator
-from rizemind.configuration.base_config import BaseConfig
-from rizemind.configuration.transform import unflatten
-from rizemind.configuration.validators.eth_address import EthereumAddress
+from rizemind.configuration import BaseConfig, unflatten
+from rizemind.configuration.validators import EthereumAddress
 from rizemind.contracts.swarm.swarm_v1.swarm_v1_factory import (
     SwarmV1Factory,
     SwarmV1FactoryConfig,
 )
-from rizemind.exception.base_exception import RizemindException
+from rizemind.exception import RizemindException
 from rizemind.swarm.swarm import Swarm
 from web3 import Web3
 
