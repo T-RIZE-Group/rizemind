@@ -16,7 +16,7 @@ from rizemind.strategies.contribution.shapley.decentralized.shapley_value_strate
 )
 from rizemind.strategies.contribution.shapley.shapley_value_strategy import Coalition
 from rizemind.swarm.config import SwarmConfig
-from rizemind.web3.config import Web3Config
+from rizemind.web3 import Web3Config
 
 from .task import Net, get_weights
 

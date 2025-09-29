@@ -30,7 +30,7 @@ from rizemind.contracts.erc.erc5267.typings import EIP712DomainMinimal
 from rizemind.exception import ParseException, RizemindException
 from rizemind.swarm.config import SWARM_CONFIG_STATE_KEY, SwarmConfig
 from rizemind.swarm.swarm import Swarm
-from rizemind.web3.config import Web3Config
+from rizemind.web3 import Web3Config
 from web3 import Web3
 
 
