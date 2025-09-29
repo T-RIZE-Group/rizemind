@@ -8,5 +8,6 @@ References
 
    authentication/index
    configuration/index
-   logging/index
    web3/index
+   exception/index
+   logging/index
