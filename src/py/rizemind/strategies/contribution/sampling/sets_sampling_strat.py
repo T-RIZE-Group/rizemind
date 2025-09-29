@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 from flwr.common import FitRes
 from flwr.server.client_proxy import ClientProxy
+
 from rizemind.strategies.contribution.shapley.trainer_mapping import ParticipantMapping
 from rizemind.strategies.contribution.shapley.trainer_set import (
     TrainerSet,

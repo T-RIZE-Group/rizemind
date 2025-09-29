@@ -3,6 +3,7 @@ import itertools
 from eth_typing import ChecksumAddress
 from flwr.common import FitRes
 from flwr.server.client_proxy import ClientProxy
+
 from rizemind.authentication.authenticated_client_properties import (
     AuthenticatedClientProperties,
 )

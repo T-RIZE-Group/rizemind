@@ -9,17 +9,18 @@ from flwr.common.typing import FitIns, Parameters, Scalar
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
-from rizemind.authentication.authenticated_client_properties import (
+
+from rizemind.authentication import (
     AuthenticatedClientProperties,
+)
+from rizemind.strategies.contribution.calculators import (
+    PlayerScore,
+    ShapleyValueCalculator,
 )
 from rizemind.strategies.contribution.calculators.calculator import (
     ContributionCalculator,
-    PlayerScore,
 )
-from rizemind.strategies.contribution.calculators.shapley_value import (
-    ShapleyValueCalculator,
-)
-from rizemind.strategies.contribution.sampling.all_sets import AllSets
+from rizemind.strategies.contribution.sampling import AllSets
 from rizemind.strategies.contribution.sampling.sets_sampling_strat import (
     SetsSamplingStrategy,
 )

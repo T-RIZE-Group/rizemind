@@ -2,6 +2,7 @@ from collections.abc import Callable
 from math import factorial
 
 from eth_typing import ChecksumAddress
+
 from rizemind.strategies.contribution.calculators.calculator import (
     ContributionCalculator,
     PlayerScore,

@@ -3,6 +3,7 @@ from collections.abc import Callable
 
 from eth_typing import ChecksumAddress
 from pydantic import BaseModel
+
 from rizemind.strategies.contribution.shapley.trainer_mapping import ParticipantMapping
 from rizemind.strategies.contribution.shapley.trainer_set import (
     TrainerSetAggregate,

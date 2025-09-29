@@ -7,8 +7,9 @@ from flwr.common.logger import log
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
-from rizemind.strategies.compensation.typings import SupportsDistribute
 from web3 import Web3
+
+from rizemind.strategies.compensation.typings import SupportsDistribute
 
 
 class SimpleCompensationStrategy(Strategy):
