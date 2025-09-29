@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import pytest
 from pydantic import HttpUrl
 from rizemind.authentication import AccountConfig
-from rizemind.web3.config import Web3Config
+from rizemind.web3 import Web3Config
 
 from .forge_helper import start_anvil
 

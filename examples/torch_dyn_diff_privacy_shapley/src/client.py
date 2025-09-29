@@ -20,7 +20,8 @@ from rizemind.strategies.contribution.shapley.decentralized.shapley_value_client
     DecentralShapleyValueClient,
 )
 from rizemind.swarm.swarm import Swarm
-from rizemind.web3.config import WEB3_CONFIG_STATE_KEY, Web3Config
+from rizemind.web3 import Web3Config
+from rizemind.web3.config import WEB3_CONFIG_STATE_KEY
 from torch.utils.data import DataLoader
 
 from .task import Net, get_weights, load_data, set_weights, test, train
