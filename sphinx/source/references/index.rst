@@ -11,4 +11,5 @@ References
    exception/index
    logging/index
    mnemonic/index
+   strategies/index
    web3/index

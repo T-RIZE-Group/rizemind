@@ -88,16 +88,16 @@ class ShapleyValueStrategy(Strategy):
         sets_sampling_strat: Strategy for sampling trainer subsets/coalitions.
         set_aggregates: Store for coalitions.
         contribution_calculator: Calculator for computing Shapley value contributions.
-
-    TODO:
-        There is a mismatch between the loss returned by `evaluate_coalitions` and the loss of the
-        selected model parameters for next round. This is due to the fact that for `evaluate_coalitions`
-        returns the minimum loss among all coalitions, while the selected model is from the coalition
-        that all trainers participated in. Therefore if this model does not have the lowest loss
-        (which can occur often) there will be a mismatch between the selected parameter's loss vs
-        what is displayed. This needs to be addresses in later versions by selecting the model
-        that its loss is returned by `evaluate_coalitions`.
     """
+
+    # TODO:
+    #     There is a mismatch between the loss returned by `evaluate_coalitions` and the loss of the
+    #     selected model parameters for next round. This is due to the fact that for `evaluate_coalitions`
+    #     returns the minimum loss among all coalitions, while the selected model is from the coalition
+    #     that all trainers participated in. Therefore if this model does not have the lowest loss
+    #     (which can occur often) there will be a mismatch between the selected parameter's loss vs
+    #     what is displayed. This needs to be addresses in later versions by selecting the model
+    #     that its loss is returned by `evaluate_coalitions`.
 
     strategy: Strategy
     swarm: SupportsShapleyValueStrategy
