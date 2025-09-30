@@ -17,24 +17,20 @@ from flwr.common.recorddict_compat import (
     fitres_to_recorddict,
     recorddict_to_fitres,
 )
-from rizemind.authentication.config import ACCOUNT_CONFIG_STATE_KEY, AccountConfig
-from rizemind.authentication.notary.model.config import (
+from rizemind.authentication import AccountConfig
+from rizemind.authentication.config import ACCOUNT_CONFIG_STATE_KEY
+from rizemind.authentication.notary.model import (
+    model_notary_mod,
     parse_model_notary_config,
     prepare_model_notary_config,
-)
-from rizemind.authentication.notary.model.mod import (
-    model_notary_mod,
-)
-from rizemind.authentication.notary.model.model_signature import (
     recover_model_signer,
     sign_parameters_model,
 )
 from rizemind.contracts.erc.erc5267.typings import EIP712DomainMinimal
-from rizemind.exception.base_exception import RizemindException
-from rizemind.exception.parse_exception import ParseException
+from rizemind.exception import ParseException, RizemindException
 from rizemind.swarm.config import SWARM_CONFIG_STATE_KEY, SwarmConfig
 from rizemind.swarm.swarm import Swarm
-from rizemind.web3.config import Web3Config
+from rizemind.web3 import Web3Config
 from web3 import Web3
 
 

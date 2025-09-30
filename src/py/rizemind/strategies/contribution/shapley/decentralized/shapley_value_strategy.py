@@ -24,14 +24,12 @@ from rizemind.swarm.modules.evaluation.ins import prepare_evaluation_task_ins
 
 
 class DecentralShapleyValueStrategy(ShapleyValueStrategy):
-    """
-    A federated learning strategy that extends the ShapleyValueStrategy to incorporate
-    decentralized coalition-based evaluation and reward distribution.
+    """Decentralized Shapley value strategy with client-side evaluation.
 
-    This strategy creates coalitions from client fit results, aggregates model parameters
-    per coalition, and then evaluates these coalitions. Based on evaluation metrics, it selects
-    the best performing coalition's parameters to be used in the next round and distributes rewards
-    to clients according to their coalition contributions.
+    This strategy extends ShapleyValueStrategy to distribute coalition evaluation
+    tasks to clients rather than performing evaluation on the server. Coalitions
+    are created from client training results, and their parameters are sent to
+    available clients for evaluation in a round-robin fashion.
     """
 
     _task_assigner: TaskAssigner
@@ -43,15 +41,12 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
         task_assigner: SupportsTaskAssignement,
         **kwargs,
     ) -> None:
-        """
-        Initialize the DecentralShapleyValueStrategy.
+        """Initialize the decentralized Shapley value strategy.
 
-        :param strategy: The base federated learning strategy to extend.
-        :type strategy: Strategy
-        :param model: The model registry containing model definitions and methods.
-        :type model: ModelRegistryV1
-        :param initial_parameters: The initial model parameters for the federation.
-        :type initial_parameters: Parameters
+        Args:
+            strategy: The base federated learning strategy.
+            model: The swarm manager for reward distribution.
+            **kwargs: Additional arguments passed to ShapleyValueStrategy.
         """
         log(DEBUG, "DecentralShapleyValueStrategy: initializing")
         ShapleyValueStrategy.__init__(self, strategy, model, **kwargs)
@@ -60,22 +55,18 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
     def configure_evaluate(
         self, server_round: int, parameters: Parameters, client_manager: ClientManager
     ) -> list[tuple[ClientProxy, EvaluateIns]]:
-        """
-        Create evaluation instructions for participating clients.
+        """Create evaluation instructions for distributing coalition evaluation to clients.
 
-        For each previously formed coalition, this method aggregates the model parameters
-        using a custom aggregation method and packages them into evaluation instructions
-        along with a unique coalition ID in the configuration. The evaluation instructions
-        are then assigned to available clients in a round-robin fashion.
+        Assigns each coalition's parameters to available clients in a round-robin fashion
+        for decentralized evaluation. Coalition order is randomized to prevent bias.
 
-        :param server_round: The current server round number.
-        :type server_round: int
-        :param parameters: Model parameters used during aggregation.
-        :type parameters: Parameters
-        :param client_manager: Manager handling available clients.
-        :type client_manager: ClientManager
-        :return: A list of (client, EvaluateIns) pairs.
-        :rtype: list[tuple[ClientProxy, EvaluateIns]]
+        Args:
+            server_round: The current server round number.
+            parameters: Current model parameters (unused, coalitions have their own).
+            client_manager: Manager handling available clients.
+
+        Returns:
+            List of tuples containing client proxies and their evaluation instructions.
         """
         log(
             DEBUG,
@@ -115,31 +106,19 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
         results: list[tuple[ClientProxy, EvaluateRes]],
         failures: list[tuple[ClientProxy, EvaluateRes] | BaseException],
     ) -> tuple[float | None, dict[str, bool | bytes | float | int | str]]:
-        """
-        Aggregate client evaluation results and distribute rewards.
+        """Aggregate client evaluation results and finalize the round.
 
-        This method:
-          1. Extracts the accuracy from each evaluation result and associates it with the coalition's client addresses.
-          4. Distributes rewards to the clients by invoking the model's distribution mechanism.
+        Collects evaluation results from clients, associates them with their
+        respective coalitions, and closes the round by computing contributions
+        and distributing rewards.
 
-        Expected evaluation metrics structure:
+        Args:
+            server_round: The current server round number.
+            results: List of tuples containing client proxies and their evaluation results.
+            failures: List of any failed evaluation results.
 
-        .. code-block:: python
-
-           metrics = {
-               "id": <coalition_id>,
-               "accuracy": <float>,
-               ...
-           }
-
-        :param server_round: The current server round number.
-        :type server_round: int
-        :param results: List of tuples containing client proxies and their evaluation results.
-        :type results: list[tuple[ClientProxy, EvaluateRes]]
-        :param failures: List of any failed evaluation results.
-        :type failures: list[tuple[ClientProxy, EvaluateRes] | BaseException]
-        :return: A tuple containing the loss value from the best performing coalition and an empty metrics dictionary.
-        :rtype: tuple[float | None, dict[str, bool | bytes | float | int | str]]
+        Returns:
+            Tuple containing the best coalition loss and aggregated metrics.
         """
         log(DEBUG, "aggregate_evaluate: client evaluations received")
         if len(failures) > 0:
@@ -153,19 +132,20 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
             _, evaluate_res = result
             id = str(evaluate_res.metrics["id"])
             coalition = self.get_coalition(id)
-            coalition.loss = evaluate_res.loss
-            coalition.metrics = evaluate_res.metrics
+            coalition.insert_res(evaluate_res)
 
         return self.close_round(server_round)
 
     def evaluate(self, server_round: int, parameters: Parameters):
-        """
-        Always return None because we don't want to do centralized evaluation
+        """Server-side evaluation (disabled for decentralized mode).
 
-        :param server_round: The current server round number.
-        :type server_round: int
-        :param parameters: Model parameters to evaluate.
-        :type parameters: Parameters
-        :return: The result of the evaluation as determined by the underlying strategy.
+        Returns None since evaluation is performed by clients in decentralized mode.
+
+        Args:
+            server_round: The current server round number.
+            parameters: Model parameters (unused).
+
+        Returns:
+            None to indicate no centralized evaluation.
         """
         return None

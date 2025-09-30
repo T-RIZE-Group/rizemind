@@ -7,8 +7,8 @@ from flwr.server.strategy import FedAvg
 from rizemind.authentication.config import AccountConfig
 from rizemind.authentication.eth_account_strategy import EthAccountStrategy
 from rizemind.configuration.toml_config import TomlConfig
-from rizemind.logging.metrics_storage import MetricsStorage
-from rizemind.logging.metrics_storage_strategy import MetricsStorageStrategy
+from rizemind.logging.local_disk_metric_storage import LocalDiskMetricStorage
+from rizemind.logging.metric_storage_strategy import MetricStorageStrategy
 from rizemind.strategies.contribution.shapley.decentralized.shapley_value_strategy import (
     DecentralShapleyValueStrategy,
 )
@@ -16,7 +16,7 @@ from rizemind.strategies.contribution.shapley.shapley_value_strategy import (
     TrainerSetAggregate,
 )
 from rizemind.swarm.config import SwarmConfig
-from rizemind.web3.config import Web3Config
+from rizemind.web3 import Web3Config
 
 from .task import Net, get_weights
 
@@ -34,7 +34,8 @@ def weighted_average(metrics: list[tuple[int, Metrics]]) -> Metrics:
 
 def aggregate_coalitions(coalitions: list[TrainerSetAggregate]) -> dict[str, Scalar]:
     accuracies = [
-        float(coalition.get_metric("accuracy", 0)) for coalition in coalitions
+        float(coalition.get_metric("accuracy", default=0, aggregator=max))
+        for coalition in coalitions
     ]
     return {"median_coalition_accuracy": statistics.median(accuracies)}
 
@@ -83,13 +84,13 @@ def server_fn(context: Context):
         swarm,
         account,
     )
-    metrics_storage = MetricsStorage(
+    metrics_storage = LocalDiskMetricStorage(
         Path(str(context.run_config["metrics-storage-path"])),
         "torch-shapley",
     )
     metrics_storage.write_config(context.run_config)
     metrics_storage.write_config(toml_config.data)
-    metrics_strategy = MetricsStorageStrategy(authStrategy, metrics_storage)
+    metrics_strategy = MetricStorageStrategy(authStrategy, metrics_storage)
 
     return ServerAppComponents(strategy=metrics_strategy, config=server_config)
 

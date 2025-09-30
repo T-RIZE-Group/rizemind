@@ -6,11 +6,16 @@ from web3 import Web3
 
 
 class Signature(BaseModel):
-    """
-    A Pydantic model for Ethereum signatures stored as a single 65-byte value.
-    Contains methods to access the r, s, v components.
+    """Represents an ECDSA signature for Ethereum.
 
-    signature: 65 bytes concatenated RSV (r[32] + s[32] + v[1])
+    This model provides a structured way to handle the 65-byte signature format,
+    which is a concatenation of the r, s, and v components. It includes
+    properties to access individual components and class methods for convenient
+    instantiation from different formats.
+
+    Attributes:
+        data: The raw 65-byte signature, concatenated as r (32 bytes) +
+              s (32 bytes) + v (1 byte).
     """
 
     data: bytes = Field(..., description="65-byte signature (r + s + v)")
@@ -18,34 +23,76 @@ class Signature(BaseModel):
     @field_validator("data")
     @classmethod
     def validate_signature_length(cls, v: bytes) -> bytes:
-        """Validate that the signature is exactly 65 bytes."""
+        """Pydantic validator to ensure the signature data is exactly 65 bytes long.
+
+        Args:
+            v: The input byte string to validate.
+
+        Returns:
+            The validated 65-byte string.
+
+        Raises:
+            ValueError: If the length of `v` is not 65.
+        """
         if len(v) != 65:
             raise ValueError("Signature must be exactly 65 bytes")
         return v
 
     @property
     def r(self) -> HexStr:
-        """First 32 bytes of the signature."""
+        """The 'r' value of the ECDSA signature.
+
+        Returns:
+            The first 32 bytes of the signature as a `HexStr`.
+        """
         return Web3.to_hex(self.data[:32])
 
     @property
     def s(self) -> HexStr:
-        """Middle 32 bytes of the signature."""
+        """The 's' value of the ECDSA signature.
+
+        Returns:
+            The middle 32 bytes (bytes 32-64) of the signature as a `HexStr`.
+        """
         return Web3.to_hex(self.data[32:64])
 
     @property
     def v(self) -> int:
-        """Last byte of the signature."""
+        """The 'v' value (recovery identifier) of the ECDSA signature.
+
+        Returns:
+            The last byte (65th) of the signature as an integer.
+        """
         return self.data[64]
 
     @classmethod
     def from_hex(cls, signature: HexStr) -> Self:
-        """Create a Signature from a hex string."""
+        """Creates a `Signature` instance from a hexadecimal string.
+
+        Args:
+            signature: The 65-byte signature as a hex string (e.g., '0x...').
+
+        Returns:
+            A new `Signature` instance.
+        """
         return cls(data=Web3.to_bytes(hexstr=signature))
 
     @classmethod
     def from_rsv(cls, r: HexStr, s: HexStr, v: int) -> Self:
-        """Create a Signature from r, s, v components."""
+        """Creates a `Signature` instance from its r, s, and v components.
+
+        Args:
+            r: The 'r' value as a 32-byte hex string.
+            s: The 's' value as a 32-byte hex string.
+            v: The 'v' value (recovery ID), must be 27 or 28.
+
+        Returns:
+            A new `Signature` instance.
+
+        Raises:
+            ValueError: If `v` is not 27 or 28, or if `r` or `s` are not
+                        32 bytes each after conversion from hex.
+        """
         if v not in (27, 28):
             raise ValueError("v must be either 27 or 28")
 
@@ -58,7 +105,14 @@ class Signature(BaseModel):
         return cls(data=r_bytes + s_bytes + bytes([v]))
 
     def to_tuple(self) -> tuple[int, bytes, bytes]:
-        """Convert to tuple format (v, r, s) used by eth_account."""
+        """Converts the signature to a tuple of (v, r, s).
+
+        This format is commonly used by Ethereum libraries like `eth-account` for
+        transaction signing and public key recovery.
+
+        Returns:
+            A tuple containing the signature components: (v, r_bytes, s_bytes).
+        """
         return (
             self.v,
             self.data[:32],  # r
@@ -66,9 +120,17 @@ class Signature(BaseModel):
         )
 
     def to_hex(self) -> HexStr:
-        """Convert to hex string format."""
+        """The full 65-byte signature as a hex string.
+
+        Returns:
+            The signature as a `HexStr` (e.g., '0x...').
+        """
         return Web3.to_hex(self.data)
 
     def __str__(self) -> str:
-        """String representation of the signature in hex format."""
+        """The string representation of the signature, which is its hex format.
+
+        Returns:
+            The signature as a hex string.
+        """
         return self.to_hex()

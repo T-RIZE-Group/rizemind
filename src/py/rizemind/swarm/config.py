@@ -4,13 +4,13 @@ from eth_account.signers.base import BaseAccount
 from eth_typing import ChecksumAddress
 from flwr.common.context import Context
 from pydantic import Field, SkipValidation, model_validator
-from rizemind.configuration.base_config import BaseConfig
-from rizemind.configuration.validators.eth_address import EthereumAddressOrNone
+from rizemind.configuration import BaseConfig, unflatten
+from rizemind.configuration.validators import EthereumAddressOrNone
 from rizemind.contracts.swarm.swarm_v1.swarm_v1_factory import (
     SwarmV1Factory,
     SwarmV1FactoryConfig,
 )
-from rizemind.exception.base_exception import RizemindException
+from rizemind.exception import RizemindException
 from rizemind.swarm.swarm import Swarm
 from web3 import Web3
 
@@ -80,7 +80,7 @@ class SwarmConfig(BaseConfig):
     ) -> "SwarmConfig | None":
         if SWARM_CONFIG_STATE_KEY in context.state.config_records:
             records: Any = context.state.config_records[SWARM_CONFIG_STATE_KEY]
-            return SwarmConfig(**records)
+            return SwarmConfig(**unflatten(records))
         if fallback_address is not None:
             return SwarmConfig(address=fallback_address)
         return None

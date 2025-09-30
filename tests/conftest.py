@@ -11,7 +11,7 @@ from flwr.common.typing import UserConfig
 from rizemind.authentication.config import AccountConfig
 from rizemind.authentication.signatures.signature import Signature
 from rizemind.contracts.erc.erc5267.typings import EIP712DomainMinimal
-from rizemind.web3.config import Web3Config
+from rizemind.web3 import Web3Config
 from web3 import Web3
 from web3.providers.eth_tester import EthereumTesterProvider
 

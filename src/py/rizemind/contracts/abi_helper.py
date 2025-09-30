@@ -10,7 +10,7 @@ from eth_utils.abi import (
 )
 from web3 import Web3
 
-from rizemind.exception.base_exception import RizemindException
+from rizemind.exception import RizemindException
 
 ERROR_SELECTOR = Web3.keccak(text="Error(string)")[:4]
 PANIC_SELECTOR = Web3.keccak(text="Panic(uint256)")[:4]

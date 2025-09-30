@@ -81,12 +81,15 @@ uv run -- flwr run
 Automated tests use `pytest`. Execute the full test suite with:
 
 ### Unit Tests
+
 ```bash
 uv run pytest tests/unit
 ```
 
 ### Integration Tests
+
 Requires Anvil installed.
+
 ```bash
 uv run pytest tests/integration
 ```

@@ -3,12 +3,13 @@ from eth_account.signers.base import BaseAccount
 from eth_typing import ChecksumAddress
 from flwr.common.typing import Parameters
 from hexbytes import HexBytes
+from web3 import Web3
+
 from rizemind.authentication.signatures.eip712 import (
     EIP712DomainRequiredFields,
     prepare_eip712_message,
 )
 from rizemind.authentication.signatures.signature import Signature
-from web3 import Web3
 
 ModelTypeName = "Model"
 ModelTypeAbi = [
@@ -18,14 +19,13 @@ ModelTypeAbi = [
 
 
 def hash_parameters(parameters: Parameters) -> HexBytes:
-    """
-    Hashes the Parameters dataclass using keccak256.
+    """Hashes the Parameters dataclass using keccak256.
 
     Args:
-        parameters (Parameters): The model parameters to hash.
+        parameters: The model parameters to hash.
 
     Returns:
-        bytes: The keccak256 hash of the concatenated tensors and tensor type.
+        The keccak256 hash of the concatenated tensors and tensor type.
     """
     # Concatenate tensors and tensor type for hashing
     data = b"".join(parameters.tensors) + parameters.tensor_type.encode()
@@ -34,24 +34,22 @@ def hash_parameters(parameters: Parameters) -> HexBytes:
 
 def sign_parameters_model(
     *,
-    account: BaseAccount,
     parameters: Parameters,
     round: int,
     domain: EIP712DomainRequiredFields,
+    account: BaseAccount,
 ) -> Signature:
-    """
-    Signs a model's parameters using the EIP-712 standard.
+    """Signs a model's parameters using the EIP-712 standard.
 
+    @TODO -> requires double checking with domain
     Args:
-        account (Account): An Ethereum account object from which the message will be signed.
-        parameters (Parameters): The model parameters to sign.
-        chainid (int): The ID of the blockchain network.
-        contract (str): The address of the verifying contract in hexadecimal format.
-        name (str): The human-readable name of the domain.
-        round (int): The current round number of the model.
+        account: An Ethereum account object from which the message will be signed.
+        parameters: The model parameters to sign.
+        domain: The EIP712 required fields.
+        round: The current round number of the federated learning.
 
     Returns:
-        dict: SignedMessage from eth_account
+        The `SignedMessage` from eth_account
     """
     parameters_hash = hash_parameters(parameters)
     eip712_message = prepare_eip712_message(
@@ -71,11 +69,16 @@ def recover_model_signer(
     domain: EIP712DomainRequiredFields,
     signature: Signature,
 ) -> ChecksumAddress:
-    """
-    Recover the address of the signed model.
+    """Recover the address of the signed model.
+
+    Args:
+        model: The model's parameters.
+        round: The current round number of the federated learning.
+        domain: The EIP712 required fields.
+        signature: The signature of the trainer/aggregator that sent the parameters.
 
     Returns:
-     str: hex address of the signer.
+        The hex address of the signer.
     """
     model_hash = hash_parameters(model)
     eip712_message = prepare_eip712_message(
