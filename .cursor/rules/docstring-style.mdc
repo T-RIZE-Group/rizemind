@@ -9,7 +9,7 @@ The docstring style should be in google format. If the class or method has typin
 
 ## Modules
 
-Files should start with a docstring describing the contents and usage of the module.
+Module files should start with a docstring describing the contents and usage of the module.
 
 ```python
 """A one-line summary of the module or program, terminated by a period.
@@ -19,10 +19,13 @@ overall description of the module or program. Optionally, it may also
 contain a brief description of exported classes and functions and/or usage
 examples.
 
+Examples should be written in doctest format, and should illustrate how
+to use the function.
+
 Typical usage example:
 
-foo = ClassFoo()
-bar = foo.function_bar()
+>>> print([i for i in example_generator(4)])
+[0, 1, 2, 3]
 """
 ```
 

@@ -2,6 +2,7 @@ from collections.abc import Callable
 from math import factorial
 
 from eth_typing import ChecksumAddress
+
 from rizemind.strategies.contribution.calculators.calculator import (
     ContributionCalculator,
     PlayerScore,
@@ -15,6 +16,13 @@ from rizemind.strategies.contribution.shapley.trainer_set import (
 
 
 class ShapleyValueCalculator(ContributionCalculator):
+    """Calculates participant contributions using Shapley values.
+
+    Implements the Shapley value method from cooperative game theory to fairly
+    assess each participant's contribution. For each participant, it computes
+    their marginal contributions across all coalitions.
+    """
+
     def get_scores(
         self,
         *,
@@ -23,6 +31,22 @@ class ShapleyValueCalculator(ContributionCalculator):
         coalition_to_score_fn: Callable[[TrainerSetAggregate], float]
         | None = default_coalition_to_score,
     ) -> dict[ChecksumAddress, PlayerScore]:
+        """Calculates Shapley value-based contribution scores.
+
+        Computes the Shapley value for each participant by evaluating their
+        marginal contribution.
+
+        Args:
+            participant_mapping: Maps participants to their coalition memberships.
+            store: Contains metrics and losses for all evaluated coalitions.
+            coalition_to_score_fn: Function to convert a coalition's aggregate
+            to a numerical score. If None, uses default_coalition_to_score.
+
+        Returns:
+            A dictionary mapping each participant's address to their PlayerScore
+            containing their Shapley value. If a participant has no valid
+            marginal contributions (weight_total is 0), their score is 0.
+        """
         num_players = participant_mapping.get_total_participants()
         player_scores: dict[ChecksumAddress, PlayerScore] = dict()
         for player in participant_mapping.get_participants():
