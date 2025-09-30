@@ -11,7 +11,6 @@ from flwr.common.typing import (
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
-from rizemind.authentication.eth_account_strategy import hash_parameters
 from rizemind.strategies.contribution.shapley.shapley_value_strategy import (
     ShapleyValueStrategy,
     SupportsShapleyValueStrategy,
@@ -20,7 +19,6 @@ from rizemind.swarm.modules.evaluation.assigment.task_assigner import (
     SupportsTaskAssignement,
     TaskAssigner,
 )
-from rizemind.swarm.modules.evaluation.ins import prepare_evaluation_task_ins
 
 
 class DecentralShapleyValueStrategy(ShapleyValueStrategy):

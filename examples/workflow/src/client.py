@@ -1,15 +1,14 @@
 import timeit
 from typing import cast
 
-from rizemind.exception.contract_execution_exception import RizemindContractError
 import torch
 from eth_account import Account
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context, Scalar
-from rizemind.authentication.authentication_mod import authentication_mod
-from rizemind.authentication.config import AccountConfig
-from rizemind.authentication.notary.model.mod import model_notary_mod
+from rizemind.authentication import AccountConfig, authentication_mod
+from rizemind.authentication.notary.model import model_notary_mod
 from rizemind.configuration.toml_config import TomlConfig
+from rizemind.exception.contract_execution_exception import RizemindContractError
 from rizemind.swarm.config import SwarmConfig
 from rizemind.swarm.modules.contribution.register_mod import register_contribution_mod
 from rizemind.swarm.modules.evaluation.ins import parse_evaluation_task_ins

@@ -8,11 +8,10 @@ from flwr.server import (
     Grid,
     LegacyContext,
     ServerApp,
-    ServerAppComponents,
     ServerConfig,
 )
 from flwr.server.strategy import FedAvg
-from rizemind.authentication.config import ACCOUNT_CONFIG_STATE_KEY, AccountConfig
+from rizemind.authentication.config import AccountConfig
 from rizemind.authentication.eth_account_strategy import EthAccountStrategy
 from rizemind.configuration.toml_config import TomlConfig
 from rizemind.contracts.access_control.base_access_control.base_access_control import (
@@ -29,8 +28,7 @@ from rizemind.contracts.swarm.training.base_training_phase.config import (
     BaseEvaluationPhaseConfig,
     BaseTrainingPhaseConfig,
 )
-from rizemind.logging.metrics_storage import MetricsStorage
-from rizemind.logging.metrics_storage_strategy import MetricsStorageStrategy
+from rizemind.logging import LocalDiskMetricStorage, MetricStorageStrategy
 from rizemind.strategies.contribution.sampling.random_deterministric import (
     RandomDeterministicSampling,
 )
@@ -64,7 +62,8 @@ def weighted_average(metrics: list[tuple[int, Metrics]]) -> Metrics:
 
 def aggregate_coalitions(coalitions: list[TrainerSetAggregate]) -> dict[str, Scalar]:
     accuracies = [
-        float(coalition.get_metric("accuracy", 0)) for coalition in coalitions
+        float(coalition.get_metric("accuracy", 0, aggregator=statistics.mean))
+        for coalition in coalitions
     ]
     return {"median_coalition_accuracy": statistics.median(accuracies)}
 
@@ -174,13 +173,13 @@ def main(grid: Grid, context: Context) -> None:
         account,
     )
     toml_config = TomlConfig("./pyproject.toml")
-    metrics_storage = MetricsStorage(
+    metrics_storage = LocalDiskMetricStorage(
         Path(str(context.run_config["metrics-storage-path"])),
         "torch-shapley",
     )
     metrics_storage.write_config(context.run_config)
     metrics_storage.write_config(toml_config.data)
-    metrics_strategy = MetricsStorageStrategy(authStrategy, metrics_storage)
+    metrics_strategy = MetricStorageStrategy(authStrategy, metrics_storage)
     workflow = RizemindWorkflow(swarm=swarm)
     context = LegacyContext(
         context=context,

@@ -88,16 +88,15 @@ class TomlConfig:
 
     @property
     def data(self) -> dict:
-        """
-        Return a deep copy of the loaded TOML dictionary.
+        """Return a deep copy of the loaded TOML dictionary.
 
-        :return: A deep copy of the entire TOML configuration as a dictionary.
-        :rtype: dict
+        Returns:
+            A deep copy of the entire TOML configuration as a dictionary.
         """
         return _safe_copy(self._data)
 
     def get(self, keys: list[str] | str, default: Any | None = None) -> Any:
-        """Retrieve a nested configuration value.
+        """Retrieve deep copy of a nested configuration value.
 
         Args:
             keys: A dot-delimited string path (for example, ``"a.b.c"``) or a

@@ -21,4 +21,10 @@ class BaseConfig(BaseModel):
         return to_config_record(flatten(self.model_dump()))
 
     def _store_in_context(self, context: Context, state_key: str) -> None:
+        """Store the configuration in the context.
+
+        Args:
+            context: The context to store the configuration in.
+            state_key: The key to store the configuration in.
+        """
         context.state.config_records[state_key] = self.to_config_record()

@@ -45,6 +45,7 @@ class SupportsShapleyValueStrategy(Protocol):
         """Distribute rewards to trainers based on their contribution scores.
 
         Args:
+            round_id: The identifier of the current round.
             trainer_scores: List of tuples containing trainer addresses and their
             corresponding contribution scores.
 
