@@ -1,0 +1,750 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Examples &#8212; RIZEMIND  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'quickstarts/examples';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How-To" href="../how-tos/index.html" />
+    <link rel="prev" title="Quickstart" href="index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">RIZEMIND  documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Sections</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Quickstart</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Examples</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../how-tos/index.html">How-To</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../how-tos/web3-auth/index.html">How To Add Web3-Based Signature Authentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../how-tos/generate-store-mnemonic.html">Generating and Storing a Mnemonic</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../references/index.html">References</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../references/authentication/index.html">Authentication Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../references/authentication/authenticated_client_manager.html">Authenticated Client Manager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/authentication/authenticated_client_properties.html">Authenticated Client Properties</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/authentication/can_train_criterion.html">Can Train Criterion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/authentication/config.html">Config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/authentication/eth_account_strategy.html">Eth Account Strategy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/authentication/mod.html">mod</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/authentication/train_auth.html">Training Authentication</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../references/authentication/notary/index.html">Notary</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../references/authentication/notary/model/index.html">Model</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../references/authentication/signatures/index.html">Signatures</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../references/authentication/signatures/auth.html">Auth</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../references/authentication/signatures/eip712.html">EIP712</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../references/authentication/signatures/signature.html">Signature</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../references/configuration/index.html">Configuration Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../references/configuration/base_config.html">Base Config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/configuration/toml_config.html">Toml Config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/configuration/transform.html">Transform utilities</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../references/configuration/validators/index.html">Validators</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../references/configuration/validators/eth_address.html">Ethereum Address</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../references/exception/index.html">Exception Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../references/exception/base_exception.html">Base Exception</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/exception/parse_exception.html">Parse Exception</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../references/logging/index.html">Logging Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../references/logging/base_metric_storage.html">Base Metric Storage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/logging/inspector_mod.html">Inspector Mod</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/logging/local_disk_metric_storage.html">Local Disk Metric Storage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/logging/metric_storage_strategy.html">Metric Storage Strategy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/logging/train_metric_history.html">Train Metric History</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../references/logging/mlflow/index.html">MLflow</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../references/logging/mlflow/config.html">MLFlow Config</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../references/logging/mlflow/metric_storage.html">MLFlow Metric Storage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../references/logging/mlflow/mod.html">MLFlow Mod</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../references/mnemonic/index.html">Mnemonic Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../references/mnemonic/store.html">Mnemonic Store</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../references/strategies/index.html">Strategies Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../references/strategies/compensation/index.html">Compensation Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../references/strategies/compensation/simple_compensation_strategy.html">Simple Compensation Strategy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../references/strategies/compensation/typings.html">Typings</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../references/strategies/contribution/index.html">Contribution Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../references/strategies/contribution/calculators/index.html">Calculators Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../references/strategies/contribution/sampling/index.html">Sampling Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../references/strategies/contribution/shapley/index.html">Shapley Module</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../references/web3/index.html">Web3 Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../references/web3/config.html">Web3 Config</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../developers/index.html">Contribute to Rizemind</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/quickstarts/examples.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Examples</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#examples">Examples</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-to-run-an-example">How to Run an Example</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#using-local-blockchain">Using Local Blockchain</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#using-rizenet">Using Rizenet</a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#set-up">Set up</a><ul class="nav section-nav flex-column">
+<li class="toc-h6 nav-item toc-entry"><a class="reference internal nav-link" href="#setup-the-repository">Setup the repository</a></li>
+<li class="toc-h6 nav-item toc-entry"><a class="reference internal nav-link" href="#generate-mnemonics">Generate mnemonics</a></li>
+<li class="toc-h6 nav-item toc-entry"><a class="reference internal nav-link" href="#save-your-mnemonic">Save Your Mnemonic</a></li>
+<li class="toc-h6 nav-item toc-entry"><a class="reference internal nav-link" href="#whitelist-aggregator">Whitelist Aggregator</a></li>
+<li class="toc-h6 nav-item toc-entry"><a class="reference internal nav-link" href="#get-gas">Get Gas</a></li>
+<li class="toc-h6 nav-item toc-entry"><a class="reference internal nav-link" href="#run-the-project">Run the project</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-to-create-a-new-example">How to create a new example</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#examples-compatibility-overview">Examples Compatibility Overview</a></li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="examples">
+<h1>Examples<a class="headerlink" href="#examples" title="Link to this heading">#</a></h1>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading">#</a></h2>
+<p>This directory contains practical examples demonstrating how to effectively use the Rizemind library. Each example includes clear, step-by-step instructions to help you quickly set up and run distributed machine learning tasks.</p>
+<section id="how-to-run-an-example">
+<h3>How to Run an Example<a class="headerlink" href="#how-to-run-an-example" title="Link to this heading">#</a></h3>
+<p>To run the examples, generally you need to navigate to its directory, setup a few steps, and execute the simulation server using:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>&lt;example_dir&gt;
+uv<span class="w"> </span>run<span class="w"> </span>--<span class="w"> </span>flwr<span class="w"> </span>run<span class="w"> </span>.
+</pre></div>
+</div>
+<blockquote>
+<div><p><strong>Note:</strong> Some examples may require additional prerequisites. Always check the specific README file inside each example directory for detailed instructions.</p>
+</div></blockquote>
+<p>There are two types of examples, some of them use a local blockchain, and some use the rizenet testnet. To learn how to setup each example properly, read below.</p>
+<hr class="docutils" />
+<section id="using-local-blockchain">
+<h4>Using Local Blockchain<a class="headerlink" href="#using-local-blockchain" title="Link to this heading">#</a></h4>
+<p>To run a local blockchain, we are going to use <strong>Foundry</strong>. <a class="reference external" href="https://book.getfoundry.sh/">Foundry</a> is a comprehensive smart contract development toolchain that manages dependencies, compiles projects, runs tests, deploys contracts, and facilitates interactions with the blockchain via command-line or Solidity scripts.</p>
+<p>Several examples utilize Foundry to create a local testing environment for contracts before deployment. To set up Foundry in this repository, follow the steps below:</p>
+<ol class="arabic simple" start="0">
+<li><p>Install <a class="reference external" href="https://book.getfoundry.sh/getting-started/installation">foundry</a></p></li>
+<li><p>Navigate to the forge directory.</p></li>
+<li><p>Run the following commands line by line:</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Install foundry tools</span>
+foundryup
+
+<span class="c1"># Install soldeer</span>
+forge<span class="w"> </span>soldeer<span class="w"> </span>install
+
+<span class="c1"># Build the project&#39;s smart contracts</span>
+forge<span class="w"> </span>build
+
+<span class="c1"># Run local ethereum node</span>
+anvil
+
+<span class="c1"># Publish the contracts to the local blockchain</span>
+forge<span class="w"> </span>script<span class="w"> </span>script/deployments/SwarmV1Factory.s.sol<span class="w"> </span>--rpc-url<span class="w"> </span>http://127.0.0.1:8545<span class="w"> </span>--private-key<span class="w"> </span>0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80<span class="w"> </span>--broadcast
+</pre></div>
+</div>
+<p>Ensure your local blockchain is running before executing examples requiring a local blockchain.</p>
+<blockquote>
+<div><p>![CAUTION] in the <code class="docutils literal notranslate"><span class="pre">forge</span> <span class="pre">script</span></code> command, the provided private key above is disposable. In real world, never commit or publish your real private key into your repository.</p>
+</div></blockquote>
+</section>
+<hr class="docutils" />
+<section id="using-rizenet">
+<h4>Using Rizenet<a class="headerlink" href="#using-rizenet" title="Link to this heading">#</a></h4>
+<p>Some examples rely on <strong>Rizenet testnet</strong>. Rizenet provides <strong>Factories</strong>, which enable an aggregator to easily instantiate new <strong>smart contracts</strong> for <strong>access control</strong> and <strong>compensation distribution</strong> in decentralized machine learning systems.</p>
+<p>For setup and usage instructions specific to Rizenet examples, follow the steps below:</p>
+<section id="set-up">
+<h5>Set up<a class="headerlink" href="#set-up" title="Link to this heading">#</a></h5>
+<section id="setup-the-repository">
+<h6>Setup the repository<a class="headerlink" href="#setup-the-repository" title="Link to this heading">#</a></h6>
+<p>First make sure you have properly followed the repository by following the main “for developers” section in our documents.</p>
+</section>
+<section id="generate-mnemonics">
+<h6>Generate mnemonics<a class="headerlink" href="#generate-mnemonics" title="Link to this heading">#</a></h6>
+<p>Generate 12-word mnemonics by running:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>--<span class="w"> </span>python<span class="w"> </span><span class="o">{</span>project_name<span class="o">}</span>/generate_mnemonic.py
+</pre></div>
+</div>
+<p>the output will look something like this:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Generated Mnemonic Phrase:
+    picture fine relief success curious avocado define divert cause genuine such master
+
+    Copy the `env.example` to `.env` and replace the RIZENET_MNEMONIC with the mnemonic above.
+
+    Your aggregator address: 0x16E5D170372bDEF845dE2192429e822900F7592F
+
+    To enable your aggregator to launch contracts on Rizenet:
+    1. Enable smart contract deployment: https://rizenet.io/deployer
+    2. Get gas: https://rizenet.io/faucets
+</pre></div>
+</div>
+<p>The two most important pieces of information here are:</p>
+<ul class="simple">
+<li><p><strong>The 12-word mnemonic phrase</strong> (used to derive private keys).</p></li>
+<li><p><strong>The aggregator address</strong> (used to deploy contracts).</p></li>
+</ul>
+</section>
+<section id="save-your-mnemonic">
+<h6>Save Your Mnemonic<a class="headerlink" href="#save-your-mnemonic" title="Link to this heading">#</a></h6>
+<p>To securely store your mnemonic, copy <code class="docutils literal notranslate"><span class="pre">env.example</span></code> to <code class="docutils literal notranslate"><span class="pre">.env</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cp<span class="w"> </span>env.example<span class="w"> </span>.env
+</pre></div>
+</div>
+<p>Then, <strong>edit the <code class="docutils literal notranslate"><span class="pre">.env</span></code> file</strong> and replace the placeholder with your generated mnemonic:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>RIZENET_MNEMONIC=&quot;picture fine relief success curious avocado define divert cause genuine such master&quot;
+</pre></div>
+</div>
+<blockquote>
+<div><p>![CAUTION] <strong>Never share your mnemonic with anyone.</strong> It grants full access to your accounts. Store it securely and do not commit <code class="docutils literal notranslate"><span class="pre">.env</span></code> files to version control.</p>
+</div></blockquote>
+</section>
+<section id="whitelist-aggregator">
+<h6>Whitelist Aggregator<a class="headerlink" href="#whitelist-aggregator" title="Link to this heading">#</a></h6>
+<p>Rizenet is a <strong>permissioned network</strong> for <strong>smart contract deployment</strong>.
+Before deploying contracts, you must <strong>whitelist your aggregator address</strong>.</p>
+<ul class="simple">
+<li><p>Go to <code class="docutils literal notranslate"><span class="pre">Rizenet</span> <span class="pre">Deployer</span> <span class="pre">&lt;https://rizenet.io/deployer&gt;</span></code>_.</p></li>
+<li><p>Enter your <strong>aggregator address</strong> (generated earlier).</p></li>
+<li><p>Click “Enable” and wait for confirmation.</p></li>
+</ul>
+<p>Once approved, your aggregator will have permission to deploy smart contracts.</p>
+</section>
+<section id="get-gas">
+<h6>Get Gas<a class="headerlink" href="#get-gas" title="Link to this heading">#</a></h6>
+<p>Blockchain transactions require <strong>gas</strong> to process computations.
+On the <strong>Rizenet Testnet</strong>, gas is <strong>free</strong>, but you need to request testnet tokens. To get gas:</p>
+<ul class="simple">
+<li><p>Visit <code class="docutils literal notranslate"><span class="pre">Rizenet</span> <span class="pre">Faucet</span> <span class="pre">&lt;https://rizenet.io/faucets&gt;</span></code>_.</p></li>
+<li><p>Enter your <strong>aggregator address</strong>.</p></li>
+<li><p>Click drip and wait for confirmation.</p></li>
+</ul>
+<p>Once your aggregator has gas, you’re ready to deploy smart contracts.</p>
+</section>
+<section id="run-the-project">
+<h6>Run the project<a class="headerlink" href="#run-the-project" title="Link to this heading">#</a></h6>
+<p>You can run your Flower project in both <em>simulation</em> and <em>deployment</em> mode without making changes to the code. If you are starting with Flower, we recommend you using the <em>simulation</em> mode as it requires fewer components to be launched manually. By default, <code class="docutils literal notranslate"><span class="pre">flwr</span> <span class="pre">run</span></code> will make use of the Simulation Engine.</p>
+<ul class="simple">
+<li><p>Run with the Simulation Engine</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>--<span class="w"> </span>flwr<span class="w"> </span>run<span class="w"> </span>.
+</pre></div>
+</div>
+<p>You can also override some of the settings for your <code class="docutils literal notranslate"><span class="pre">ClientApp</span></code> and <code class="docutils literal notranslate"><span class="pre">ServerApp</span></code> defined in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>. For example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>--<span class="w"> </span>flwr<span class="w"> </span>run<span class="w"> </span>.<span class="w"> </span>--run-config<span class="w"> </span>num-server-rounds<span class="o">=</span><span class="m">5</span>,learning-rate<span class="o">=</span><span class="m">0</span>.05
+</pre></div>
+</div>
+<blockquote>
+<div><p>![NOTE]: Make sure to always use the command <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">run</span> <span class="pre">--</span></code> before calling the actual command. This way <code class="docutils literal notranslate"><span class="pre">uv</span></code> will make sure you have the proper dependencies installed.</p>
+</div></blockquote>
+</section>
+</section>
+</section>
+</section>
+<section id="how-to-create-a-new-example">
+<h3>How to create a new example<a class="headerlink" href="#how-to-create-a-new-example" title="Link to this heading">#</a></h3>
+<p>To create a new example, make a new sub-directory in the <code class="docutils literal notranslate"><span class="pre">examples</span></code>, open it in your terminal, and run the following command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>init<span class="w"> </span>--python<span class="w"> </span><span class="m">3</span>.12<span class="w"> </span><span class="c1"># Since our dependencies are currently only compatible with python 3.12</span>
+</pre></div>
+</div>
+<p>This will tell <code class="docutils literal notranslate"><span class="pre">uv</span></code> to add the new example as a workspace, allowing the dependencies to be shared. Please keep in mind that all workspaces share the same dependency version. This is to facilitate dependency management across the examples and the main library.</p>
+<p>Now you will see three files under your newly created sub-directory:</p>
+<ol class="arabic simple">
+<li><p>A <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> file</p></li>
+<li><p>A main.py file</p></li>
+<li><p>A README.md file</p></li>
+</ol>
+<p>Go ahead and remove the main.py file. Then copy the following lines into your <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> file:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[build-system]</span>
+<span class="n">requires</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;hatchling&quot;</span><span class="p">]</span>
+<span class="n">build-backend</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;hatchling.build&quot;</span>
+
+<span class="k">[tool.hatch.build.targets.wheel]</span>
+<span class="n">packages</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;.&quot;</span><span class="p">]</span>
+<span class="k">[tool.hatch.metadata]</span>
+<span class="n">allow-direct-references</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+</pre></div>
+</div>
+<p>You also need to add some additional configurations for your flower client/server based on the type of app you are developing. For that please check <a class="reference external" href="https://flower.ai/docs/framework/">flower documentation</a> or check one of our examples for inspiration.</p>
+<p>To add dependencies to your examples, run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>add<span class="w"> </span>&lt;package-list&gt;
+</pre></div>
+</div>
+<p>This will install all the packages for your examples. Now if you have configured everything properly, you can simply call <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">run</span> <span class="pre">--</span> <span class="pre">flwr</span> <span class="pre">run</span> <span class="pre">.</span></code> for flower to start simulating your example.</p>
+</section>
+<section id="examples-compatibility-overview">
+<h3>Examples Compatibility Overview<a class="headerlink" href="#examples-compatibility-overview" title="Link to this heading">#</a></h3>
+<p>The table below clarifies which examples require a local blockchain and which ones are designed for Rizenet:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Example</p></th>
+<th class="head"><p>Local Blockchain</p></th>
+<th class="head"><p>Rizenet</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Basic Signature</p></td>
+<td><p>✅</p></td>
+<td><p>❌</p></td>
+</tr>
+<tr class="row-odd"><td><p>Centralized Shapley Value</p></td>
+<td><p>✅</p></td>
+<td><p>❌</p></td>
+</tr>
+<tr class="row-even"><td><p>Decentralized Shapley Value</p></td>
+<td><p>✅</p></td>
+<td><p>❌</p></td>
+</tr>
+<tr class="row-odd"><td><p>Decentralized TabPFN</p></td>
+<td><p>✅</p></td>
+<td><p>❌</p></td>
+</tr>
+<tr class="row-even"><td><p>RizeNet Deployment</p></td>
+<td><p>❌</p></td>
+<td><p>✅</p></td>
+</tr>
+<tr class="row-odd"><td><p>RizeNet Shapley</p></td>
+<td><p>❌</p></td>
+<td><p>✅</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Quickstart</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../how-tos/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">How-To</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#examples">Examples</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-to-run-an-example">How to Run an Example</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#using-local-blockchain">Using Local Blockchain</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#using-rizenet">Using Rizenet</a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#set-up">Set up</a><ul class="nav section-nav flex-column">
+<li class="toc-h6 nav-item toc-entry"><a class="reference internal nav-link" href="#setup-the-repository">Setup the repository</a></li>
+<li class="toc-h6 nav-item toc-entry"><a class="reference internal nav-link" href="#generate-mnemonics">Generate mnemonics</a></li>
+<li class="toc-h6 nav-item toc-entry"><a class="reference internal nav-link" href="#save-your-mnemonic">Save Your Mnemonic</a></li>
+<li class="toc-h6 nav-item toc-entry"><a class="reference internal nav-link" href="#whitelist-aggregator">Whitelist Aggregator</a></li>
+<li class="toc-h6 nav-item toc-entry"><a class="reference internal nav-link" href="#get-gas">Get Gas</a></li>
+<li class="toc-h6 nav-item toc-entry"><a class="reference internal nav-link" href="#run-the-project">Run the project</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-to-create-a-new-example">How to create a new example</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#examples-compatibility-overview">Examples Compatibility Overview</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By T-RIZE
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2025, T-RIZE.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
