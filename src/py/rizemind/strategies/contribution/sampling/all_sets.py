@@ -10,8 +10,8 @@ from rizemind.authentication.authenticated_client_properties import (
 from rizemind.strategies.contribution.sampling.sets_sampling_strat import (
     SetsSamplingStrategy,
 )
-from rizemind.strategies.contribution.shapley.trainer_mapping import ParticipantMapping
-from rizemind.strategies.contribution.shapley.trainer_set import (
+from rizemind.strategies.contribution.shapley import (
+    ParticipantMapping,
     TrainerSet,
 )
 
@@ -45,7 +45,6 @@ class AllSets(SetsSamplingStrategy):
         Sets up an empty participant mapping, initializes the current round to an
         invalid state (-1), and prepares an empty sets dictionary for caching.
         """
-        super().__init__()
         self.trainer_mapping = ParticipantMapping()
         self.current_round = -1  # Initialize to invalid round
         self.sets = {}
@@ -71,7 +70,14 @@ class AllSets(SetsSamplingStrategy):
         Returns:
             A list of all possible TrainerSet combinations, including the empty set.
             For n trainers, returns 2^n sets.
+
+        Raises:
+            ValueError: if server_round is less than the current round.
         """
+        if server_round < self.current_round:
+            raise ValueError(
+                f"Unsupported sampling, round {server_round} is less than the current round {self.current_round}."
+            )
         if server_round == self.current_round:
             return self.get_sets(round_id=server_round)
 
@@ -112,7 +118,7 @@ class AllSets(SetsSamplingStrategy):
         """
         if round_id != self.current_round:
             raise ValueError(
-                f"Round {round_id} is not the current round {self.current_round}"
+                f"Round {round_id} is not the current round {self.current_round}."
             )
         return list(self.sets.values())
 
@@ -129,11 +135,11 @@ class AllSets(SetsSamplingStrategy):
 
         Raises:
             ValueError: If the round_id does not match the current round, or
-                if no trainer set with the given ID exists in the current round.
+            if no trainer set with the given ID exists in the current round.
         """
         if round_id != self.current_round:
             raise ValueError(
-                f"Round {round_id} is not the current round {self.current_round}"
+                f"Round {round_id} is not the current round {self.current_round}."
             )
         if id not in self.sets:
             raise ValueError(f"Trainer set with ID {id} not found")
@@ -151,10 +157,10 @@ class AllSets(SetsSamplingStrategy):
 
         Raises:
             ValueError: If the round_id does not match the current round, indicating
-                that a new round needs to be processed via sample_trainer_sets.
+            that a new round needs to be processed via sample_trainer_sets.
         """
         if round_id != self.current_round:
             raise ValueError(
-                f"Round {round_id} is not the current round {self.current_round}"
+                f"Round {round_id} is not the current round {self.current_round}."
             )
         return self.trainer_mapping

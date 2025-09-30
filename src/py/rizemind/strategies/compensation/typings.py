@@ -22,6 +22,7 @@ class SupportsDistribute(Protocol):
             corresponding compensation scores. Addresses must be valid Ethereum
             checksum addresses.
 
-        @TODO: Include return value explanation
+        Returns:
+            Transaction hash or confirmation string of the next round operation.
         """
         ...

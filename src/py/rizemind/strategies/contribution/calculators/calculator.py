@@ -20,7 +20,7 @@ def default_coalition_to_score(set: TrainerSetAggregate) -> float:
     score = set.get_loss()
     if score is None:
         raise Exception(f"Trainer set ID {set.id} not evaluated")
-    return score
+    return 1 / score
 
 
 class PlayerScore(BaseModel):
