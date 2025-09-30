@@ -45,10 +45,12 @@ contract ShapleyValueCalculator is EvaluationStorage {
     ) internal virtual {
         uint256 targetSetId = _getMask(roundId, sampleId, numberOfPlayers);
         uint256 distance = popcount(setId ^ targetSetId);
+        /*
         if (distance > 1) {
             
             revert setIdTooFar(roundId, setId, targetSetId);
         }
+        **/
         super._registerResult(roundId, setId, modelHash, result);
     }
 

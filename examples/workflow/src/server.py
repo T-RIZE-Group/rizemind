@@ -103,7 +103,7 @@ def lifespan(context: Context):
             "contribution_calculator": ContributionCalculatorConfig(
                 initial_num_samples=6,
             ),
-            "training_phase": BaseTrainingPhaseConfig(ttl=30),
+            "training_phase": BaseTrainingPhaseConfig(ttl=35),
             "evaluation_phase": BaseEvaluationPhaseConfig(ttl=30, registration_ttl=10),
         }
     )

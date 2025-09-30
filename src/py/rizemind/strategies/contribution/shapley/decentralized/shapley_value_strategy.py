@@ -151,7 +151,7 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
         # Evaluate each coalition result to determine the best performing one.
         for result in results:
             _, evaluate_res = result
-            id = cast(str, evaluate_res.metrics["id"])
+            id = str(evaluate_res.metrics["id"])
             coalition = self.get_coalition(id)
             coalition.loss = evaluate_res.loss
             coalition.metrics = evaluate_res.metrics

@@ -55,6 +55,7 @@ class TrainerSetAggregateStore:
         self.set_aggregates = {}
 
     def insert(self, aggregate: TrainerSetAggregate) -> None:
+        print(f"inserting set {aggregate.id} ({bin(int(aggregate.id))})")
         self.set_aggregates[aggregate.id] = aggregate
 
     def get_sets(self) -> list[TrainerSetAggregate]:
@@ -66,7 +67,9 @@ class TrainerSetAggregateStore:
     def get_set(self, id: str) -> TrainerSetAggregate:
         if id in self.set_aggregates:
             return self.set_aggregates[id]
-        raise Exception(f"Coalition {id} not found")
+        raise Exception(
+            f"Coalition {id} not found, available sets: {self.set_aggregates.keys()}"
+        )
 
     def get_set_by_order(self, order: int) -> list[TrainerSetAggregate]:
         return [set for set in self.set_aggregates.values() if set.order == order]

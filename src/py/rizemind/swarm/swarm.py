@@ -255,7 +255,27 @@ class Swarm:
         hash = self.swarm.register_round_contribution(round_id, model_hash)
         receipt = self.w3.eth.wait_for_transaction_receipt(hash)
         if receipt["status"] != 1:
-            raise SwarmException("register_round_contribution failed to confirm")
+            tx = self.w3.eth.get_transaction(hash)
+            replay: TxParams = {
+                "to": tx["to"],  # pyright: ignore[reportTypedDictNotRequiredAccess]
+                "from": tx["from"],  # pyright: ignore[reportTypedDictNotRequiredAccess]
+                "value": tx["value"],  # pyright: ignore[reportTypedDictNotRequiredAccess]
+                "data": tx["input"],  # pyright: ignore[reportTypedDictNotRequiredAccess]
+            }
+            try:
+                w3 = self.w3
+                # replay in the original context (block n-1)
+                w3.eth.call(replay, tx["blockNumber"])  # pyright: ignore[reportTypedDictNotRequiredAccess]
+            except Exception as e:
+                # e.args[0] contains "execution reverted: <reason>"
+                # on newer web3.py, e.data has raw error bytes
+                print("Reason:", str(e))
+                raise SwarmException(
+                    "register_round_contribution failed to confirm (replay)"
+                ) from e
+            raise SwarmException(
+                "register_round_contribution failed to confirm ( didn't fail in replay)"
+            )
         return True
 
     def register_for_round_evaluation(self, round_id: int) -> bool:
@@ -268,8 +288,8 @@ class Swarm:
     def register_evaluation(
         self,
         round_id: int,
-        eval_id: int,
-        set_id: int,
+        eval_id: int,  # task ID
+        set_id: int,  # bitvector
         model_hash: HexBytes,
         result: int,
     ) -> bool:

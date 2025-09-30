@@ -1,6 +1,7 @@
 import timeit
 from typing import cast
 
+from rizemind.exception.contract_execution_exception import RizemindContractError
 import torch
 from eth_account import Account
 from flwr.client import ClientApp, NumPyClient
@@ -15,6 +16,7 @@ from rizemind.swarm.modules.evaluation.ins import parse_evaluation_task_ins
 from rizemind.swarm.swarm import Swarm
 from rizemind.web3.config import Web3Config
 from web3 import Web3
+from web3.exceptions import Web3RPCError
 
 from .task import Net, get_weights, load_data, set_weights, test, train
 
@@ -58,18 +60,42 @@ class FlowerClient(NumPyClient):
         set_weights(self.net, parameters)
         loss, accuracy = test(self.net, self.valloader, self.device)
         task_ins = parse_evaluation_task_ins(config)
-        self.swarm.register_evaluation(
-            round_id=task_ins.round_id,
-            eval_id=task_ins.eval_id,
-            set_id=task_ins.set_id,
-            model_hash=task_ins.model_hash,
-            result=Web3.to_wei(accuracy, "gwei"),
-        )
-        return (
-            loss,
-            len(self.valloader.dataset),
-            cast(dict[str, Scalar], {"accuracy": accuracy, "id": task_ins.set_id}),
-        )
+        while True:
+            try:
+                self.swarm.register_evaluation(
+                    round_id=task_ins.round_id,
+                    eval_id=task_ins.eval_id,
+                    set_id=task_ins.set_id,
+                    model_hash=task_ins.model_hash,
+                    result=Web3.to_wei(accuracy, "gwei"),
+                )
+                return (
+                    loss,
+                    len(self.valloader.dataset),
+                    cast(
+                        dict[str, Scalar], {"accuracy": accuracy, "id": task_ins.set_id}
+                    ),
+                )
+            except RizemindContractError as e:
+                n_trainers = self.swarm.trainer_registry.get_trainer_count(
+                    task_ins.round_id
+                )
+                expected_set = self.swarm.contribution_calculator.get_mask(
+                    task_ins.round_id, task_ins.eval_id, n_trainers
+                )
+                print(
+                    f"Wrong configuration? Eval ID {task_ins.eval_id}: set id {task_ins.set_id} ({bin(task_ins.set_id)}) vs {expected_set} ({bin(expected_set)})"
+                )
+                print(e)
+                return (
+                    loss,
+                    len(self.valloader.dataset),
+                    cast(
+                        dict[str, Scalar], {"accuracy": accuracy, "id": task_ins.set_id}
+                    ),
+                )
+            except Web3RPCError:
+                pass
 
 
 def client_fn(context: Context):

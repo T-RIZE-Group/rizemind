@@ -49,17 +49,27 @@ class RandomDeterministicSampling(SetsSamplingStrategy):
         """
         for i in range(n_sets):
             set_id = self._sampler.get_nth_set(server_round, i)
+            print(f"set {i}: {set_id} ({bin(int(set_id))})")
             members = self._trainer_mapping.get_participants_of_set_id(set_id)
             self._sets[set_id] = TrainerSet(set_id, members, order=i)
             for participant in self._trainer_mapping.get_participants():
                 complementary_id = self._trainer_mapping.get_complementary_id(
                     participant, set_id
                 )
-                self._sets[complementary_id] = TrainerSet(
-                    complementary_id, [participant], order=i
+                print(
+                    f"complementary set {i}: {complementary_id} ({bin(int(complementary_id))})"
                 )
+                complementary_members = (
+                    self._trainer_mapping.get_participants_of_set_id(complementary_id)
+                )
+                if complementary_id not in self._sets:
+                    self._sets[complementary_id] = TrainerSet(
+                        complementary_id, complementary_members, order=i
+                    )
 
         print(f"sets: {len(self._sets)}/{n_sets}")
+        for set in self._sets.values():
+            print(f"set {set.order}: {set.id} ({bin(int(set.id))})")
         return self.get_sets(round_id=server_round)
 
     def get_sets(self, round_id: int) -> list[TrainerSet]:

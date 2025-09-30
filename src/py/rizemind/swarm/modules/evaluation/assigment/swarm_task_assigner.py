@@ -20,7 +20,7 @@ class SwarmTaskAssigner(SupportsTaskAssignement):
             node_id = self._swarm.evaluator_registry.get_evaluator_id(
                 round_id, evaluator
             )
-            return self._swarm.task_assignement.tasks_of_node(round_id, node_id)
+            return self._swarm.task_assignement.tasks_of_node(round_id, node_id - 1)
         except Exception as e:
             log(WARNING, f"tasks_of_evaluator: {e}")
             return []

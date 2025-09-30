@@ -7,7 +7,7 @@ from eth_typing import ChecksumAddress, HexStr
 from hexbytes import HexBytes
 from web3 import Web3
 from web3.contract import Contract
-from web3.exceptions import ContractCustomError, ContractLogicError
+from web3.exceptions import ContractCustomError, ContractLogicError, Web3RPCError
 
 from rizemind.contracts.abi_helper import PANIC_CODES, error_registry
 from rizemind.exception.base_exception import RizemindException
@@ -62,9 +62,19 @@ class BaseContract:
             self._raise_parsed_error(e)
         return tx_hash  # pyright: ignore[reportPossiblyUnboundVariable]
 
-    def simulate(self, *, tx_fn: Any, from_account: BaseAccount) -> Any:
+    def simulate(
+        self, *, tx_fn: Any, from_account: BaseAccount, retry_attempts: int = 3
+    ) -> Any:
         try:
-            return tx_fn.call(self.get_transaction_context(from_account=from_account))
+            while retry_attempts > 0:
+                try:
+                    return tx_fn.call(
+                        self.get_transaction_context(from_account=from_account)
+                    )
+                except Web3RPCError as e:
+                    if retry_attempts == 0:
+                        raise e
+                    retry_attempts -= 1
         except (ContractLogicError, ContractCustomError) as e:
             self._raise_parsed_error(e)
 
