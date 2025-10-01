@@ -67,6 +67,8 @@ The following rules dictate where type definitions should be placed within the c
 
 2. Multi-File Usage: If a type is used by multiple classes, functions, or methods across **two or more files** (whether within the same module, across different modules in the same submodule, or across different submodules), the type definition **must** be placed in a dedicated `typing.py` file within the most relevant module or submodule. This centralizes shared type definitions and makes dependencies explicit.
 
+> [!Note] The `typing.py` files shouldn't be included in `__init__.py` files unless the module is explicitly designed to export types.
+
 ## Exceptions and Exception Files
 
 ### Exception Definitions
@@ -93,4 +95,6 @@ The following rules dictate where exception definitions should be placed within 
 
 1. Single-File Usage: If an exception class is raised and/or caught exclusively within a single file, the exception definition must be placed at the top of that same file, immediately following the import statements. This keeps the exception definition close to its usage.
 
-2. Multi-File Usage: If an exception class is raised or caught by multiple classes, functions, or methods across two or more files (whether within the same module, across different modules in the same submodule, or across different submodules), the exception definition must be placed in a dedicated `exceptions.py` file within the most relevant module or submodule. This centralizes shared exception definitions and makes error handling explicit.
+2. Multi-File Usage: If an exception class is raised or caught by multiple classes, functions, or methods across two or more files (whether within the same module, across different modules in the same submodule, or across different submodules), the exception definition must be placed in a dedicated `exception.py` file within the most relevant module or submodule. This centralizes shared exception definitions and makes error handling explicit.
+
+> [!Note] The `exception.py` files shouldn't be included in `__init__.py` files unless the module is explicitly designed to export types (e.g. `/rizemind/exception` module).
