@@ -1,4 +1,4 @@
-from rizemind.strategies.contribution.sampling.random_deterministric import (
+from rizemind.strategies.contribution.sampling.typing import (
     RandomDeterministicInterface,
 )
 from rizemind.swarm.swarm import Swarm

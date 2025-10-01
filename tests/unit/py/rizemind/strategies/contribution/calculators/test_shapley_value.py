@@ -2,7 +2,6 @@ import pytest
 from eth_account import Account
 from eth_typing import ChecksumAddress
 from flwr.common.typing import Parameters
-
 from rizemind.strategies.contribution.calculators.shapley_value import (
     ShapleyValueCalculator,
 )
@@ -11,7 +10,6 @@ from rizemind.strategies.contribution.shapley.trainer_set import (
     TrainerSetAggregate,
     TrainerSetAggregateStore,
 )
-
 
 """
 Test suite for the ShapleyValueCalculator class.
@@ -27,7 +25,7 @@ for federated learning contribution assessment. The tests cover:
 6. Error handling and robustness
 
 The Shapley value is calculated using the formula:
-φ_i = Σ_{S⊆N\\{i}} (|S|!(|N|-|S|-1)! / |N|!) * [v(S∪{i}) - v(S)]
+φ_i = Σ_{S⊆N\\{i}} (|S|!(|N|-|S|-1)! / |N|!) * [v(S U {i}) - v(S)]
 
 Where:
 - φ_i is the Shapley value for player i

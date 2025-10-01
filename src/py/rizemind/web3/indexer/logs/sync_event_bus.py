@@ -1,11 +1,9 @@
 import asyncio
-from collections.abc import Callable
 
 from eth_typing import ABIEvent, ChecksumAddress
+from rizemind.web3.indexer.logs.typing import Predicate
 
 from .event_bus import EventBus, EventEnvelope
-
-Predicate = Callable[[EventEnvelope], bool]
 
 
 class SyncEventBus:

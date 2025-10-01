@@ -3,14 +3,13 @@ from typing import Any
 from flwr.common.context import Context
 from pydantic import Field, HttpUrl, field_validator
 from pydantic_core import Url
-from rizemind.web3.middlewares.errors import RizemindErrorsMiddleware
 from web3 import AsyncHTTPProvider, AsyncWeb3, HTTPProvider, Web3
-from web3.main import BaseWeb3
 from web3.middleware import ExtraDataToPOAMiddleware
 
 from rizemind.configuration.base_config import BaseConfig
 from rizemind.configuration.transform import unflatten
 from rizemind.web3.chains import RIZENET_TESTNET_CHAINID
+from rizemind.web3.middlewares.errors import RizemindErrorsMiddleware
 
 poaChains = [RIZENET_TESTNET_CHAINID]
 

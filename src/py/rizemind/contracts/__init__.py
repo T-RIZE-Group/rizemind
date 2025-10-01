@@ -1,5 +1,5 @@
-from .contribution import CalculatorFactoryContract, ContributionCalculator
 from .compensation import CompensationFactoryContract, SimpleMintCompensation
+from .contribution import CalculatorFactoryContract, ContributionCalculator
 from .open_zeppelin import AccessControl
 
 __all__ = [

@@ -14,7 +14,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from rizemind.strategies.contribution.shapley.shapley_value_strategy import (
         ShapleyValueStrategy,
-        SupportsShapleyValueStrategy,
     )
     from rizemind.strategies.contribution.shapley.trainer_mapping import (
         ParticipantMapping,
@@ -34,12 +33,6 @@ def __getattr__(name: str):
         )
 
         return ShapleyValueStrategy
-    elif name == "SupportsShapleyValueStrategy":
-        from rizemind.strategies.contribution.shapley.shapley_value_strategy import (
-            SupportsShapleyValueStrategy,
-        )
-
-        return SupportsShapleyValueStrategy
     elif name == "ParticipantMapping":
         from rizemind.strategies.contribution.shapley.trainer_mapping import (
             ParticipantMapping,
@@ -67,7 +60,6 @@ def __getattr__(name: str):
 
 __all__ = [
     "ShapleyValueStrategy",
-    "SupportsShapleyValueStrategy",
     "ParticipantMapping",
     "TrainerSetAggregate",
     "TrainerSetAggregateStore",

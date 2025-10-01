@@ -3,7 +3,6 @@ import contextlib
 
 from pyee.asyncio import AsyncIOEventEmitter
 from rizemind.swarm.indexer.phases.latest_phase_bus import LatestPhaseBus
-from rizemind.swarm.indexer.phases.new_phase_event import NewPhaseEvent
 from rizemind.swarm.indexer.phases.phase_watcher import PhaseWatcher
 from rizemind.swarm.swarm import Swarm
 from rizemind.workflow.async_runtime import AsyncRuntime

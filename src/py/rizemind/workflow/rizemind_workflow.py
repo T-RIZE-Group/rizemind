@@ -1,7 +1,6 @@
 import io
 import timeit
 from logging import INFO
-from typing import Optional
 
 from flwr.common import (
     ConfigRecord,

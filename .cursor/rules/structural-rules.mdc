@@ -1,0 +1,100 @@
+---
+description: Organization and Structural Rules for all Modules and Sub-modules
+alwaysApply: false
+---
+
+# Structural Rules
+
+This document defines the structural and organizational rules that every module and submodule in Rizemind must adhere to. These rules are established to ensure consistency, maintainability, and ease of navigation throughout the codebase for both developers and users alike. Additionally, they facilitate design choices so that developers can focus on implementing features and maintaining code quality without deliberating on organizational decisions. Consider this the "ten commandments" for Rizemind development.
+
+## Types and Typing Files
+
+### Type Definitions
+
+For the purposes of this document, the following constructs are classified as "types":
+
+1. Type Aliases and Extensions: Any type alias or extension using typing constructs (e.g., `Numerical = Union[int, float]` defines a type alias called `Numerical`).
+
+2. Dataclasses: Every class decorated with the `@dataclass` decorator. These classes are designed to hold data with minimal logic. For example:
+
+   ```python
+   @dataclass
+   class AccessControlParams:
+       id: bytes
+       init_data: bytes
+   ```
+
+3. Parameter-Only Classes and Stateless Classes: Any class that exclusively contains parameters (attributes) and/or stateless methods (such as `staticmethod`, `classmethod` without instance state, etc.). These classes serve as data containers or utility classes with no instance-specific behavior. For example:
+
+   ```python
+   class ClassWithParamOnly:
+       population: int
+
+   class ClassWithStaticMethod:
+       balance: float
+
+       def __init__(self, balance: float = 0):
+           self.balance = balance
+
+       @staticmethod
+       def create_empty_class() -> "ClassWithStaticMethod":
+           return ClassWithStaticMethod()
+   ```
+
+4. BaseModel Extensions with Parameters or Stateless Methods: Every Pydantic `BaseModel` subclass that only contains field definitions and/or stateless methods (such as `staticmethod`, `field_validator`, `model_validator`, etc.). These classes typically define configuration schemas or data validation structures. For example:
+
+   ```python
+   class ExtensionOfBaseModelWithParamOnly(BaseModel):
+       population: int
+
+   class ExtensionOfBaseModelWithStaticMethod(BaseModel):
+       balance: float = 0
+
+       @staticmethod
+       def create_empty_class() -> "ClassWithStaticMethod":
+           return ClassWithStaticMethod()
+   ```
+
+5. Protocol Classes: Any class that inherits from `typing.Protocol` to define structural subtyping (duck typing) interfaces. These define the expected structure of objects without inheritance.
+
+> [!WARNING] Config classes (classes that end with the word `Config`) are an exception. These classes are not considered a "type".
+
+### Type Placement Rules
+
+The following rules dictate where type definitions should be placed within the codebase:
+
+1. Single-File Usage: If a type is used exclusively within a single file (by one or more classes/functions/methods in that file), the type definition **must** be placed at the top of that same file, immediately following the import statements. This keeps the type definition close to its usage and avoids unnecessary file proliferation.
+
+2. Multi-File Usage: If a type is used by multiple classes, functions, or methods across **two or more files** (whether within the same module, across different modules in the same submodule, or across different submodules), the type definition **must** be placed in a dedicated `typing.py` file within the most relevant module or submodule. This centralizes shared type definitions and makes dependencies explicit.
+
+> [!Note] The `typing.py` files shouldn't be included in `__init__.py` files unless the module is explicitly designed to export types.
+
+## Exceptions and Exception Files
+
+### Exception Definitions
+
+For the purposes of this document, the following constructs are classified as "exceptions":
+
+1. Custom Exception Classes: Any class that inherits from `Exception`, `BaseException`, or any of Python's built-in exception classes (e.g., `ValueError`, `RuntimeError`, `TypeError`, etc.). These classes are used to represent specific error conditions in the application. For example:
+
+   ```python
+   class AuthenticationError(Exception):
+       """Raised when authentication fails."""
+       pass
+
+   class InvalidConfigurationError(ValueError):
+       """Raised when configuration is invalid."""
+       def __init__(self, field: str, message: str):
+           self.field = field
+           super().__init__(f"Invalid configuration for '{field}': {message}")
+   ```
+
+### Exception Placement Rules
+
+The following rules dictate where exception definitions should be placed within the codebase:
+
+1. Single-File Usage: If an exception class is raised and/or caught exclusively within a single file, the exception definition must be placed at the top of that same file, immediately following the import statements. This keeps the exception definition close to its usage.
+
+2. Multi-File Usage: If an exception class is raised or caught by multiple classes, functions, or methods across two or more files (whether within the same module, across different modules in the same submodule, or across different submodules), the exception definition must be placed in a dedicated `exception.py` file within the most relevant module or submodule. This centralizes shared exception definitions and makes error handling explicit.
+
+> [!Note] The `exception.py` files shouldn't be included in `__init__.py` files unless the module is explicitly designed to export types (e.g. `/rizemind/exception` module).

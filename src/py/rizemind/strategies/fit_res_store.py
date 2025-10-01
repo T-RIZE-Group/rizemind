@@ -1,14 +1,7 @@
-from typing import Protocol
-
 from eth_typing import ChecksumAddress
 from flwr.common import FitRes
 
-
-class SupportsFitResStore(Protocol):
-    def insert(self, client_id: ChecksumAddress, fit_res: FitRes) -> None: ...
-    def get(self, client_id: ChecksumAddress) -> FitRes: ...
-    def clear(self) -> None: ...
-    def items(self) -> list[tuple[ChecksumAddress, FitRes]]: ...
+from rizemind.strategies.typing import SupportsFitResStore
 
 
 class InMemoryFitResStore(SupportsFitResStore):
