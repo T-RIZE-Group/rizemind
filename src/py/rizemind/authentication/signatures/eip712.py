@@ -1,31 +1,19 @@
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any
 
 from eth_account.messages import SignableMessage, encode_typed_data
 from eth_typing import ChecksumAddress
 
+from rizemind.authentication.signatures.typing import EIP712DomainRequiredFields
 
-class EIP712DomainRequiredFields(Protocol):
-    """Protocol defining the required fields for an EIP-712 domain.
+EIP712DomainTypeName = "EIP712Domain"
 
-    This protocol specifies the mandatory fields that must be present in any
-    EIP-712 domain implementation to ensure compatibility with the EIP-712
-    standard for typed structured data hashing and signing.
-
-    Attributes:
-        name: A human-readable name for the domain. This is typically
-        the name of the DApp or protocol.
-        version: The current version of the domain.
-        chainId: The EIP-155 chain ID of the network where the contract is
-        deployed.
-        verifyingContract: The Ethereum address of the contract that will
-        verify the signature.
-    """
-
-    name: str
-    version: str
-    chainId: int
-    verifyingContract: ChecksumAddress
+EIP712DomainABI = [
+    {"name": "name", "type": "string"},
+    {"name": "version", "type": "string"},
+    {"name": "chainId", "type": "uint256"},
+    {"name": "verifyingContract", "type": "address"},
+]
 
 
 @dataclass
@@ -50,16 +38,6 @@ class EIP712DomainStruct:
     version: str
     chainId: int
     verifyingContract: ChecksumAddress
-
-
-EIP712DomainTypeName = "EIP712Domain"
-
-EIP712DomainABI = [
-    {"name": "name", "type": "string"},
-    {"name": "version", "type": "string"},
-    {"name": "chainId", "type": "uint256"},
-    {"name": "verifyingContract", "type": "address"},
-]
 
 
 def prepare_eip712_domain(
