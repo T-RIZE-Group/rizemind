@@ -57,6 +57,8 @@ For the purposes of this document, the following constructs are classified as "t
 
 5. Protocol Classes: Any class that inherits from `typing.Protocol` to define structural subtyping (duck typing) interfaces. These define the expected structure of objects without inheritance.
 
+> [!WARNING] Config classes (classes that end with the word `Config`) are an exception. These classes are not considered a "type".
+
 ### Type Placement Rules
 
 The following rules dictate where type definitions should be placed within the codebase:
@@ -65,91 +67,30 @@ The following rules dictate where type definitions should be placed within the c
 
 2. Multi-File Usage: If a type is used by multiple classes, functions, or methods across **two or more files** (whether within the same module, across different modules in the same submodule, or across different submodules), the type definition **must** be placed in a dedicated `typing.py` file within the most relevant module or submodule. This centralizes shared type definitions and makes dependencies explicit.
 
-### Example
+## Exceptions and Exception Files
 
-Consider the `authentication` module with the following structure:
+### Exception Definitions
 
-```bash
-rizemind/authentication/
-├── __init__.py
-├── config.py
-├── eth_account_strategy.py
-├── typing.py
-└── signatures/
-    ├── __init__.py
-    ├── auth.py
-    ├── eip712.py
-    ├── signature.py
-    └── typing.py
-```
+For the purposes of this document, the following constructs are classified as "exceptions":
 
-#### Scenario 1: Type used in a single file (Rule 1)
+1. Custom Exception Classes: Any class that inherits from `Exception`, `BaseException`, or any of Python's built-in exception classes (e.g., `ValueError`, `RuntimeError`, `TypeError`, etc.). These classes are used to represent specific error conditions in the application. For example:
 
-In `config.py`, we have a type `MnemonicStoreConfig` that is only used within the same file by the `AccountConfig` class:
+   ```python
+   class AuthenticationError(Exception):
+       """Raised when authentication fails."""
+       pass
 
-```python
-# config.py
-from pydantic import BaseModel, Field
+   class InvalidConfigurationError(ValueError):
+       """Raised when configuration is invalid."""
+       def __init__(self, field: str, message: str):
+           self.field = field
+           super().__init__(f"Invalid configuration for '{field}': {message}")
+   ```
 
-# Type definition at the top of the file (after imports)
-class MnemonicStoreConfig(BaseModel):
-    """Configuration for mnemonic keystore."""
-    account_name: str = Field(..., description="account name")
-    passphrase: str = Field(..., description="Pass-phrase that unlocks the keystore")
+### Exception Placement Rules
 
-# The type is only used here in this file
-class AccountConfig(BaseConfig):
-    """Ethereum account configuration."""
-    mnemonic: str | None = None
-    mnemonic_store: MnemonicStoreConfig | None = None
-    default_account_index: int = 0
-```
+The following rules dictate where exception definitions should be placed within the codebase:
 
-Since `MnemonicStoreConfig` is only referenced within `config.py`, it remains at the top of that file.
+1. Single-File Usage: If an exception class is raised and/or caught exclusively within a single file, the exception definition must be placed at the top of that same file, immediately following the import statements. This keeps the exception definition close to its usage.
 
-#### Scenario 2: Type used across multiple files (Rule 2)
-
-The `SupportsEthAccountStrategy` protocol is used by multiple files across the authentication module:
-
-- `eth_account_strategy.py` (implements the protocol)
-- `client_manager.py` (uses the protocol for type hints)
-- `can_train_criterion.py` (uses the protocol for validation)
-
-Therefore, this type is defined in `authentication/typing.py`:
-
-```python
-# authentication/typing.py
-from typing import Protocol
-from eth_typing import ChecksumAddress
-from rizemind.contracts.erc.erc5267.typings import EIP712Domain
-
-class SupportsEthAccountStrategy(Protocol):
-    """Protocol for Ethereum account-based authentication strategies."""
-    def can_train(self, trainer: ChecksumAddress, round_id: int) -> bool: ...
-    def can_evaluate(self, evaluator: ChecksumAddress, round_id: int) -> bool: ...
-    def get_eip712_domain(self) -> EIP712Domain: ...
-```
-
-Similarly, within the `signatures` submodule, the `EIP712DomainStruct` dataclass is used by:
-
-- `signatures/eip712.py` (creates instances)
-- `signatures/auth.py` (validates domains)
-- `signatures/signature.py` (references for typing)
-
-Therefore, it's defined in `authentication/signatures/typing.py`:
-
-```python
-# authentication/signatures/typing.py
-from dataclasses import dataclass
-from eth_typing import ChecksumAddress
-
-@dataclass
-class EIP712DomainStruct:
-    """EIP-712 domain separator structure."""
-    name: str
-    version: str
-    chainId: int
-    verifyingContract: ChecksumAddress
-```
-
-This organization ensures that shared types are centralized in `typing.py` files at the appropriate module level, while file-specific types are coupled with their user class/method.
+2. Multi-File Usage: If an exception class is raised or caught by multiple classes, functions, or methods across two or more files (whether within the same module, across different modules in the same submodule, or across different submodules), the exception definition must be placed in a dedicated `exceptions.py` file within the most relevant module or submodule. This centralizes shared exception definitions and makes error handling explicit.
