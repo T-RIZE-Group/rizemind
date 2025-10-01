@@ -14,10 +14,13 @@ class SupportsDistribute(Protocol):
     are identified by their Ethereum addresses.
     """
 
-    def distribute(self, trainer_scores: list[tuple[ChecksumAddress, float]]) -> str:
+    def distribute(
+        self, round_id: int, trainer_scores: list[tuple[ChecksumAddress, float]]
+    ) -> str:
         """Distribute compensation to trainers based on their scores.
 
         Args:
+            round_id: The ID of the round to distribute compensation for.
             trainer_scores: List of tuples containing trainer addresses and their
             corresponding compensation scores. Addresses must be valid Ethereum
             checksum addresses.

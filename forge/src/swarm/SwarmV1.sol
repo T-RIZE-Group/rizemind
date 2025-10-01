@@ -2,38 +2,116 @@
 pragma solidity ^0.8.20;
 
 import {EIP712Upgradeable} from "@openzeppelin-contracts-upgradeable-5.2.0/utils/cryptography/EIP712Upgradeable.sol";
-import {ContextUpgradeable} from "@openzeppelin-contracts-upgradeable-5.2.0/utils/ContextUpgradeable.sol";
-
-import {FLAccessControl} from "../access/FLAccessControl.sol";
-import {SimpleMintCompensation} from "../compensation/SimpleMintCompensation.sol";
+import {IERC165} from "@openzeppelin-contracts-5.2.0/utils/introspection/IERC165.sol";
+import {IAccessControl} from "../access/IAccessControl.sol";
 import {RoundTraining} from "../training/RoundTraining.sol";
 import {CertificateRegistry} from "./registry/CertificateRegistry.sol";
 import {SwarmCore} from "./registry/SwarmCore.sol";
 import {ISelector} from "../sampling/ISelector.sol";
+import {TaskAssignment} from "../scheduling/TaskAssignment.sol";
+import {BaseTrainingPhases} from "../training/BaseTrainingPhases.sol";
+import {RoundTrainerRegistry} from "./registry/RoundTrainerRegistry.sol";
+import {RoundEvaluatorRegistry} from "./registry/RoundEvaluatorRegistry.sol";
+import {ContributionCalculator} from "../contribution/ContributionCalculator.sol";
+import {ICompensation} from "../compensation/types.sol";
+import {TrainerContributed} from "../contribution/types.sol";
 
+/**
+ * @title SwarmV1
+ * @author 
+ * @notice SwarmV1 is the entrypoint for the Swarm Coordination.
+ * 
+ * It encapsulates the training liefecycle, access control, contribution calculation and metadata storage.
+ * 
+ * Overview of a round:
+ * 1. Aggregator calls startTrainingRound() to start the training round
+ * 2. Trainers call registerRoundContribution() to register their contributions
+ * 3. Evaluators call registerForRoundEvaluations() to register for round evaluations
+ * 4. Evaluators call registerEvaluation() to register their evaluations
+ * 5. Aggregator calls nextRound() to finish the round
+ * 
+ * The swarm has a set of whitelisted trainers and evaluators based on the FLAccessControl contract.
+ * Each round a subset of those nodes are selected by the SamplerSelector contract.
+ * 
+ * For contribution calculation, the IContributionCalculator defines the number of evaluation tasks required.
+ * These tasks are assigned an incremental task ID.
+ * 
+ * Before the evaluation starts, the evaluators registers so the TaskAssigment module distributes tasks
+ * uniformly to the evaluators.
+ * 
+ * After the evaluation is completed, the trainers can claim their rewards by calling claimReward().
+ */
 contract SwarmV1 is
-    FLAccessControl,
-    SimpleMintCompensation,
     EIP712Upgradeable,
     RoundTraining,
+    BaseTrainingPhases,
     CertificateRegistry,
+    RoundTrainerRegistry,
+    RoundEvaluatorRegistry,
+    TaskAssignment,
     SwarmCore
 {
     string private constant _VERSION = "swarm-v1.0.0";
 
+    error ForbiddenRound(uint256 roundId);
+    error NotIdle();
+    error NotTrainingPhase();
+    error NotEvaluatorRegistrationPhase();
+    error NotAssignedTo(uint256 roundId, uint256 evalId, address evaluator);
+    error NotEvaluationPhase();
+    error WrongInitialization();
+    error NotAggregator();
+    error NotTrainer();
+    error NotEvaluator();
+    error RewardsAlreadyClaimed(uint256 roundId, address trainer);
+
+    struct SwarmV1InitializeParams {
+        string name;
+        address initialTrainerSelector;
+        address initialEvaluatorSelector;
+        address initialContributionCalculator;
+        address initialAccessControl;
+        address initialCompensation;
+        BaseTrainingPhases.TrainingPhaseConfiguration trainingPhaseConfiguration;
+        BaseTrainingPhases.EvaluationPhaseConfiguration evaluationPhaseConfiguration;
+    }
+
+    modifier onlyAggregator(address aggregator) {
+        if (!IAccessControl(getAccessControl()).isAggregator(aggregator)) {
+            revert NotAggregator();
+        }
+        _;
+    }
+
+    modifier onlyTrainer(address trainer) {
+        if (!IAccessControl(getAccessControl()).isTrainer(trainer)) {
+            revert NotTrainer();
+        }
+        _;
+    }
+
+    modifier onlyEvaluator(address evaluator) {
+        if (!IAccessControl(getAccessControl()).isEvaluator(evaluator)) {
+            revert NotEvaluator();
+        }
+        _;
+    }
+
     function initialize(
-        string memory name,
-        string memory symbol,
-        address aggregator,
-        address[] memory initialTrainers,
-        address initialTrainerSelector,
-        address initialEvaluatorSelector
-    ) external initializer {
-        __EIP712_init(name, _VERSION);
-        __SimpleMintCompensation_init(name, symbol, 10 ** 20);
-        __FLAccessControl_init(aggregator, initialTrainers);
+        SwarmV1InitializeParams memory params
+    ) external virtual initializer {
+        __EIP712_init(params.name, _VERSION);
         __RoundTraining_init();
-        __SwarmCore_init(initialTrainerSelector, initialEvaluatorSelector);
+        __BaseTrainingPhases_init(params.trainingPhaseConfiguration, params.evaluationPhaseConfiguration);
+        __CertificateRegistry_init();
+        __RoundTrainerRegistry_init();
+        __RoundEvaluatorRegistry_init();
+        __TaskAssignment_init();
+        __SwarmCore_init(params.initialTrainerSelector, params.initialEvaluatorSelector, params.initialContributionCalculator, params.initialAccessControl, params.initialCompensation);
+    }
+
+    function initialize() external virtual override(RoundTrainerRegistry, RoundEvaluatorRegistry, TaskAssignment) {
+        revert WrongInitialization();
     }
 
     function canTrain(
@@ -41,7 +119,17 @@ contract SwarmV1 is
         uint256 roundId
     ) public view returns (bool) {
         ISelector selector = ISelector(getTrainerSelector());
-        return isTrainer(trainer) && selector.isSelected(trainer, roundId);
+        IAccessControl accessControl = IAccessControl(getAccessControl());
+        return accessControl.isTrainer(trainer) && selector.isSelected(trainer, roundId);
+    }
+
+    function canEvaluate(
+        address evaluator,
+        uint256 roundId
+    ) public view returns (bool) {
+        ISelector selector = ISelector(getEvaluatorSelector());
+        IAccessControl accessControl = IAccessControl(getAccessControl());
+        return accessControl.isEvaluator(evaluator) && selector.isSelected(evaluator, roundId);
     }
 
     function updateTrainerSelector(address newTrainerSelector) external onlyAggregator(msg.sender) {
@@ -53,40 +141,155 @@ contract SwarmV1 is
     }
 
     function distribute(
+        uint256 roundId,
         address[] calldata trainers,
         uint64[] calldata contributions
     ) external onlyAggregator(msg.sender) {
-        _distribute(trainers, contributions);
+        _distribute(roundId, trainers, contributions);
     }
 
-    function _msgSender()
-        internal
-        view
-        virtual
-        override(ContextUpgradeable)
-        returns (address)
-    {
-        return ContextUpgradeable._msgSender();
+    function startTrainingRound() external onlyAggregator(msg.sender) {
+        if (updatePhase() != IDLE_PHASE) {
+            revert NotIdle();
+        }
+        _nextRound();
+        _forceStartTrainingPhase();
     }
 
-    function _msgData()
-        internal
-        view
-        virtual
-        override(ContextUpgradeable)
-        returns (bytes calldata)
-    {
-        return ContextUpgradeable._msgData();
+    function _endTrainingPhase() internal override returns (bytes32) {
+        uint256 numberOfTrainers = getTrainerCount(currentRound());
+        if (numberOfTrainers <= 0) {
+            return TRAINING_PHASE;
+        }
+        return super._endTrainingPhase();
     }
 
-    function _contextSuffixLength()
-        internal
-        view
-        virtual
-        override(ContextUpgradeable)
-        returns (uint256)
-    {
-        return ContextUpgradeable._contextSuffixLength();
+    function registerRoundContribution(uint256 roundId, bytes32 modelHash) external {
+        if (!canTrain(msg.sender, roundId)) {
+            revert NotTrainer();
+        }
+        _registerRoundContribution(roundId, msg.sender, modelHash);
+    }
+
+    function _registerRoundContribution(uint256 roundId, address trainer, bytes32 modelHash) internal {
+        if (updatePhase() != TRAINING_PHASE) {
+            revert NotTrainingPhase();
+        }
+        if (roundId != currentRound()) {
+            revert ForbiddenRound(roundId);
+        }
+        _registerTrainer(roundId, trainer, modelHash);
+    }
+
+    function registerForRoundEvaluation(uint256 roundId) external {
+        if (!canEvaluate(msg.sender, roundId)) {
+            revert NotEvaluator();
+        }
+        _registerForRoundEvaluations(roundId, msg.sender);
+    }
+
+    function _registerForRoundEvaluations(uint256 roundId, address evaluator) internal {
+        bytes32 phase = updatePhase();
+        if (phase == EVALUATION_PHASE || phase == IDLE_PHASE) {
+            revert NotEvaluatorRegistrationPhase();
+        }
+        _registerEvaluator(roundId, evaluator);
+    }
+
+    function _endEvaluatorRegistrationPhase() internal override returns (bytes32) {
+        uint256 roundId = currentRound();
+        uint256 nNodes = getEvaluatorCount(roundId);
+        uint256 nTrainers = getTrainerCount(roundId);
+        if (nNodes == 0) { // we're going to trigger a TaskAssigment#InvalidConfig error
+            return EVALUATOR_REGISTRATION_PHASE;
+        }
+        ContributionCalculator calc = ContributionCalculator(getContributionCalculator());
+        uint256 nTasks = calc.getEvaluationsRequired(roundId, uint8(nTrainers));
+        if (nTasks == 0) {
+            nTasks = calc.getEvaluationsRequired(roundId - 1, uint8(nTrainers));
+            calc.setEvaluationsRequired(roundId, nTasks);
+        }
+    
+        uint256 nTasksPerNode = 1;
+        if (nTasks > nNodes) {
+            // TODO: handle potential rounding error
+            nTasksPerNode = nTasks / nNodes;
+        }
+        _setConfig(roundId, Config({
+            T: nTasks,
+            N: nNodes,
+            R: nTasksPerNode
+        }));
+        return super._endEvaluatorRegistrationPhase();
+    }
+
+    function registerEvaluation(
+        uint256 roundId,
+        uint256 evalId,
+        uint256 setId,
+        bytes32 modelHash,
+        int256 result
+    ) external {
+        _registerEvaluation(roundId, evalId, setId, modelHash, result, msg.sender);
+    }
+
+/**
+ * @param roundId   The round ID    
+ * @param taskId    The task ID
+ * @param modelHash  The model hash
+ * @param result     The evaluation result
+ * @param evaluator  The evaluator address
+ */
+    function _registerEvaluation(
+        uint256 roundId,
+        uint256 taskId,
+        uint256 setId,
+        bytes32 modelHash,
+        int256 result,
+        address evaluator
+    ) internal {
+        if (updatePhase() != EVALUATION_PHASE) {
+            revert NotEvaluationPhase();
+        }
+        ContributionCalculator calc = ContributionCalculator(getContributionCalculator());
+        uint256 evaluatorId = getEvaluatorIdOrThrow(roundId, evaluator);
+        // evaluator id starts at 1,but TaskAssigment starts at 0
+        if (!isAssigned(roundId, evaluatorId - 1, taskId)) {
+            revert NotAssignedTo(roundId, taskId, evaluator);
+        }
+        uint256 nTrainers = getTrainerCount(roundId);
+        calc.registerResult(roundId, taskId, setId, modelHash, result, uint8(nTrainers));
+    }
+
+    function claimReward(uint256 roundId, address trainer) external {
+        if(hasClaimedRewards(roundId, trainer)) {
+            revert RewardsAlreadyClaimed(roundId, trainer);
+        }
+        uint256 currentRound = currentRound();
+        if (roundId > currentRound || (roundId == currentRound && updatePhase() != IDLE_PHASE)) {
+            revert ForbiddenRound(roundId);
+        }
+
+        ContributionCalculator calc = ContributionCalculator(getContributionCalculator());
+        uint256 trainerId = getTrainerIdOrThrow(roundId, trainer);
+        // trainer id starts at 1,but ContributionCalculator starts at 0
+        int256 contribution = calc.calculateContribution(roundId, trainerId - 1, uint8(getTrainerCount(roundId)));
+        emit TrainerContributed(trainer, contribution);
+        _setClaimedRewards(roundId, trainer);
+        address[] memory trainers = new address[](1);
+        trainers[0] = trainer;
+        uint64[] memory contributions = new uint64[](1);
+        contributions[0] = uint64(uint256(contribution));
+        _distribute(roundId, trainers, contributions);
+    }
+
+    function _distribute(
+        uint256 roundId,
+        address[] memory trainers,
+        uint64[] memory contributions
+    ) internal {
+        ICompensation compensation = ICompensation(getCompensation());
+        compensation.distribute(roundId, trainers, contributions);
     }
 
     /**
@@ -108,11 +311,11 @@ contract SwarmV1 is
         public
         view
         virtual
-        override(FLAccessControl, RoundTraining, CertificateRegistry)
+        override(RoundTraining, CertificateRegistry)
         returns (bool)
     {
         return
-            FLAccessControl.supportsInterface(interfaceId) ||
+            interfaceId == type(IERC165).interfaceId ||
             RoundTraining.supportsInterface(interfaceId) ||
             CertificateRegistry.supportsInterface(interfaceId) ||
             interfaceId == this.canTrain.selector ||

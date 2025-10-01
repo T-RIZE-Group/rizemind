@@ -1,6 +1,7 @@
-from typing import Annotated
+from typing import Annotated, Any
 
 from eth_typing import ChecksumAddress
+from pydantic import BeforeValidator
 from pydantic.functional_validators import AfterValidator
 from web3 import Web3
 
@@ -21,7 +22,6 @@ def _validate_eth_address(addr: str) -> ChecksumAddress:
     return Web3.to_checksum_address(addr)
 
 
-EthereumAddress = Annotated[str, AfterValidator(_validate_eth_address)]
 """A validated Ethereum address type.
 
 This type alias represents a string that has been validated to be a proper
@@ -44,3 +44,17 @@ Raises:
     TypeError: If the input is not a string.
     ValueError: If the string is not a valid Ethereum address.
 """
+EthereumAddress = Annotated[str, AfterValidator(_validate_eth_address)]
+
+
+def to_checksum_or_none(v: Any) -> ChecksumAddress | None:
+    if v is None:
+        return None
+    if not isinstance(v, str):
+        return None
+    if not Web3.is_address(v):
+        return None
+    return Web3.to_checksum_address(v)
+
+
+EthereumAddressOrNone = Annotated[str | None, BeforeValidator(to_checksum_or_none)]

@@ -1,9 +1,22 @@
 import pytest
 from eth_account.signers.base import BaseAccount
+from rizemind.contracts.access_control.base_access_control.base_access_control import (
+    BaseAccessControlConfig,
+)
+from rizemind.contracts.compensation.simple_mint_compensation.simple_mint_compensation import (
+    SimpleMintCompensationConfig,
+)
+from rizemind.contracts.contribution.contribution_calculator.contribution_calculator import (
+    ContributionCalculatorConfig,
+)
 from rizemind.contracts.swarm.swarm_v1.swarm_v1 import SwarmV1
 from rizemind.contracts.swarm.swarm_v1.swarm_v1_factory import (
     SwarmV1Factory,
     SwarmV1FactoryConfig,
+)
+from rizemind.contracts.swarm.training.base_training_phase.config import (
+    BaseEvaluationPhaseConfig,
+    BaseTrainingPhaseConfig,
 )
 
 from tests.integration.forge_fixtures import AnvilContext
@@ -14,21 +27,36 @@ type SwarmFixture = tuple[SwarmV1, BaseAccount, list[BaseAccount]]
 
 @pytest.fixture(scope="module")
 def swarm_deployment(anvil: AnvilContext):
-    deployer = anvil.account_conf.get_account(0)
+    aggregator = anvil.account_conf.get_account(0)
+    trainers = [anvil.account_conf.get_account(i) for i in range(2, 4)]
+    evaluators = [anvil.account_conf.get_account(i) for i in range(4, 6)]
     artifact_path = run_script(
-        "script/deployments/SwarmV1Factory.s.sol",
-        account=deployer.address,
+        "script/integrations/Deploy.s.sol:DeployAll",
+        account=aggregator.address,
+        env={"OWNER": aggregator.address},
     )
     factory_config = SwarmV1FactoryConfig(
-        name="test", local_factory_deployment_path=str(artifact_path)
+        name="test",
+        local_factory_deployment_path=str(artifact_path),
+        access_control=BaseAccessControlConfig(
+            aggregator=aggregator.address,
+            trainers=[trainer.address for trainer in trainers],
+            evaluators=[evaluator.address for evaluator in evaluators],
+        ),
+        compensation=SimpleMintCompensationConfig(
+            token_symbol="tst",
+            token_name="test",
+            target_rewards=10**18,
+        ),
+        contribution_calculator=ContributionCalculatorConfig(
+            initial_num_samples=1,
+        ),
+        training_phase=BaseTrainingPhaseConfig(ttl=1000),
+        evaluation_phase=BaseEvaluationPhaseConfig(ttl=1000, registration_ttl=1000),
     )
-    factory = SwarmV1Factory(factory_config)
-    aggregator = anvil.account_conf.get_account(1)
-    trainers = [anvil.account_conf.get_account(i) for i in range(2, 4)]
     w3 = anvil.w3conf.get_web3()
-    swarm_deployment = factory.deploy(
-        aggregator, [trainer.address for trainer in trainers], w3
-    )
+    factory = SwarmV1Factory(factory_config)
+    swarm_deployment = factory.deploy(aggregator, w3)
     swarm = SwarmV1.from_address(
         account=aggregator, w3=w3, address=swarm_deployment.address
     )

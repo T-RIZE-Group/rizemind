@@ -1,7 +1,8 @@
+from flwr.common import Context
 from flwr.common.record.configrecord import ConfigRecord
 from pydantic import BaseModel
 
-from rizemind.configuration.transform import to_config_record
+from rizemind.configuration.transform import flatten, to_config_record
 
 
 class BaseConfig(BaseModel):
@@ -17,4 +18,13 @@ class BaseConfig(BaseModel):
         Returns:
             The Flower `ConfigRecord` representing this configuration.
         """
-        return to_config_record(self.model_dump())
+        return to_config_record(flatten(self.model_dump()))
+
+    def _store_in_context(self, context: Context, state_key: str) -> None:
+        """Store the configuration in the context.
+
+        Args:
+            context: The context to store the configuration in.
+            state_key: The key to store the configuration in.
+        """
+        context.state.config_records[state_key] = self.to_config_record()

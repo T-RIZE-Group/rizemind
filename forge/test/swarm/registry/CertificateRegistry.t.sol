@@ -12,7 +12,7 @@ contract TestCertificateRegistry is CertificateRegistry {
 
     // Expose the init for coverage
     function callInit() external {
-        __ICertificateRegistry_init();
+        __CertificateRegistry_init();
     }
 }
 

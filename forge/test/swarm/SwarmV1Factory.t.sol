@@ -7,22 +7,36 @@ import {SwarmV1Factory} from "@rizemind-contracts/swarm/SwarmV1Factory.sol";
 import {SelectorFactory} from "@rizemind-contracts/sampling/SelectorFactory.sol";
 import {AlwaysSampled} from "@rizemind-contracts/sampling/AlwaysSampled.sol";
 import {RandomSampling} from "@rizemind-contracts/sampling/RandomSampling.sol";
+import {CalculatorFactory} from "@rizemind-contracts/contribution/CalculatorFactory.sol";
+import {ContributionCalculator} from "@rizemind-contracts/contribution/ContributionCalculator.sol";
+import {BaseAccessControl} from "@rizemind-contracts/access/BaseAccessControl.sol";
+import {SimpleMintCompensation} from "@rizemind-contracts/compensation/SimpleMintCompensation.sol";
+import {AccessControlFactory} from "@rizemind-contracts/access/AccessControlFactory.sol";
+import {CompensationFactory} from "@rizemind-contracts/compensation/CompensationFactory.sol";
+import {BaseTrainingPhases} from "@rizemind-contracts/training/BaseTrainingPhases.sol";
 
 contract SwarmV1FactoryTest is Test {
     SwarmV1 public swarmImpl;
     SwarmV1Factory public swarmFactory;
     SelectorFactory public selectorFactory;
+    CalculatorFactory public calculatorFactory;
+    ContributionCalculator public calculatorImpl;
     AlwaysSampled public trainerSelectorImpl;
     RandomSampling public evaluatorSelectorImpl;
-    
+    BaseAccessControl public accessControlImpl;
+    SimpleMintCompensation public compensationImpl;
+    AccessControlFactory public accessControlFactory;
+    CompensationFactory public compensationFactory;
     address public aggregator;
     address[] public trainers;
     address public nonTrainer;
 
     // Selector IDs for testing
-    bytes32  TRAINER_SELECTOR_ID;
+    bytes32 TRAINER_SELECTOR_ID;
     bytes32 EVALUATOR_SELECTOR_ID;
-
+    bytes32 CALCULATOR_ID;
+    bytes32 ACCESS_CONTROL_ID;
+    bytes32 COMPENSATION_ID;
     bytes32 salt = keccak256(abi.encodePacked("test"));
 
     function setUp() public {
@@ -35,23 +49,52 @@ contract SwarmV1FactoryTest is Test {
         // Deploy the implementation contract (SwarmV1)
         vm.startPrank(aggregator);
         swarmImpl = new SwarmV1();
-        
-        // Deploy selector implementations
+
+
+
+        // Deploy SelectorFactory
         trainerSelectorImpl = new AlwaysSampled();
         evaluatorSelectorImpl = new RandomSampling();
-        
-        // Deploy SelectorFactory first
         selectorFactory = new SelectorFactory(aggregator);
-        
-        // Now we can get the IDs after SelectorFactory is deployed
+        // Now we can get the IDs after factories are deployed
         (,, string memory version,,,,) = trainerSelectorImpl.eip712Domain();
         TRAINER_SELECTOR_ID = selectorFactory.getID(version);
         (,, string memory version2,,,,) = evaluatorSelectorImpl.eip712Domain();
         EVALUATOR_SELECTOR_ID = selectorFactory.getID(version2);
-        
+
         selectorFactory.registerSelectorImplementation(address(trainerSelectorImpl));
         selectorFactory.registerSelectorImplementation(address(evaluatorSelectorImpl));
-        swarmFactory = new SwarmV1Factory(address(swarmImpl), address(selectorFactory));
+
+
+        //deploy calculator factory
+        calculatorImpl = new ContributionCalculator();
+        calculatorFactory = new CalculatorFactory(aggregator);
+        (,, string memory version3,,,,) = calculatorImpl.eip712Domain();
+        CALCULATOR_ID = calculatorFactory.getID(version3);
+        calculatorFactory.registerCalculatorImplementation(address(calculatorImpl));
+
+
+        //deploy access control factory
+        accessControlImpl = new BaseAccessControl();
+        accessControlFactory = new AccessControlFactory(aggregator);
+        (,, string memory version4,,,,) = accessControlImpl.eip712Domain();
+        ACCESS_CONTROL_ID = accessControlFactory.getID(version4);
+        accessControlFactory.registerAccessControlImplementation(address(accessControlImpl));   
+
+        // deploy compensation factory
+        compensationImpl = new SimpleMintCompensation();
+        compensationFactory = new CompensationFactory(aggregator);
+        (,, string memory version5,,,,) = compensationImpl.eip712Domain();
+        COMPENSATION_ID = compensationFactory.getID(version5);
+        compensationFactory.registerCompensationImplementation(address(compensationImpl));
+        
+        swarmFactory = new SwarmV1Factory(
+            address(swarmImpl), 
+            address(selectorFactory),
+            address(calculatorFactory),
+            address(accessControlFactory),
+            address(compensationFactory)
+        );
         vm.stopPrank();
     }
 
@@ -182,11 +225,9 @@ contract SwarmV1FactoryTest is Test {
         string memory name,
         string memory symbol
     ) internal view returns (SwarmV1Factory.SwarmParams memory) {
+
         SwarmV1Factory.SwarmV1Params memory swarmParams = SwarmV1Factory.SwarmV1Params({
-            name: name,
-            symbol: symbol,
-            aggregator: aggregator,
-            trainers: trainers
+            name: name
         });
         
         SwarmV1Factory.SelectorParams memory trainerSelectorParams = SwarmV1Factory.SelectorParams({
@@ -199,10 +240,113 @@ contract SwarmV1FactoryTest is Test {
             initData: ""
         });
         
+        SwarmV1Factory.CalculatorParams memory calculatorParams = SwarmV1Factory.CalculatorParams({
+            id: CALCULATOR_ID,
+            initData: abi.encodeWithSelector(ContributionCalculator.initialize.selector, aggregator, 2)
+        });
+        
+        SwarmV1Factory.AccessControlParams memory accessControlParams = SwarmV1Factory.AccessControlParams({
+            id: ACCESS_CONTROL_ID,
+            initData: abi.encodeWithSelector(BaseAccessControl.initialize.selector, aggregator, trainers, trainers)
+        });
+        
+        SwarmV1Factory.CompensationParams memory compensationParams = SwarmV1Factory.CompensationParams({
+            id: COMPENSATION_ID,
+            initData: abi.encodeWithSelector(SimpleMintCompensation.initialize.selector, name, symbol, 1000 ether, aggregator, aggregator)
+        });
+        
         return SwarmV1Factory.SwarmParams({
             swarm: swarmParams,
             trainerSelector: trainerSelectorParams,
-            evaluatorSelector: evaluatorSelectorParams
+            evaluatorSelector: evaluatorSelectorParams,
+            contributionCalculator: calculatorParams,
+            accessControl: accessControlParams,
+            compensation: compensationParams,
+            trainingPhaseConfiguration: BaseTrainingPhases.TrainingPhaseConfiguration({
+                ttl: 1000
+            }),
+            evaluationPhaseConfiguration: BaseTrainingPhases.EvaluationPhaseConfiguration({
+                ttl: 1000,
+                registrationTtl: 1000
+            })
         });
+    }
+
+    // ============================================================================
+    // CALCULATOR FACTORY TESTS
+    // ============================================================================
+
+    function testGetCalculatorFactory() public view {
+        // Should be set to calculatorFactory address from setUp
+        assertEq(swarmFactory.getCalculatorFactory(), address(calculatorFactory), "Calculator factory should be set correctly");
+    }
+
+    function testSetCalculatorFactory() public {
+        // Deploy a new calculator factory for this test
+        vm.prank(aggregator);
+        CalculatorFactory newCalculatorFactory = new CalculatorFactory(aggregator);
+        
+        vm.prank(aggregator);
+        swarmFactory.setCalculatorFactory(address(newCalculatorFactory));
+        
+        assertEq(swarmFactory.getCalculatorFactory(), address(newCalculatorFactory), "Calculator factory should be set correctly");
+    }
+
+    function testSetCalculatorFactoryEmitsEvent() public {
+        // Deploy a new calculator factory for this test
+        vm.prank(aggregator);
+        CalculatorFactory newCalculatorFactory = new CalculatorFactory(aggregator);
+        
+        vm.expectEmit(true, true, false, false);
+        emit SwarmV1Factory.CalculatorFactoryUpdated(address(calculatorFactory), address(newCalculatorFactory));
+        
+        vm.prank(aggregator);
+        swarmFactory.setCalculatorFactory(address(newCalculatorFactory));
+    }
+
+    function testSetCalculatorFactoryProtected() public {
+        vm.prank(trainers[0]);
+        vm.expectRevert();
+        swarmFactory.setCalculatorFactory(address(calculatorFactory));
+    }
+
+    function testSetCalculatorFactoryZeroAddressReverts() public {
+        vm.prank(aggregator);
+        vm.expectRevert(bytes("calculator factory cannot be null"));
+        swarmFactory.setCalculatorFactory(address(0));
+    }
+
+    function testUpdateCalculatorFactory() public {
+        // First set a calculator factory
+        vm.prank(aggregator);
+        swarmFactory.setCalculatorFactory(address(calculatorFactory));
+        
+        // Deploy a new calculator factory
+        vm.prank(aggregator);
+        CalculatorFactory newCalculatorFactory = new CalculatorFactory(aggregator);
+        
+        // Update to new calculator factory
+        vm.expectEmit(true, true, false, false);
+        emit SwarmV1Factory.CalculatorFactoryUpdated(address(calculatorFactory), address(newCalculatorFactory));
+        
+        vm.prank(aggregator);
+        swarmFactory.setCalculatorFactory(address(newCalculatorFactory));
+        
+        assertEq(swarmFactory.getCalculatorFactory(), address(newCalculatorFactory), "Calculator factory should be updated correctly");
+    }
+
+    function testGetSwarmAddressMatchesCreateSwarm() public {
+        SwarmV1Factory.SwarmParams memory params = _createSwarmParams("test", "TST");
+        
+        // Get the predicted address before creating
+        address predictedAddress = swarmFactory.getSwarmAddress(salt);
+        
+        // Create the swarm
+        vm.prank(aggregator);
+        address createdAddress = swarmFactory.createSwarm(salt, params);
+        
+        // Verify both addresses match
+        assertEq(predictedAddress, createdAddress, "getSwarmAddress should return the same address as createSwarm");
+        assertTrue(createdAddress != address(0), "Created address should not be zero");
     }
 }

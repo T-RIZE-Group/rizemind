@@ -14,6 +14,7 @@ class TrainerSet:
         members: List of trainer addresses that are members of this set.
     """
 
+    order: int
     id: str
     members: list[ChecksumAddress]
 
@@ -21,6 +22,7 @@ class TrainerSet:
         self,
         id: str,
         members: list[ChecksumAddress],
+        order: int = 0,
     ) -> None:
         """Initialize a trainer set.
 
@@ -30,6 +32,7 @@ class TrainerSet:
         """
         self.id = id
         self.members = members
+        self.order = order
 
     def size(self) -> int:
         """Get the number of trainers in this set.
@@ -58,6 +61,7 @@ class TrainerSetAggregate(TrainerSet):
         members: list[ChecksumAddress],
         parameters: Parameters,
         config: dict[str, Scalar],
+        order: int = 0,
     ) -> None:
         """Initialize a trainer set aggregate.
 
@@ -67,7 +71,7 @@ class TrainerSetAggregate(TrainerSet):
             parameters: Aggregated model parameters.
             config: Configuration dictionary.
         """
-        super().__init__(id, members=members)
+        super().__init__(id, members=members, order=order)
         self.parameters = parameters
         self.config = config
         self._evaluation_res = []
@@ -115,14 +119,11 @@ class TrainerSetAggregate(TrainerSet):
             The aggregated metric value, or default if not all evaluations
             contain this metric.
         """
-        if not self._evaluation_res:
+        if not self._evaluation_res or len(self._evaluation_res) == 0:
             return default
 
         metric_values = [res.metrics.get(name) for res in self._evaluation_res]
-        valid_metrics = [v for v in metric_values if v is not None]
-
-        if len(valid_metrics) != len(self._evaluation_res):
-            return default
+        valid_metrics = [v if v is not None else default for v in metric_values]
 
         return aggregator(valid_metrics)
 
@@ -176,7 +177,12 @@ class TrainerSetAggregateStore:
         """
         if id in self.set_aggregates:
             return self.set_aggregates[id]
-        raise Exception(f"Coalition {id} not found")
+        raise Exception(
+            f"Coalition {id} not found, available sets: {self.set_aggregates.keys()}"
+        )
+
+    def get_set_by_order(self, order: int) -> list[TrainerSetAggregate]:
+        return [set for set in self.set_aggregates.values() if set.order == order]
 
     def is_available(self, id: str) -> bool:
         """Check if a coalition aggregate exists in the store.

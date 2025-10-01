@@ -9,7 +9,7 @@ abstract contract CertificateRegistry is ICertificateRegistry {
     event NewCertificate(bytes32 indexed id, bytes certificate);
 
     // aderyn-ignore-next-line(empty-block)
-    function __ICertificateRegistry_init() public {}
+    function __CertificateRegistry_init() public {}
 
     function _setCertificate(bytes32 id, bytes calldata certificate) internal {
         _certificates[id] = certificate;

@@ -76,6 +76,13 @@ class ParticipantMapping:
         """
         return self.include_participants(participants=participants, id="0")
 
+    def get_participants_of_set_id(self, id: str) -> list[ChecksumAddress]:
+        members = []
+        for participant in self.participant_ids.keys():
+            if self.in_set(participant, id):
+                members.append(participant)
+        return members
+
     def in_set(self, trainer: ChecksumAddress, id: str) -> bool:
         """Check if a trainer is a member of a set.
 
@@ -137,6 +144,11 @@ class ParticipantMapping:
             participant_mask = self.get_participant_mask(participants)
             aggregate_mask |= participant_mask
         return str(aggregate_mask)
+
+    def get_complementary_id(self, participant: ChecksumAddress, set_id: str) -> str:
+        if self.in_set(participant, set_id):
+            return self.exclude_participants(participant, set_id)
+        return self.include_participants(participant, set_id)
 
     def get_participants(self) -> list[ChecksumAddress]:
         """Get all participant addresses.

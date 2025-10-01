@@ -1,5 +1,8 @@
-"""Module for validating EthereumAddresses and provide proper typing"""
+"""Module for custom pydantic validators"""
 
-from rizemind.configuration.validators.eth_address import EthereumAddress
+from rizemind.configuration.validators.eth_address import (
+    EthereumAddress,
+    EthereumAddressOrNone,
+)
 
-__all__ = ["EthereumAddress"]
+__all__ = ["EthereumAddress", "EthereumAddressOrNone"]

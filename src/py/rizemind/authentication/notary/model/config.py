@@ -1,5 +1,6 @@
 from typing import Any
 
+from hexbytes import HexBytes
 from pydantic import BaseModel
 
 from rizemind.authentication.signatures.signature import Signature
@@ -34,7 +35,7 @@ def prepare_model_notary_config(
     round_id: int,
     domain: EIP712DomainMinimal,
     signature: Signature,
-    model_hash: bytes,
+    model_hash: HexBytes,
 ):
     """Constructs and serializes a `ModelNotaryConfig` into a nested dictionary.
 

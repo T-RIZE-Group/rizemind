@@ -6,7 +6,7 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "RIZEMIND"
+project = "Rizemind"
 copyright = "2025, T-RIZE"
 author = "T-RIZE"
 

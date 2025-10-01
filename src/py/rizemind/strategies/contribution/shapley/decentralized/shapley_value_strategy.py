@@ -7,15 +7,17 @@ from flwr.common.typing import (
     EvaluateIns,
     EvaluateRes,
     Parameters,
-    Scalar,
 )
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
-
 from rizemind.strategies.contribution.shapley.shapley_value_strategy import (
     ShapleyValueStrategy,
     SupportsShapleyValueStrategy,
+)
+from rizemind.swarm.modules.evaluation.assigment.task_assigner import (
+    SupportsTaskAssignement,
+    TaskAssigner,
 )
 
 
@@ -28,10 +30,13 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
     available clients for evaluation in a round-robin fashion.
     """
 
+    _task_assigner: TaskAssigner
+
     def __init__(
         self,
         strategy: Strategy,
         model: SupportsShapleyValueStrategy,
+        task_assigner: SupportsTaskAssignement,
         **kwargs,
     ) -> None:
         """Initialize the decentralized Shapley value strategy.
@@ -43,6 +48,7 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
         """
         log(DEBUG, "DecentralShapleyValueStrategy: initializing")
         ShapleyValueStrategy.__init__(self, strategy, model, **kwargs)
+        self._task_assigner = TaskAssigner(task_assigner, self.set_aggregates)
 
     def configure_evaluate(
         self, server_round: int, parameters: Parameters, client_manager: ClientManager
@@ -66,20 +72,26 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
         )
         num_clients = client_manager.num_available()
         log(INFO, f"configure_evaluate: available number clients: {num_clients}")
-        clients = client_manager.sample(
-            num_clients=num_clients, min_num_clients=num_clients
-        )
 
         configurations: list[tuple[ClientProxy, EvaluateIns]] = []
-        coalitions = self.get_coalitions()
+        coalitions = self.create_coalitions(server_round, client_manager)
         # Making sure the order of the coalitions is different each time
         # to prevent giving the same client the same coalition each single time
-        random.shuffle(coalitions)
+        """        random.shuffle(coalitions)
         for i, coalition in enumerate(coalitions):
-            config: dict[str, Scalar] = {"id": coalition.id}
-            evaluate_ins = EvaluateIns(coalition.parameters, config)
+            task_ins = prepare_evaluation_task_ins(
+                round_id=server_round,
+                eval_id=coalition.order,
+                set_id=int(coalition.id),
+                model_hash=hash_parameters(coalition.parameters),
+            )
+            evaluate_ins = EvaluateIns(coalition.parameters, task_ins)
+            print(evaluate_ins.config)
             # Distribute evaluation instructions among clients using round-robin assignment.
-            configurations.append((clients[i % num_clients], evaluate_ins))
+            configurations.append((clients[i % num_clients], evaluate_ins))"""
+        configurations = self._task_assigner.configure_evaluate(
+            server_round, client_manager
+        )
         log(
             DEBUG,
             "configure_evaluate: client evaluation configurations generated",
@@ -116,7 +128,7 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
         # Evaluate each coalition result to determine the best performing one.
         for result in results:
             _, evaluate_res = result
-            id = cast(str, evaluate_res.metrics["id"])
+            id = str(evaluate_res.metrics["id"])
             coalition = self.get_coalition(id)
             coalition.insert_res(evaluate_res)
 

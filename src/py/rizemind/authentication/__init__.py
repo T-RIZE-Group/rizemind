@@ -15,11 +15,11 @@ Typical usage example:
     app = ClientApp(client_fn, mods=[authentication_mod, model_notary_mod])
 """
 
-from rizemind.authentication.authenticated_client_manager import (
-    AuthenticatedClientManager,
-)
 from rizemind.authentication.authenticated_client_properties import (
     AuthenticatedClientProperties,
+)
+from rizemind.authentication.client_manager import (
+    ClientManagerWithCriterion,
 )
 from rizemind.authentication.config import AccountConfig
 from rizemind.authentication.eth_account_strategy import EthAccountStrategy
@@ -30,7 +30,7 @@ from . import notary, signatures
 __all__ = [
     "notary",
     "signatures",
-    "AuthenticatedClientManager",
+    "ClientManagerWithCriterion",
     "AuthenticatedClientProperties",
     "authentication_mod",
     "AccountConfig",

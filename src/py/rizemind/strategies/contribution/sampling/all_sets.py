@@ -2,11 +2,7 @@ import itertools
 
 from eth_typing import ChecksumAddress
 from flwr.common import FitRes
-from flwr.server.client_proxy import ClientProxy
 
-from rizemind.authentication.authenticated_client_properties import (
-    AuthenticatedClientProperties,
-)
 from rizemind.strategies.contribution.sampling.sets_sampling_strat import (
     SetsSamplingStrategy,
 )
@@ -50,7 +46,7 @@ class AllSets(SetsSamplingStrategy):
         self.sets = {}
 
     def sample_trainer_sets(
-        self, server_round: int, results: list[tuple[ClientProxy, FitRes]]
+        self, server_round: int, results: list[tuple[ChecksumAddress, FitRes]]
     ) -> list[TrainerSet]:
         """Generates all possible combinations of trainers for the given round.
 
@@ -85,9 +81,8 @@ class AllSets(SetsSamplingStrategy):
         self.trainer_mapping = ParticipantMapping()
         self.sets = {}
 
-        for client, _ in results:
-            auth = AuthenticatedClientProperties.from_client(client)
-            self.trainer_mapping.add_participant(auth.trainer_address)
+        for client_address, _ in results:
+            self.trainer_mapping.add_participant(client_address)
 
         results_coalitions = [
             list(combination)
@@ -96,9 +91,8 @@ class AllSets(SetsSamplingStrategy):
         ]
         for results_coalition in results_coalitions:
             members: list[ChecksumAddress] = []
-            for client, _ in results_coalition:
-                auth = AuthenticatedClientProperties.from_client(client)
-                members.append(auth.trainer_address)
+            for client_address, _ in results_coalition:
+                members.append(client_address)
             id = self.trainer_mapping.get_participant_set_id(members)
             self.sets[id] = TrainerSet(id, members)
 

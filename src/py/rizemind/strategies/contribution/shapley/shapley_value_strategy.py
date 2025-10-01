@@ -28,6 +28,7 @@ from rizemind.strategies.contribution.shapley.trainer_set import (
     TrainerSetAggregate,
     TrainerSetAggregateStore,
 )
+from rizemind.strategies.fit_res_store import InMemoryFitResStore, SupportsFitResStore
 
 
 class SupportsShapleyValueStrategy(Protocol):
@@ -38,10 +39,13 @@ class SupportsShapleyValueStrategy(Protocol):
     contribution calculation.
     """
 
-    def distribute(self, trainer_scores: list[tuple[ChecksumAddress, float]]) -> str:
+    def distribute(
+        self, round_id: int, trainer_scores: list[tuple[ChecksumAddress, float]]
+    ) -> str:
         """Distribute rewards to trainers based on their contribution scores.
 
         Args:
+            round_id: The identifier of the current round.
             trainer_scores: List of tuples containing trainer addresses and their
             corresponding contribution scores.
 
@@ -109,6 +113,7 @@ class ShapleyValueStrategy(Strategy):
     sets_sampling_strat: SetsSamplingStrategy
     set_aggregates: TrainerSetAggregateStore
     contribution_calculator: ContributionCalculator
+    fit_res_store: SupportsFitResStore
 
     def __init__(
         self,
@@ -121,6 +126,7 @@ class ShapleyValueStrategy(Strategy):
         | None = None,
         shapley_sampling_strat: SetsSamplingStrategy = AllSets(),
         contribution_calculator: ContributionCalculator = ShapleyValueCalculator(),
+        fit_res_store: SupportsFitResStore = InMemoryFitResStore(),
     ) -> None:
         """Initialize the Shapley value strategy.
 
@@ -144,6 +150,7 @@ class ShapleyValueStrategy(Strategy):
         self.aggregate_coalition_metrics = aggregate_coalition_metrics_fn
         self.sets_sampling_strat = shapley_sampling_strat
         self.contribution_calculator = contribution_calculator
+        self.fit_res_store = fit_res_store
 
     def initialize_parameters(self, client_manager: ClientManager) -> Parameters | None:
         """Delegate the initialization of model parameters to the underlying strategy.
@@ -229,12 +236,16 @@ class ShapleyValueStrategy(Strategy):
                 level=WARNING,
                 msg=f"aggregate_fit: there have been {len(failures)} failures in round {server_round}",
             )
-        self.create_coalitions(server_round, results)
+
+        self.fit_res_store.clear()
+        for [client, fit_res] in results:
+            auth = AuthenticatedClientProperties.from_client(client)
+            self.fit_res_store.insert(auth.trainer_address, fit_res)
 
         return self.strategy.aggregate_fit(server_round, results, failures)
 
     def create_coalitions(
-        self, server_round: int, results: list[tuple[ClientProxy, FitRes]]
+        self, server_round: int, client_manager: ClientManager
     ) -> list[TrainerSetAggregate]:
         """Create coalitions from client training results.
 
@@ -252,16 +263,21 @@ class ShapleyValueStrategy(Strategy):
             ValueError: If no aggregate parameters are returned for a trainer set.
         """
         log(DEBUG, "create_coalitions: initializing")
+        results = self.fit_res_store.items()
         trainer_sets = self.sets_sampling_strat.sample_trainer_sets(
             server_round=server_round, results=results
         )
 
+        address_to_proxy: dict[ChecksumAddress, ClientProxy] = {}
+        for client in client_manager.all().values():
+            auth = AuthenticatedClientProperties.from_client(client)
+            address_to_proxy[auth.trainer_address] = client
+
         for trainer_set in trainer_sets:
             set_results: list[tuple[ClientProxy, FitRes]] = []
-            for client, result in results:
-                auth = AuthenticatedClientProperties.from_client(client)
-                if auth.trainer_address in trainer_set.members:
-                    set_results.append((client, result))
+            for client_address, result in results:
+                if client_address in trainer_set.members:
+                    set_results.append((address_to_proxy[client_address], result))
 
             if trainer_set.size() == 0:
                 parameters, config = self.last_round_parameters, {}
@@ -407,23 +423,14 @@ class ShapleyValueStrategy(Strategy):
                     f"aggregate_evaluate: free rider detected! Trainer address: {player_score.trainer_address}, Score: {player_score.score}",
                 )
         self.swarm.distribute(
+            round_id,
             [
                 (player_score.trainer_address, player_score.score)
                 for player_score in player_scores
-            ]
+            ],
         )
 
-        loss, metrics = self.evaluate_coalitions()
-        next_model = self.select_aggregate()
-        score = 0 if next_model is None else self.get_coalition_score(next_model)
-        self.swarm.next_round(
-            round_id,
-            len(player_scores),
-            score,
-            sum(score.score for score in player_scores),
-        )
-
-        return loss, metrics
+        return self.evaluate_coalitions()
 
     def evaluate_coalitions(self) -> tuple[float, dict[str, Scalar]]:
         """Evaluate all coalitions and determine the best performance.

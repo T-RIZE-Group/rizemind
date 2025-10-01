@@ -26,7 +26,7 @@ class SimpleCompensationStrategy(Strategy):
     """
 
     strategy: Strategy
-    model: SupportsDistribute
+    swarm: SupportsDistribute
 
     def __init__(self, strategy: Strategy, model: SupportsDistribute) -> None:
         """Initialize the simple compensation strategy.
@@ -36,7 +36,7 @@ class SimpleCompensationStrategy(Strategy):
             model: The reward distributor.
         """
         self.strategy = strategy
-        self.model = model
+        self.swarm = model
 
     def calculate(self, client_ids: list[Address]):
         """Compensate each client equally.
@@ -77,7 +77,7 @@ class SimpleCompensationStrategy(Strategy):
         trainer_scores = self.calculate(
             [cast(Address, res.metrics["trainer_address"]) for _, res in results]
         )
-        self.model.distribute(trainer_scores)
+        self.swarm.distribute(server_round, trainer_scores)
         return self.strategy.aggregate_fit(server_round, results, failures)
 
     def initialize_parameters(self, client_manager: ClientManager) -> Parameters | None:

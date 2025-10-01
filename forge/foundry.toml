@@ -5,6 +5,9 @@
 src = "src"
 out = "out"
 libs = ["lib", "dependencies"]
+optimizer = true
+optimizer_runs = 1000
+via_ir = true
 fs_permissions = [
   { access = "read-write", path = "./output"},
   { access = "read", path = "./broadcast" },

@@ -11,6 +11,21 @@
         "name": "selectorFactory",
         "type": "address",
         "internalType": "address"
+      },
+      {
+        "name": "calculatorFactory",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "accessControlFactory",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "compensationFactory",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "stateMutability": "nonpayable"
@@ -51,21 +66,6 @@
                 "name": "name",
                 "type": "string",
                 "internalType": "string"
-              },
-              {
-                "name": "symbol",
-                "type": "string",
-                "internalType": "string"
-              },
-              {
-                "name": "aggregator",
-                "type": "address",
-                "internalType": "address"
-              },
-              {
-                "name": "trainers",
-                "type": "address[]",
-                "internalType": "address[]"
               }
             ]
           },
@@ -102,6 +102,86 @@
                 "internalType": "bytes"
               }
             ]
+          },
+          {
+            "name": "contributionCalculator",
+            "type": "tuple",
+            "internalType": "struct SwarmV1Factory.CalculatorParams",
+            "components": [
+              {
+                "name": "id",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "initData",
+                "type": "bytes",
+                "internalType": "bytes"
+              }
+            ]
+          },
+          {
+            "name": "accessControl",
+            "type": "tuple",
+            "internalType": "struct SwarmV1Factory.AccessControlParams",
+            "components": [
+              {
+                "name": "id",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "initData",
+                "type": "bytes",
+                "internalType": "bytes"
+              }
+            ]
+          },
+          {
+            "name": "compensation",
+            "type": "tuple",
+            "internalType": "struct SwarmV1Factory.CompensationParams",
+            "components": [
+              {
+                "name": "id",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "initData",
+                "type": "bytes",
+                "internalType": "bytes"
+              }
+            ]
+          },
+          {
+            "name": "trainingPhaseConfiguration",
+            "type": "tuple",
+            "internalType": "struct BaseTrainingPhases.TrainingPhaseConfiguration",
+            "components": [
+              {
+                "name": "ttl",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "evaluationPhaseConfiguration",
+            "type": "tuple",
+            "internalType": "struct BaseTrainingPhases.EvaluationPhaseConfiguration",
+            "components": [
+              {
+                "name": "ttl",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "registrationTtl",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
           }
         ]
       }
@@ -114,6 +194,45 @@
       }
     ],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "getAccessControlFactory",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getCalculatorFactory",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getCompensationFactory",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -143,6 +262,25 @@
         "name": "",
         "type": "bytes32",
         "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getSwarmAddress",
+    "inputs": [
+      {
+        "name": "salt",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "stateMutability": "view"
@@ -227,6 +365,45 @@
   },
   {
     "type": "function",
+    "name": "setAccessControlFactory",
+    "inputs": [
+      {
+        "name": "accessControlFactory",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setCalculatorFactory",
+    "inputs": [
+      {
+        "name": "calculatorFactory",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setCompensationFactory",
+    "inputs": [
+      {
+        "name": "compensationFactory",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "supportsInterface",
     "inputs": [
       {
@@ -256,6 +433,63 @@
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "AccessControlFactoryUpdated",
+    "inputs": [
+      {
+        "name": "oldFactory",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newFactory",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "CalculatorFactoryUpdated",
+    "inputs": [
+      {
+        "name": "oldFactory",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newFactory",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "CompensationFactoryUpdated",
+    "inputs": [
+      {
+        "name": "oldFactory",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newFactory",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
   },
   {
     "type": "event",
@@ -394,6 +628,32 @@
         "name": "neededRole",
         "type": "bytes32",
         "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "Create2EmptyBytecode",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "FailedDeployment",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InsufficientBalance",
+    "inputs": [
+      {
+        "name": "balance",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "needed",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ]
   }

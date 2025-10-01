@@ -95,7 +95,7 @@ contract RNGTest is Test {
         vm.assume(max < 1000000);
         
         uint8 DECIMALS = 18;
-        uint256 numSamples = 100;
+        uint256 numSamples = 500;
 
         uint256 sum = 0;
         // Generate multiple samples
