@@ -1,6 +1,4 @@
-import random
 from logging import DEBUG, INFO, WARNING
-from typing import cast
 
 from flwr.common.logger import log
 from flwr.common.typing import (
@@ -11,10 +9,11 @@ from flwr.common.typing import (
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
+
 from rizemind.strategies.contribution.shapley.shapley_value_strategy import (
     ShapleyValueStrategy,
-    SupportsShapleyValueStrategy,
 )
+from rizemind.strategies.contribution.shapley.typing import SupportsShapleyValueStrategy
 from rizemind.swarm.modules.evaluation.assigment.task_assigner import (
     SupportsTaskAssignement,
     TaskAssigner,

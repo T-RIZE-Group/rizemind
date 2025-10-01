@@ -1,20 +1,15 @@
-from typing import Protocol
-
 from eth_typing import ChecksumAddress
 from flwr.common import FitRes
+from web3 import Web3
+
 from rizemind.strategies.contribution.sampling.sets_sampling_strat import (
     SetsSamplingStrategy,
 )
+from rizemind.strategies.contribution.sampling.typing import (
+    RandomDeterministicInterface,
+)
 from rizemind.strategies.contribution.shapley.trainer_mapping import ParticipantMapping
 from rizemind.strategies.contribution.shapley.trainer_set import TrainerSet
-from web3 import Web3
-
-
-class RandomDeterministicInterface(Protocol):
-    def get_number_of_sets(self, round_id: int) -> int: ...
-    def get_number_of_participants(self, round_id: int) -> int: ...
-    def get_nth_participant(self, round_id: int, n: int) -> str: ...
-    def get_nth_set(self, round_id: int, n: int) -> str: ...
 
 
 class RandomDeterministicSampling(SetsSamplingStrategy):

@@ -1,32 +1,14 @@
 import asyncio
 import contextlib
-from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import TypedDict
 
 from eth_typing import ABIEvent
 from eth_utils.abi import event_abi_to_log_topic
 from rizemind.contracts.abi_helper import EventsRegistry
+from rizemind.web3.indexer.logs.typing import EventEnvelope, Handler, Predicate
 from web3 import AsyncWeb3, Web3
 from web3.contract.base_contract import BaseContractEvent
 from web3.types import EventData, LogReceipt
-
-
-class EventEnvelope(TypedDict):
-    name: str
-    signature: bytes
-    abi: ABIEvent
-    address: str
-    args: dict
-    blockNumber: int
-    transactionHash: str
-    logIndex: int
-    blockHash: str | None
-    removed: bool
-
-
-Predicate = Callable[[EventEnvelope], bool]
-Handler = Callable[[EventEnvelope], Awaitable[None]]
 
 
 @dataclass(frozen=True)

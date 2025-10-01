@@ -15,8 +15,8 @@ from flwr.server.strategy import Strategy
 
 from rizemind.strategies.contribution.shapley.shapley_value_strategy import (
     ShapleyValueStrategy,
-    SupportsShapleyValueStrategy,
 )
+from rizemind.strategies.contribution.shapley.typing import SupportsShapleyValueStrategy
 
 
 class CentralShapleyValueStrategy(ShapleyValueStrategy):
