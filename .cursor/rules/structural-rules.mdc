@@ -1,0 +1,155 @@
+---
+description: Organization and Structural Rules for all Modules and Sub-modules
+alwaysApply: false
+---
+
+# Structural Rules
+
+This document defines the structural and organizational rules that every module and submodule in Rizemind must adhere to. These rules are established to ensure consistency, maintainability, and ease of navigation throughout the codebase for both developers and users alike. Additionally, they facilitate design choices so that developers can focus on implementing features and maintaining code quality without deliberating on organizational decisions. Consider this the "ten commandments" for Rizemind development.
+
+## Types and Typing Files
+
+### Type Definitions
+
+For the purposes of this document, the following constructs are classified as "types":
+
+1. Type Aliases and Extensions: Any type alias or extension using typing constructs (e.g., `Numerical = Union[int, float]` defines a type alias called `Numerical`).
+
+2. Dataclasses: Every class decorated with the `@dataclass` decorator. These classes are designed to hold data with minimal logic. For example:
+
+   ```python
+   @dataclass
+   class AccessControlParams:
+       id: bytes
+       init_data: bytes
+   ```
+
+3. Parameter-Only Classes and Stateless Classes: Any class that exclusively contains parameters (attributes) and/or stateless methods (such as `staticmethod`, `classmethod` without instance state, etc.). These classes serve as data containers or utility classes with no instance-specific behavior. For example:
+
+   ```python
+   class ClassWithParamOnly:
+       population: int
+
+   class ClassWithStaticMethod:
+       balance: float
+
+       def __init__(self, balance: float = 0):
+           self.balance = balance
+
+       @staticmethod
+       def create_empty_class() -> "ClassWithStaticMethod":
+           return ClassWithStaticMethod()
+   ```
+
+4. BaseModel Extensions with Parameters or Stateless Methods: Every Pydantic `BaseModel` subclass that only contains field definitions and/or stateless methods (such as `staticmethod`, `field_validator`, `model_validator`, etc.). These classes typically define configuration schemas or data validation structures. For example:
+
+   ```python
+   class ExtensionOfBaseModelWithParamOnly(BaseModel):
+       population: int
+
+   class ExtensionOfBaseModelWithStaticMethod(BaseModel):
+       balance: float = 0
+
+       @staticmethod
+       def create_empty_class() -> "ClassWithStaticMethod":
+           return ClassWithStaticMethod()
+   ```
+
+5. Protocol Classes: Any class that inherits from `typing.Protocol` to define structural subtyping (duck typing) interfaces. These define the expected structure of objects without inheritance.
+
+### Type Placement Rules
+
+The following rules dictate where type definitions should be placed within the codebase:
+
+1. Single-File Usage: If a type is used exclusively within a single file (by one or more classes/functions/methods in that file), the type definition **must** be placed at the top of that same file, immediately following the import statements. This keeps the type definition close to its usage and avoids unnecessary file proliferation.
+
+2. Multi-File Usage: If a type is used by multiple classes, functions, or methods across **two or more files** (whether within the same module, across different modules in the same submodule, or across different submodules), the type definition **must** be placed in a dedicated `typing.py` file within the most relevant module or submodule. This centralizes shared type definitions and makes dependencies explicit.
+
+### Example
+
+Consider the `authentication` module with the following structure:
+
+```bash
+rizemind/authentication/
+├── __init__.py
+├── config.py
+├── eth_account_strategy.py
+├── typing.py
+└── signatures/
+    ├── __init__.py
+    ├── auth.py
+    ├── eip712.py
+    ├── signature.py
+    └── typing.py
+```
+
+#### Scenario 1: Type used in a single file (Rule 1)
+
+In `config.py`, we have a type `MnemonicStoreConfig` that is only used within the same file by the `AccountConfig` class:
+
+```python
+# config.py
+from pydantic import BaseModel, Field
+
+# Type definition at the top of the file (after imports)
+class MnemonicStoreConfig(BaseModel):
+    """Configuration for mnemonic keystore."""
+    account_name: str = Field(..., description="account name")
+    passphrase: str = Field(..., description="Pass-phrase that unlocks the keystore")
+
+# The type is only used here in this file
+class AccountConfig(BaseConfig):
+    """Ethereum account configuration."""
+    mnemonic: str | None = None
+    mnemonic_store: MnemonicStoreConfig | None = None
+    default_account_index: int = 0
+```
+
+Since `MnemonicStoreConfig` is only referenced within `config.py`, it remains at the top of that file.
+
+#### Scenario 2: Type used across multiple files (Rule 2)
+
+The `SupportsEthAccountStrategy` protocol is used by multiple files across the authentication module:
+
+- `eth_account_strategy.py` (implements the protocol)
+- `client_manager.py` (uses the protocol for type hints)
+- `can_train_criterion.py` (uses the protocol for validation)
+
+Therefore, this type is defined in `authentication/typing.py`:
+
+```python
+# authentication/typing.py
+from typing import Protocol
+from eth_typing import ChecksumAddress
+from rizemind.contracts.erc.erc5267.typings import EIP712Domain
+
+class SupportsEthAccountStrategy(Protocol):
+    """Protocol for Ethereum account-based authentication strategies."""
+    def can_train(self, trainer: ChecksumAddress, round_id: int) -> bool: ...
+    def can_evaluate(self, evaluator: ChecksumAddress, round_id: int) -> bool: ...
+    def get_eip712_domain(self) -> EIP712Domain: ...
+```
+
+Similarly, within the `signatures` submodule, the `EIP712DomainStruct` dataclass is used by:
+
+- `signatures/eip712.py` (creates instances)
+- `signatures/auth.py` (validates domains)
+- `signatures/signature.py` (references for typing)
+
+Therefore, it's defined in `authentication/signatures/typing.py`:
+
+```python
+# authentication/signatures/typing.py
+from dataclasses import dataclass
+from eth_typing import ChecksumAddress
+
+@dataclass
+class EIP712DomainStruct:
+    """EIP-712 domain separator structure."""
+    name: str
+    version: str
+    chainId: int
+    verifyingContract: ChecksumAddress
+```
+
+This organization ensures that shared types are centralized in `typing.py` files at the appropriate module level, while file-specific types are coupled with their user class/method.
