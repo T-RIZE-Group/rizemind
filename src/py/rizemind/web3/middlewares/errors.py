@@ -1,17 +1,14 @@
-from collections.abc import Callable
-from typing import Any, Tuple, Dict, cast
+from typing import Any, cast
+
 from eth_abi.abi import decode
 from eth_typing import ABIError, HexStr
-from web3 import Web3
-
 from rizemind.contracts.abi_helper import PANIC_CODES, error_registry
 from rizemind.exception.contract_execution_exception import RizemindContractError
-from web3.exceptions import ContractCustomError, ContractLogicError
-from web3.middleware import FormattingMiddlewareBuilder
-from web3.types import RPCEndpoint, RPCResponse
+from web3 import Web3
 from web3._utils.rpc_abi import (
     RPC,
 )
+from web3.middleware import FormattingMiddlewareBuilder
 
 
 def _parse_error(hex_data: str) -> tuple[ABIError, dict[str, Any]]:
@@ -53,7 +50,7 @@ def _extract_hex_error_data(err_data: Any) -> str | None:
     return None
 
 
-def _raise_rizemind_if_revert(error_obj: Dict[str, Any]) -> Dict[str, Any]:
+def _raise_rizemind_if_revert(error_obj: dict[str, Any]) -> dict[str, Any]:
     """
     error_formatters receive the JSON-RPC 'error' object.
     If we can decode a Solidity error, raise RizemindContractError.

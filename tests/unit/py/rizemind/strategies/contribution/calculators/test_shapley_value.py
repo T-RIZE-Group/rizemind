@@ -2,7 +2,6 @@ import pytest
 from eth_account import Account
 from eth_typing import ChecksumAddress
 from flwr.common.typing import Parameters
-
 from rizemind.strategies.contribution.calculators.shapley_value import (
     ShapleyValueCalculator,
 )
@@ -11,7 +10,6 @@ from rizemind.strategies.contribution.shapley.trainer_set import (
     TrainerSetAggregate,
     TrainerSetAggregateStore,
 )
-
 
 """
 Test suite for the ShapleyValueCalculator class.

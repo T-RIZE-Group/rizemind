@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 from eth_typing import ChecksumAddress
 from flwr.common import FitRes
+
 from rizemind.strategies.contribution.shapley.trainer_mapping import ParticipantMapping
 from rizemind.strategies.contribution.shapley.trainer_set import (
     TrainerSet,

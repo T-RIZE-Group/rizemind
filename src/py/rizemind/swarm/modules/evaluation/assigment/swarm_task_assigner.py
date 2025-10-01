@@ -1,4 +1,5 @@
 from logging import WARNING
+
 from eth_typing import ChecksumAddress
 from flwr.common import log
 from rizemind.swarm.modules.evaluation.assigment.task_assigner import (

@@ -24,5 +24,3 @@ class EIP712DomainRequiredFields(Protocol):
     version: str
     chainId: int
     verifyingContract: ChecksumAddress
-
-
