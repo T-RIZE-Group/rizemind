@@ -50,7 +50,6 @@ from .task import Net, get_weights
 
 
 # Define metric aggregation function
-# Define metric aggregation function
 def weighted_average(metrics: list[tuple[int, Metrics]]) -> Metrics:
     # Multiply accuracy of each client by number of examples used
     accuracies = [num_examples * float(m["accuracy"]) for num_examples, m in metrics]
@@ -162,7 +161,9 @@ def main(grid: Grid, context: Context) -> None:
         DecentralShapleyValueStrategy(
             strategy,
             swarm,
-            coalition_to_score_fn=lambda coalition: coalition.metrics["accuracy"],
+            coalition_to_score_fn=lambda coalition: coalition.get_metric(
+                "accuracy", 0, aggregator=statistics.mean
+            ),
             aggregate_coalition_metrics_fn=aggregate_coalitions,
             shapley_sampling_strat=RandomDeterministicSampling(
                 SwarmDeterministicSampling(swarm)

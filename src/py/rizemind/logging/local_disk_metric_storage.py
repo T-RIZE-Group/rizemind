@@ -127,4 +127,4 @@ class LocalDiskMetricStorage(BaseMetricStorage):
         if loss < self._best_loss:
             self._best_loss = loss
             ndarray_params = parameters_to_ndarrays(self._current_round_model)
-            np.savez(self.weights_file, ndarray_params)
+            np.savez(self.weights_file, *ndarray_params)

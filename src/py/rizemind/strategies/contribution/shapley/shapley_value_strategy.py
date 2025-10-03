@@ -293,7 +293,11 @@ class ShapleyValueStrategy(Strategy):
 
             self.set_aggregates.insert(
                 TrainerSetAggregate(
-                    trainer_set.id, trainer_set.members, parameters, config
+                    trainer_set.id,
+                    trainer_set.members,
+                    parameters,
+                    config,
+                    order=trainer_set.order,
                 )
             )
 

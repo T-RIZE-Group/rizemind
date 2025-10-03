@@ -1,10 +1,11 @@
+import logging
 import timeit
 from typing import cast
 
 import torch
 from eth_account import Account
 from flwr.client import ClientApp, NumPyClient
-from flwr.common import Context, Scalar
+from flwr.common import Context, Scalar, log
 from rizemind.authentication import AccountConfig, authentication_mod
 from rizemind.authentication.notary.model import model_notary_mod
 from rizemind.configuration.toml_config import TomlConfig
@@ -61,6 +62,25 @@ class FlowerClient(NumPyClient):
         task_ins = parse_evaluation_task_ins(config)
         while True:
             try:
+                n_trainers = self.swarm.trainer_registry.get_trainer_count(
+                    task_ins.round_id
+                )
+                expected_set = self.swarm.contribution_calculator.get_mask(
+                    task_ins.round_id, task_ins.eval_id, n_trainers
+                )
+                distance = bin(task_ins.set_id ^ expected_set).count("1")
+                if distance > 1:
+                    print(
+                        f"Refusing to register evaluation: set id {task_ins.eval_id} (bin: {bin(expected_set)}) is too far from received set (bin: {bin(task_ins.set_id)}), hamming distance {distance}"
+                    )
+                    return (
+                        loss,
+                        len(self.valloader.dataset),
+                        cast(
+                            dict[str, Scalar],
+                            {"accuracy": accuracy, "id": task_ins.set_id},
+                        ),
+                    )
                 self.swarm.register_evaluation(
                     round_id=task_ins.round_id,
                     eval_id=task_ins.eval_id,
@@ -76,16 +96,10 @@ class FlowerClient(NumPyClient):
                     ),
                 )
             except RizemindContractError as e:
-                n_trainers = self.swarm.trainer_registry.get_trainer_count(
-                    task_ins.round_id
+                log(
+                    level=logging.ERROR,
+                    msg=f"Couldn't commit result onchain. Eval ID {task_ins.eval_id}: set id {task_ins.set_id} ({bin(task_ins.set_id)}) vs {expected_set} ({bin(expected_set)})",
                 )
-                expected_set = self.swarm.contribution_calculator.get_mask(
-                    task_ins.round_id, task_ins.eval_id, n_trainers
-                )
-                print(
-                    f"Wrong configuration? Eval ID {task_ins.eval_id}: set id {task_ins.set_id} ({bin(task_ins.set_id)}) vs {expected_set} ({bin(expected_set)})"
-                )
-                print(e)
                 return (
                     loss,
                     len(self.valloader.dataset),

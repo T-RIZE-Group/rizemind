@@ -165,14 +165,14 @@ contract ShapleyValueCalculatorTest is Test {
 
     function test_registerResult_withInvalidDistance() public {
         uint256 roundId = 1;
-        uint8 numberOfPlayers = 2;
+        uint8 numberOfPlayers = 5;
         bytes32 modelHash = keccak256("test_model");
         
         // Set up a target set ID
         uint256 targetSetId = calculator.getMask(roundId, 0, numberOfPlayers);
         
         // Try to register result with hamming distance > 1 (should revert)
-        uint256 farSetId = targetSetId ^ 3; // Flip two bits (distance = 2)
+        uint256 farSetId = targetSetId ^ 3; // Flip two bits 3 -> 0b11 (distance = 2)
         
         vm.expectRevert(
             abi.encodeWithSelector(

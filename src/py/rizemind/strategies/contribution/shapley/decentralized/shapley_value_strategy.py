@@ -74,21 +74,7 @@ class DecentralShapleyValueStrategy(ShapleyValueStrategy):
         log(INFO, f"configure_evaluate: available number clients: {num_clients}")
 
         configurations: list[tuple[ClientProxy, EvaluateIns]] = []
-        coalitions = self.create_coalitions(server_round, client_manager)
-        # Making sure the order of the coalitions is different each time
-        # to prevent giving the same client the same coalition each single time
-        """        random.shuffle(coalitions)
-        for i, coalition in enumerate(coalitions):
-            task_ins = prepare_evaluation_task_ins(
-                round_id=server_round,
-                eval_id=coalition.order,
-                set_id=int(coalition.id),
-                model_hash=hash_parameters(coalition.parameters),
-            )
-            evaluate_ins = EvaluateIns(coalition.parameters, task_ins)
-            print(evaluate_ins.config)
-            # Distribute evaluation instructions among clients using round-robin assignment.
-            configurations.append((clients[i % num_clients], evaluate_ins))"""
+        self.create_coalitions(server_round, client_manager)
         configurations = self._task_assigner.configure_evaluate(
             server_round, client_manager
         )

@@ -61,7 +61,7 @@ class TrainerSetAggregate(TrainerSet):
         members: list[ChecksumAddress],
         parameters: Parameters,
         config: dict[str, Scalar],
-        order: int = 0,
+        order: int,
     ) -> None:
         """Initialize a trainer set aggregate.
 
