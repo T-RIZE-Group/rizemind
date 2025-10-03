@@ -6,6 +6,7 @@ from eth_account import Account
 from eth_typing import ChecksumAddress
 from flwr.common import GetPropertiesRes
 from flwr.common.typing import Code, Status
+from rizemind.authentication import AuthenticatedClientProperties
 from rizemind.authentication.can_train_criterion import CanTrainCriterion
 from rizemind.authentication.signatures.auth import sign_auth_message
 from rizemind.authentication.train_auth import (
@@ -37,6 +38,9 @@ class _DummySwarm:
     def can_train(self, trainer: ChecksumAddress, round_id: int) -> bool:
         self.last_call = (trainer, round_id)
         return self._result
+
+    def can_evaluate(self, evaluator: ChecksumAddress, round_id: int) -> bool:
+        raise NotImplementedError()
 
 
 @pytest.fixture(autouse=True)
@@ -78,27 +82,16 @@ def test_select_propagates_swarm_decision(
     signer_account,
 ):
     rnd = 42
-    sig = sign_auth_message(
-        round=rnd, nonce=nonce, domain=domain, account=signer_account
-    )
-
     swarm = _DummySwarm(domain, result=swarm_allows_training)
 
-    client = MagicMock(spec_set=["get_properties", "properties"])
-    get_prop_res = prepare_train_auth_res(signature=sig)
-    client.get_properties.return_value = get_prop_res
+    client = MagicMock(spec_set=["properties"])
     client.properties = {}
-
+    auth_prop = AuthenticatedClientProperties(trainer_address=signer_account.address)
+    auth_prop.tag_client(client)
     criterion = CanTrainCriterion(round_id=rnd, swarm=swarm)
     outcome = criterion.select(client)
 
     assert outcome is swarm_allows_training
-
-    # the correct instruction object was sent to the client
-    expected_ins = prepare_train_auth_ins(round_id=rnd, nonce=nonce, domain=domain)
-    (ins_arg,), kw = client.get_properties.call_args
-    assert ins_arg == expected_ins
-    assert kw["group_id"] == rnd
 
     # `swarm.can_train` should have been invoked with the *recovered* signer
     # and the same round id
@@ -108,21 +101,7 @@ def test_select_propagates_swarm_decision(
     assert signer == signer_account.address
 
 
-@pytest.mark.parametrize(
-    "bad_response",
-    [
-        GetPropertiesRes(
-            status=Status(code=Code.OK, message="bad payload"), properties={}
-        ),
-        GetPropertiesRes(
-            status=Status(code=Code.OK, message="bad payload"),
-            properties={f"{TRAIN_AUTH_PREFIX}.data": b"123"},
-        ),
-    ],
-)
-def test_select_returns_false_when_parsing_exception(
-    domain: EIP712Domain, bad_response: GetPropertiesRes
-):
+def test_select_returns_false_when_parsing_exception(domain: EIP712Domain):
     """
     If the Flower client returns a malformed GetPropertiesRes such that
     `parse_train_auth_res` raises, `select` must *not* propagate the exception
@@ -132,8 +111,8 @@ def test_select_returns_false_when_parsing_exception(
 
     swarm = _DummySwarm(domain, result=True)
 
-    client = MagicMock(spec_set=["get_properties"])
-    client.get_properties.return_value = bad_response
+    client = MagicMock(spec_set=["properties"])
+    client.properties = {}
 
     criterion = CanTrainCriterion(round_id=rnd, swarm=swarm)
     outcome = criterion.select(client)

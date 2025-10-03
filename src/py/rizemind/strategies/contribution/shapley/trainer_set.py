@@ -110,6 +110,8 @@ class TrainerSetAggregate(TrainerSet):
     ):
         """Get an aggregated metric value for this coalition.
 
+        Missing metrics are imputed with the default value.
+
         Args:
             name: The metric name to retrieve.
             default: Default value to return if metric is unavailable.

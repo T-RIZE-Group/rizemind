@@ -1,6 +1,7 @@
 import pytest
 from eth_account import Account
 from eth_typing import ChecksumAddress
+from flwr.common import Code, EvaluateRes, Status
 from flwr.common.typing import Parameters
 
 from rizemind.strategies.contribution.calculators.shapley_value import (
@@ -11,6 +12,60 @@ from rizemind.strategies.contribution.shapley.trainer_set import (
     TrainerSetAggregate,
     TrainerSetAggregateStore,
 )
+
+
+def create_trainer_set_aggregate(
+    id: str,
+    members: list[ChecksumAddress],
+    loss: float = 0.0,
+    accuracy: float = 0.0,
+    order: int = 0,
+) -> TrainerSetAggregate:
+    """Create a TrainerSetAggregate with EvaluateRes containing target loss and accuracy metric.
+
+    Args:
+        id: Unique identifier for this coalition.
+        members: List of trainer addresses in this coalition.
+        loss: Target loss value for the evaluation result.
+        accuracy: Target accuracy metric value for the evaluation result.
+        order: Order of this coalition.
+
+    Returns:
+        TrainerSetAggregate with EvaluateRes containing the specified loss and accuracy.
+    """
+    aggregate = TrainerSetAggregate(
+        id=id,
+        members=members,
+        parameters=Parameters([], ""),
+        config={},
+        order=order,
+    )
+
+    # Create EvaluateRes with the specified loss and accuracy metric
+    eval_res = EvaluateRes(
+        loss=loss,
+        metrics={"accuracy": accuracy},
+        status=Status(code=Code.OK, message=""),
+        num_examples=100,  # Default number of examples
+    )
+
+    aggregate.insert_res(eval_res)
+    return aggregate
+
+
+def accuracy_scoring_fn(coalition: TrainerSetAggregate) -> float:
+    """Custom scoring function that uses get_metric to retrieve accuracy metric.
+
+    Args:
+        coalition: The coalition aggregate to score.
+
+    Returns:
+        The accuracy metric value from the coalition.
+    """
+    metric_value = coalition.get_metric("accuracy", 0.0, lambda x: x[0] if x else 0.0)
+    if isinstance(metric_value, (int, float)):
+        return float(metric_value)
+    return 0.0
 
 
 """
@@ -65,31 +120,28 @@ def trainer_set_store(
     store = TrainerSetAggregateStore()
 
     # Create empty coalition (no participants)
-    empty_coalition = TrainerSetAggregate(
-        id="0", members=[], parameters=Parameters([], ""), config={}
+    empty_coalition = create_trainer_set_aggregate(
+        id="0", members=[], loss=0.0, accuracy=0.0
     )
-    empty_coalition.loss = 0.0
     store.insert(empty_coalition)
 
     # Create single participant coalitions
     for i, address in enumerate(sample_addresses):
-        coalition = TrainerSetAggregate(
+        coalition = create_trainer_set_aggregate(
             id=str(1 << i),  # Use bit mask as ID
             members=[address],
-            parameters=Parameters([], ""),
-            config={},
+            loss=100.0 + i * 50.0,  # Different losses for each participant
+            accuracy=100.0 + i * 50.0,  # Use same values as accuracy
         )
-        coalition.loss = 100.0 + i * 50.0  # Different losses for each participant
         store.insert(coalition)
 
     # Create coalition with all participants
-    all_participants_coalition = TrainerSetAggregate(
+    all_participants_coalition = create_trainer_set_aggregate(
         id=str((1 << len(sample_addresses)) - 1),  # All bits set
         members=sample_addresses,
-        parameters=Parameters([], ""),
-        config={},
+        loss=500.0,
+        accuracy=500.0,  # Use same value as accuracy
     )
-    all_participants_coalition.loss = 500.0
     store.insert(all_participants_coalition)
 
     return store
@@ -110,7 +162,9 @@ def test_shapley_value_calculator_with_existing_fixtures(
 
     # Calculate Shapley values using the fixture data
     scores = shapley_calculator.get_scores(
-        participant_mapping=participant_mapping, store=trainer_set_store
+        participant_mapping=participant_mapping,
+        store=trainer_set_store,
+        coalition_to_score_fn=accuracy_scoring_fn,
     )
 
     # Verify results
@@ -150,45 +204,43 @@ def test_shapley_value_calculator_happy_path(
 
     # Create coalitions with known values for easy Shapley calculation
     # Empty coalition: value = 0
-    empty_coalition = TrainerSetAggregate(
-        id="0", members=[], parameters=Parameters([], ""), config={}
+    empty_coalition = create_trainer_set_aggregate(
+        id="0", members=[], loss=0.0, accuracy=0.0
     )
-    empty_coalition.loss = 0.0
     simple_store.insert(empty_coalition)
 
     # Coalition with participant 1: value = 100
-    coalition_1 = TrainerSetAggregate(
+    coalition_1 = create_trainer_set_aggregate(
         id="1",  # Binary: 01
         members=[addr1],
-        parameters=Parameters([], ""),
-        config={},
+        loss=100.0,
+        accuracy=100.0,  # Use same value as accuracy
     )
-    coalition_1.loss = 100.0
     simple_store.insert(coalition_1)
 
     # Coalition with participant 2: value = 200
-    coalition_2 = TrainerSetAggregate(
+    coalition_2 = create_trainer_set_aggregate(
         id="2",  # Binary: 10
         members=[addr2],
-        parameters=Parameters([], ""),
-        config={},
+        loss=200.0,
+        accuracy=200.0,  # Use same value as accuracy
     )
-    coalition_2.loss = 200.0
     simple_store.insert(coalition_2)
 
     # Coalition with both participants: value = 400
-    coalition_both = TrainerSetAggregate(
+    coalition_both = create_trainer_set_aggregate(
         id="3",  # Binary: 11
         members=[addr1, addr2],
-        parameters=Parameters([], ""),
-        config={},
+        loss=400.0,
+        accuracy=400.0,  # Use same value as accuracy
     )
-    coalition_both.loss = 400.0
     simple_store.insert(coalition_both)
 
     # Calculate Shapley values
     scores = shapley_calculator.get_scores(
-        participant_mapping=simple_mapping, store=simple_store
+        participant_mapping=simple_mapping,
+        store=simple_store,
+        coalition_to_score_fn=accuracy_scoring_fn,
     )
 
     # Verify results
@@ -227,20 +279,25 @@ def test_shapley_value_calculator_single_participant(
     mapping.add_participant(addr)
 
     # Create coalitions
-    empty_coalition = TrainerSetAggregate(
-        id="0", members=[], parameters=Parameters([], ""), config={}
+    empty_coalition = create_trainer_set_aggregate(
+        id="0", members=[], loss=0.0, accuracy=0.0
     )
-    empty_coalition.loss = 0.0
     store.insert(empty_coalition)
 
-    single_coalition = TrainerSetAggregate(
-        id="1", members=[addr], parameters=Parameters([], ""), config={}
+    single_coalition = create_trainer_set_aggregate(
+        id="1",
+        members=[addr],
+        loss=100.0,
+        accuracy=100.0,  # Use same value as accuracy
     )
-    single_coalition.loss = 100.0
     store.insert(single_coalition)
 
     # Calculate Shapley values
-    scores = shapley_calculator.get_scores(participant_mapping=mapping, store=store)
+    scores = shapley_calculator.get_scores(
+        participant_mapping=mapping,
+        store=store,
+        coalition_to_score_fn=accuracy_scoring_fn,
+    )
 
     # Verify results
     assert len(scores) == 1
@@ -257,14 +314,17 @@ def test_shapley_value_calculator_empty_participants(
     store = TrainerSetAggregateStore()
 
     # Create only empty coalition
-    empty_coalition = TrainerSetAggregate(
-        id="0", members=[], parameters=Parameters([], ""), config={}
+    empty_coalition = create_trainer_set_aggregate(
+        id="0", members=[], loss=0.0, accuracy=0.0
     )
-    empty_coalition.loss = 0.0
     store.insert(empty_coalition)
 
     # Calculate Shapley values
-    scores = shapley_calculator.get_scores(participant_mapping=mapping, store=store)
+    scores = shapley_calculator.get_scores(
+        participant_mapping=mapping,
+        store=store,
+        coalition_to_score_fn=accuracy_scoring_fn,
+    )
 
     # Verify results
     assert len(scores) == 0
@@ -285,33 +345,40 @@ def test_shapley_value_calculator_custom_scoring_function(
     mapping.add_participant(addr2)
 
     # Create coalitions with custom metrics
-    empty_coalition = TrainerSetAggregate(
-        id="0", members=[], parameters=Parameters([], ""), config={}
+    empty_coalition = create_trainer_set_aggregate(
+        id="0", members=[], loss=0.0, accuracy=0.0
     )
-    empty_coalition.metrics = {"custom_score": 0.0}
     store.insert(empty_coalition)
 
-    coalition_1 = TrainerSetAggregate(
-        id="1", members=[addr1], parameters=Parameters([], ""), config={}
+    coalition_1 = create_trainer_set_aggregate(
+        id="1",
+        members=[addr1],
+        loss=50.0,
+        accuracy=50.0,  # Use same value as accuracy
     )
-    coalition_1.metrics = {"custom_score": 50.0}
     store.insert(coalition_1)
 
-    coalition_2 = TrainerSetAggregate(
-        id="2", members=[addr2], parameters=Parameters([], ""), config={}
+    coalition_2 = create_trainer_set_aggregate(
+        id="2",
+        members=[addr2],
+        loss=75.0,
+        accuracy=75.0,  # Use same value as accuracy
     )
-    coalition_2.metrics = {"custom_score": 75.0}
     store.insert(coalition_2)
 
-    coalition_both = TrainerSetAggregate(
-        id="3", members=[addr1, addr2], parameters=Parameters([], ""), config={}
+    coalition_both = create_trainer_set_aggregate(
+        id="3",
+        members=[addr1, addr2],
+        loss=150.0,
+        accuracy=150.0,  # Use same value as accuracy
     )
-    coalition_both.metrics = {"custom_score": 150.0}
     store.insert(coalition_both)
 
-    # Custom scoring function that uses metrics instead of loss
+    # Custom scoring function that uses accuracy metric instead of loss
     def custom_scoring(coalition: TrainerSetAggregate) -> float:
-        metric_value = coalition.get_metric("custom_score", 0.0)
+        metric_value = coalition.get_metric(
+            "accuracy", 0.0, lambda x: x[0] if x else 0.0
+        )
         if isinstance(metric_value, (int, float)):
             return float(metric_value)
         return 0.0
@@ -352,25 +419,33 @@ def test_shapley_value_calculator_three_participants(
 
     # Create all possible coalitions (2^3 = 8 coalitions)
     coalitions = [
-        ("0", [], 0.0),  # Empty
-        ("1", [addr1], 10.0),  # Player 1 only
-        ("2", [addr2], 20.0),  # Player 2 only
-        ("3", [addr1, addr2], 35.0),  # Players 1+2
-        ("4", [addr3], 30.0),  # Player 3 only
-        ("5", [addr1, addr3], 45.0),  # Players 1+3
-        ("6", [addr2, addr3], 55.0),  # Players 2+3
-        ("7", [addr1, addr2, addr3], 70.0),  # All players
+        ("0", [], 0.0, 0.0),  # Empty
+        ("1", [addr1], 10.0, 10.0),  # Player 1 only - use same value as accuracy
+        ("2", [addr2], 20.0, 20.0),  # Player 2 only - use same value as accuracy
+        ("3", [addr1, addr2], 35.0, 35.0),  # Players 1+2 - use same value as accuracy
+        ("4", [addr3], 30.0, 30.0),  # Player 3 only - use same value as accuracy
+        ("5", [addr1, addr3], 45.0, 45.0),  # Players 1+3 - use same value as accuracy
+        ("6", [addr2, addr3], 55.0, 55.0),  # Players 2+3 - use same value as accuracy
+        (
+            "7",
+            [addr1, addr2, addr3],
+            70.0,
+            70.0,
+        ),  # All players - use same value as accuracy
     ]
 
-    for coalition_id, members, value in coalitions:
-        coalition = TrainerSetAggregate(
-            id=coalition_id, members=members, parameters=Parameters([], ""), config={}
+    for coalition_id, members, loss, accuracy in coalitions:
+        coalition = create_trainer_set_aggregate(
+            id=coalition_id, members=members, loss=loss, accuracy=accuracy
         )
-        coalition.loss = value
         store.insert(coalition)
 
     # Calculate Shapley values
-    scores = shapley_calculator.get_scores(participant_mapping=mapping, store=store)
+    scores = shapley_calculator.get_scores(
+        participant_mapping=mapping,
+        store=store,
+        coalition_to_score_fn=accuracy_scoring_fn,
+    )
 
     # Verify results
     assert len(scores) == 3
@@ -399,20 +474,28 @@ def test_shapley_value_calculator_missing_coalitions(
     mapping.add_participant(addr2)
 
     # Only create some coalitions (missing the empty coalition and coalition with both players)
-    coalition_1 = TrainerSetAggregate(
-        id="1", members=[addr1], parameters=Parameters([], ""), config={}
+    coalition_1 = create_trainer_set_aggregate(
+        id="1",
+        members=[addr1],
+        loss=100.0,
+        accuracy=100.0,  # Use same value as accuracy
     )
-    coalition_1.loss = 100.0
     store.insert(coalition_1)
 
-    coalition_2 = TrainerSetAggregate(
-        id="2", members=[addr2], parameters=Parameters([], ""), config={}
+    coalition_2 = create_trainer_set_aggregate(
+        id="2",
+        members=[addr2],
+        loss=200.0,
+        accuracy=200.0,  # Use same value as accuracy
     )
-    coalition_2.loss = 200.0
     store.insert(coalition_2)
 
     # Calculate Shapley values
-    scores = shapley_calculator.get_scores(participant_mapping=mapping, store=store)
+    scores = shapley_calculator.get_scores(
+        participant_mapping=mapping,
+        store=store,
+        coalition_to_score_fn=accuracy_scoring_fn,
+    )
 
     # Verify results - should still work but with incomplete calculations
     assert len(scores) == 2
@@ -441,32 +524,44 @@ def test_shapley_value_calculator_zero_weight_scenario(
 
     # Create coalitions where all marginal contributions are zero
     # This can happen when all coalitions have the same value
-    empty_coalition = TrainerSetAggregate(
-        id="0", members=[], parameters=Parameters([], ""), config={}
+    empty_coalition = create_trainer_set_aggregate(
+        id="0",
+        members=[],
+        loss=100.0,
+        accuracy=100.0,  # Use same value as accuracy
     )
-    empty_coalition.loss = 100.0
     store.insert(empty_coalition)
 
-    coalition_1 = TrainerSetAggregate(
-        id="1", members=[addr1], parameters=Parameters([], ""), config={}
+    coalition_1 = create_trainer_set_aggregate(
+        id="1",
+        members=[addr1],
+        loss=100.0,
+        accuracy=100.0,  # Same as empty
     )
-    coalition_1.loss = 100.0  # Same as empty
     store.insert(coalition_1)
 
-    coalition_2 = TrainerSetAggregate(
-        id="2", members=[addr2], parameters=Parameters([], ""), config={}
+    coalition_2 = create_trainer_set_aggregate(
+        id="2",
+        members=[addr2],
+        loss=100.0,
+        accuracy=100.0,  # Same as empty
     )
-    coalition_2.loss = 100.0  # Same as empty
     store.insert(coalition_2)
 
-    coalition_both = TrainerSetAggregate(
-        id="3", members=[addr1, addr2], parameters=Parameters([], ""), config={}
+    coalition_both = create_trainer_set_aggregate(
+        id="3",
+        members=[addr1, addr2],
+        loss=100.0,
+        accuracy=100.0,  # Same as all others
     )
-    coalition_both.loss = 100.0  # Same as all others
     store.insert(coalition_both)
 
     # Calculate Shapley values
-    scores = shapley_calculator.get_scores(participant_mapping=mapping, store=store)
+    scores = shapley_calculator.get_scores(
+        participant_mapping=mapping,
+        store=store,
+        coalition_to_score_fn=accuracy_scoring_fn,
+    )
 
     # Verify results - all scores should be 0 since no marginal contribution
     assert len(scores) == 2
@@ -494,25 +589,53 @@ def test_shapley_value_calculator_mathematical_properties(
 
     # Create coalitions with symmetric values
     coalitions = [
-        ("0", [], 0.0),  # Empty
-        ("1", [addr1], 10.0),  # Player 1 only
-        ("2", [addr2], 10.0),  # Player 2 only (same as player 1)
-        ("3", [addr1, addr2], 25.0),  # Players 1+2
-        ("4", [addr3], 10.0),  # Player 3 only (same as others)
-        ("5", [addr1, addr3], 25.0),  # Players 1+3 (same as 1+2)
-        ("6", [addr2, addr3], 25.0),  # Players 2+3 (same as others)
-        ("7", [addr1, addr2, addr3], 45.0),  # All players
+        ("0", [], 0.0, 0.0),  # Empty
+        ("1", [addr1], 10.0, 10.0),  # Player 1 only - use same value as accuracy
+        (
+            "2",
+            [addr2],
+            10.0,
+            10.0,
+        ),  # Player 2 only (same as player 1) - use same value as accuracy
+        ("3", [addr1, addr2], 25.0, 25.0),  # Players 1+2 - use same value as accuracy
+        (
+            "4",
+            [addr3],
+            10.0,
+            10.0,
+        ),  # Player 3 only (same as others) - use same value as accuracy
+        (
+            "5",
+            [addr1, addr3],
+            25.0,
+            25.0,
+        ),  # Players 1+3 (same as 1+2) - use same value as accuracy
+        (
+            "6",
+            [addr2, addr3],
+            25.0,
+            25.0,
+        ),  # Players 2+3 (same as others) - use same value as accuracy
+        (
+            "7",
+            [addr1, addr2, addr3],
+            45.0,
+            45.0,
+        ),  # All players - use same value as accuracy
     ]
 
-    for coalition_id, members, value in coalitions:
-        coalition = TrainerSetAggregate(
-            id=coalition_id, members=members, parameters=Parameters([], ""), config={}
+    for coalition_id, members, loss, accuracy in coalitions:
+        coalition = create_trainer_set_aggregate(
+            id=coalition_id, members=members, loss=loss, accuracy=accuracy
         )
-        coalition.loss = value
         store.insert(coalition)
 
     # Calculate Shapley values
-    scores = shapley_calculator.get_scores(participant_mapping=mapping, store=store)
+    scores = shapley_calculator.get_scores(
+        participant_mapping=mapping,
+        store=store,
+        coalition_to_score_fn=accuracy_scoring_fn,
+    )
 
     # Verify results
     assert len(scores) == 3
@@ -548,35 +671,39 @@ def test_shapley_value_calculator_large_coalition(
 
     # Create coalitions with proper bit mask IDs based on participant IDs
     # Empty coalition
-    empty_coalition = TrainerSetAggregate(
-        id="0", members=[], parameters=Parameters([], ""), config={}
+    empty_coalition = create_trainer_set_aggregate(
+        id="0", members=[], loss=0.0, accuracy=0.0
     )
-    empty_coalition.loss = 0.0
     store.insert(empty_coalition)
 
     # Single participant coalitions - use the actual participant IDs from mapping
     for addr in addresses:
         participant_id = mapping.get_participant_id(addr)
         coalition_id = str(1 << participant_id)
-        coalition = TrainerSetAggregate(
-            id=coalition_id, members=[addr], parameters=Parameters([], ""), config={}
+        coalition = create_trainer_set_aggregate(
+            id=coalition_id,
+            members=[addr],
+            loss=10.0 * (participant_id + 1),
+            accuracy=10.0 * (participant_id + 1),  # Use same value as accuracy
         )
-        coalition.loss = 10.0 * (participant_id + 1)
         store.insert(coalition)
 
     # Grand coalition - include all participants
     grand_coalition_id = mapping.get_participant_set_id(addresses)
-    grand_coalition = TrainerSetAggregate(
+    grand_coalition = create_trainer_set_aggregate(
         id=grand_coalition_id,
         members=addresses,
-        parameters=Parameters([], ""),
-        config={},
+        loss=100.0,
+        accuracy=100.0,  # Use same value as accuracy
     )
-    grand_coalition.loss = 100.0
     store.insert(grand_coalition)
 
     # Calculate Shapley values
-    scores = shapley_calculator.get_scores(participant_mapping=mapping, store=store)
+    scores = shapley_calculator.get_scores(
+        participant_mapping=mapping,
+        store=store,
+        coalition_to_score_fn=accuracy_scoring_fn,
+    )
 
     # Verify results
     assert len(scores) == 4

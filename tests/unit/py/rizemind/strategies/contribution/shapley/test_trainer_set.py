@@ -14,6 +14,7 @@ def trainer_set_params() -> dict[str, Any]:
         "members": ["0x1234", "0x1235"],
         "parameters": Parameters(tensors=[], tensor_type="torch"),
         "config": {"c1": "v1"},
+        "order": 0,
     }
 
 
@@ -67,7 +68,7 @@ def improperly_populated_trainer_set_aggregate(
         status=Status(code=Code.EVALUATE_NOT_IMPLEMENTED, message="err"),
         loss=float("inf"),
         num_examples=1200,
-        metrics={"r2": -1 * float("inf")},
+        metrics={"r2": float("inf")},
     )
     res3 = EvaluateRes(
         status=Status(code=Code.GET_PARAMETERS_NOT_IMPLEMENTED, message="err"),
