@@ -18,8 +18,21 @@ class BaseMetricStorage(ABC):
     """
 
     @abstractmethod
-    def write_metrics(self, server_round: int, metrics: dict[str, Scalar]) -> None:
-        """Writes a dictionary of metrics for a specific server round.
+    def write_fit_metrics(self, server_round: int, metrics: dict[str, Scalar]) -> None:
+        """Writes a dictionary of metrics for a specific server round in aggregate_fit.
+
+        This method is called to persist the metrics (e.g., accuracy, precision)
+        during various phases.
+
+        Args:
+            server_round (int): The current round of federated learning.
+            metrics (dict[str, Scalar]): A dictionary mapping metric names
+                (e.g., "accuracy") to their scalar values.
+        """
+
+    @abstractmethod
+    def write_eval_metrics(self, server_round: int, metrics: dict[str, Scalar]) -> None:
+        """Writes a dictionary of metrics for a specific server round in aggregate_eval.
 
         This method is called to persist the metrics (e.g., accuracy, precision)
         during various phases.
