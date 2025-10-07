@@ -1,6 +1,6 @@
 from typing import Literal
 
-from flwr.common import Scalar
+from flwr.common import Metrics, Scalar
 from pydantic import BaseModel
 
 TRAIN_METRIC_HISTORY_KEY = "rizemind.logging.train_metric_history"
@@ -14,7 +14,7 @@ class TrainMetricHistory(BaseModel):
     It has the capability to distinguish metrics for evaluation and training (during training phase).
     """
 
-    _history: dict[str, list[float]]
+    history: dict[str, list[float]]
 
     def __init__(self, history: dict[str, list[float]] = {}):
         super().__init__(history=history)
@@ -32,9 +32,9 @@ class TrainMetricHistory(BaseModel):
 
         for k, v in metrics.items():
             metric = f"{k}_{phase}"
-            if metric not in self._history:
-                self._history[metric] = []
-            self._history[metric].append(float(v))
+            if metric not in self.history:
+                self.history[metric] = []
+            self.history[metric].append(float(v))
 
     def items(self):
         """Return an iterable of the history's items (key-value pairs).
@@ -44,7 +44,7 @@ class TrainMetricHistory(BaseModel):
         Returns:
             A view object displaying a list of the dictionary's key-value tuple pairs.
         """
-        return self._history.items()
+        return self.history.items()
 
     def serialize(self) -> dict[str, str]:
         """Serialize the TrainMetricHistory instance into its json representation.
@@ -69,3 +69,24 @@ class TrainMetricHistory(BaseModel):
             A new instance of the TrainMetricHistory class.
         """
         return TrainMetricHistory.model_validate_json(serialized_train_metric_history)
+
+
+def fit_metric_history_aggregation_fn(metrics: list[tuple[int, Metrics]]) -> Metrics:
+    """Returns the serialized FitMetricHistories for each single client
+
+    Typical usage:
+    >>> fedavg_strategy = FedAvg(
+    >>>    fraction_fit=float(context.run_config["fraction-fit"]),
+    >>>    fraction_evaluate=float(context.run_config["fraction-evaluate"]),
+    >>>    min_available_clients=int(context.run_config["min-available-clients"]),
+    >>>    min_evaluate_clients=int(context.run_config["min-evaluate-clients"]),
+    >>>    initial_parameters=parameters,
+    >>>    fit_metrics_aggregation_fn=fit_metric_history_aggregation_fn,
+    >>> )
+    """
+    serialized_metrics: dict[str, Scalar] = {}
+    for _, client_metrics_dict in metrics:
+        for key, value in client_metrics_dict.items():
+            if key.startswith(TRAIN_METRIC_HISTORY_KEY):
+                serialized_metrics[key] = value
+    return serialized_metrics

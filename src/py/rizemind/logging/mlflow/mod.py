@@ -8,7 +8,7 @@ from flwr.client.typing import ClientAppCallable
 from flwr.common import Context, log
 from flwr.common.constant import MessageType
 from flwr.common.message import Message
-from flwr.common.recorddict_compat import recorddict_to_fitres
+from flwr.common.recorddict_compat import fitres_to_recorddict, recorddict_to_fitres
 from mlflow.entities import RunStatus, ViewType
 
 from rizemind.logging.mlflow.config import MLFlowConfig
@@ -88,8 +88,14 @@ def mlflow_mod(msg: Message, ctx: Context, call_next: ClientAppCallable) -> Mess
             # Get metrics and log them
             fit_res = recorddict_to_fitres(reply.content, keep_input=True)
             serialized_train_metric_history = cast(
-                str, fit_res.metrics.get(TRAIN_METRIC_HISTORY_KEY)
+                str, fit_res.metrics.pop(TRAIN_METRIC_HISTORY_KEY)
             )
+            # Fingerprint the MetricHistory
+            fit_res.metrics[f"{TRAIN_METRIC_HISTORY_KEY}.{ctx.node_id}"] = (
+                serialized_train_metric_history
+            )
+            reply.content = fitres_to_recorddict(fit_res, True)
+
             train_metric_history = TrainMetricHistory.deserialize(
                 serialized_train_metric_history=serialized_train_metric_history
             )

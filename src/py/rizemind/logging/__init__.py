@@ -6,6 +6,7 @@ from rizemind.logging.metric_storage_strategy import MetricPhases, MetricStorage
 from rizemind.logging.train_metric_history import (
     TRAIN_METRIC_HISTORY_KEY,
     TrainMetricHistory,
+    fit_metric_history_aggregation_fn,
 )
 
 __all__ = [
@@ -15,4 +16,5 @@ __all__ = [
     "LocalDiskMetricStorage",
     "TrainMetricHistory",
     "TRAIN_METRIC_HISTORY_KEY",
+    "fit_metric_history_aggregation_fn",
 ]
