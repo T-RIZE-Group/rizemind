@@ -85,7 +85,7 @@ class LocalDiskMetricStorage(BaseMetricStorage):
             new_config_df = merged_df
         new_config_df.write_json(self.config_file)
 
-    def write_metrics(self, server_round: int, metrics: dict[str, Scalar]):
+    def _write_metrics(self, server_round: int, metrics: dict[str, Scalar]):
         """Appends a dictionary of metrics to the metrics.csv file.
 
         Each key-value pair in the metrics dictionary is written as a new row
@@ -99,6 +99,12 @@ class LocalDiskMetricStorage(BaseMetricStorage):
         with open(self.metrics_file, "a", encoding="utf-8") as f:
             for metric, value in metrics.items():
                 csv.writer(f).writerow([server_round, metric, value])
+
+    def write_fit_metrics(self, server_round: int, metrics: dict[str, Scalar]) -> None:
+        return self._write_metrics(server_round, metrics)
+
+    def write_eval_metrics(self, server_round: int, metrics: dict[str, Scalar]) -> None:
+        return self._write_metrics(server_round, metrics)
 
     def update_current_round_model(self, parameters: Parameters):
         """Temporarily stores the model parameters for the current round in memory.
