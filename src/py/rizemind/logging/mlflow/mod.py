@@ -11,11 +11,11 @@ from flwr.common.message import Message
 from flwr.common.recorddict_compat import fitres_to_recorddict, recorddict_to_fitres
 from mlflow.entities import RunStatus, ViewType
 
-from rizemind.logging.mlflow.config import MLFlowConfig
-from rizemind.logging.train_metric_history import (
+from rizemind.logging.fit_metric_history import (
     TRAIN_METRIC_HISTORY_KEY,
-    TrainMetricHistory,
+    FitMetricHistory,
 )
+from rizemind.logging.mlflow.config import MLFlowConfig
 
 
 def mlflow_mod(msg: Message, ctx: Context, call_next: ClientAppCallable) -> Message:
@@ -96,7 +96,7 @@ def mlflow_mod(msg: Message, ctx: Context, call_next: ClientAppCallable) -> Mess
             )
             reply.content = fitres_to_recorddict(fit_res, True)
 
-            train_metric_history = TrainMetricHistory.deserialize(
+            train_metric_history = FitMetricHistory.deserialize(
                 serialized_train_metric_history=serialized_train_metric_history
             )
             epochs_this_round = 0

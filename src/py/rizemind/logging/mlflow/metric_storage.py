@@ -16,7 +16,7 @@ from mlflow.entities import RunStatus, ViewType
 
 from rizemind.logging import (
     TRAIN_METRIC_HISTORY_KEY,
-    TrainMetricHistory,
+    FitMetricHistory,
 )
 from rizemind.logging.base_metric_storage import BaseMetricStorage
 
@@ -113,7 +113,7 @@ class MLFLowMetricStorage(BaseMetricStorage):
                 run_id = cast(str, runs_df.loc[0, "run_id"])
                 mlflow.start_run(run_id=run_id)
 
-            train_metric_history = TrainMetricHistory.deserialize(
+            train_metric_history = FitMetricHistory.deserialize(
                 serialized_train_metric_history=cast(str, value)
             )
             epochs_this_round = 0

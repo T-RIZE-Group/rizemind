@@ -6,7 +6,7 @@ from pydantic import BaseModel
 TRAIN_METRIC_HISTORY_KEY = "rizemind.logging.train_metric_history"
 
 
-class TrainMetricHistory(BaseModel):
+class FitMetricHistory(BaseModel):
     """Standard class to log training metrics for clients.
 
     The `TrainMetricHistory` class is used to log metrics that are gathered during the training phase.
@@ -59,7 +59,7 @@ class TrainMetricHistory(BaseModel):
         return {TRAIN_METRIC_HISTORY_KEY: self.model_dump_json()}
 
     @classmethod
-    def deserialize(cls, serialized_train_metric_history: str) -> "TrainMetricHistory":
+    def deserialize(cls, serialized_train_metric_history: str) -> "FitMetricHistory":
         """Deserialize a JSON string into a TrainMetricHistory instance.
 
         Args:
@@ -68,7 +68,7 @@ class TrainMetricHistory(BaseModel):
         Returns:
             A new instance of the TrainMetricHistory class.
         """
-        return TrainMetricHistory.model_validate_json(serialized_train_metric_history)
+        return FitMetricHistory.model_validate_json(serialized_train_metric_history)
 
 
 def fit_metric_history_aggregation_fn(metrics: list[tuple[int, Metrics]]) -> Metrics:
