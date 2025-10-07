@@ -93,7 +93,7 @@ class MetricStorageStrategy(Strategy):
             else:
                 self._metrics_storage.update_current_round_model(parameters)
         if MetricPhases.AGGREGATE_FIT in self._enabled_metric_phases:
-            self._metrics_storage.write_metrics(server_round, metrics)
+            self._metrics_storage.write_fit_metrics(server_round, metrics)
         return (parameters, metrics)
 
     def configure_evaluate(
@@ -139,10 +139,10 @@ class MetricStorageStrategy(Strategy):
                 )
         if MetricPhases.AGGREGATE_EVALUATE in self._enabled_metric_phases:
             if evaluation is not None:
-                self._metrics_storage.write_metrics(
+                self._metrics_storage.write_eval_metrics(
                     server_round, {"loss_aggregated": evaluation}
                 )
-            self._metrics_storage.write_metrics(server_round, metrics)
+            self._metrics_storage.write_eval_metrics(server_round, metrics)
         return (evaluation, metrics)
 
     def evaluate(
@@ -164,8 +164,8 @@ class MetricStorageStrategy(Strategy):
         if MetricPhases.EVALUATE in self._enabled_metric_phases:
             if evaluation_result is None:
                 return None
-            self._metrics_storage.write_metrics(
+            self._metrics_storage.write_eval_metrics(
                 server_round, {"loss": evaluation_result[0]}
             )
-            self._metrics_storage.write_metrics(server_round, evaluation_result[1])
+            self._metrics_storage.write_eval_metrics(server_round, evaluation_result[1])
         return evaluation_result
