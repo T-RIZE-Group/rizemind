@@ -16,6 +16,7 @@ contract RoundTrainerRegistryV2 is Initializable {
     /// @dev Structure to store trainers for a specific round
     struct RoundTrainers {
         mapping(address => TrainerInfo) trainers; // Maps trainer address to their info
+        uint256 count; // Total number of trainers registered
     }
 
     /// @dev Storage namespace for RoundTrainerRegistry

@@ -164,10 +164,7 @@ contract SwarmV2 is
     }
 
     function revealTrainerCommitment(uint256 roundId, address trainer, bytes calldata nonce) external onlyAggregator(msg.sender) {
-        bytes32 phase = getCurrentPhase();
-        if (phase == TRAINING_PHASE) {
-            revert RevealNotAvailable();
-        }
+        updatePhase();
         _revealTrainerPrivacy(roundId, trainer, nonce);
     }
 
@@ -237,6 +234,10 @@ contract SwarmV2 is
 
     function _endTrainingPhase() internal override returns (bytes32) {
         uint256 numberOfTrainers = getTrainerCount(currentRound());
+        uint256 pendingCommitments = getPendingCommitmentCount(currentRound());
+        if (pendingCommitments > 0) {
+            numberOfTrainers += pendingCommitments;
+        }
         if (numberOfTrainers <= 0) {
             return TRAINING_PHASE;
         }
@@ -282,6 +283,10 @@ contract SwarmV2 is
         uint256 roundId = currentRound();
         uint256 nNodes = getEvaluatorCount(roundId);
         uint256 nTrainers = getTrainerCount(roundId);
+        uint256 pendingCommitments = getPendingCommitmentCount(roundId);
+        if (pendingCommitments > 0) {
+            nTrainers += pendingCommitments;
+        }
         if (nNodes == 0) { // we're going to trigger a TaskAssigment#InvalidConfig error
             return EVALUATOR_REGISTRATION_PHASE;
         }
@@ -340,6 +345,10 @@ contract SwarmV2 is
             revert NotAssignedTo(roundId, taskId, evaluator);
         }
         uint256 nTrainers = getTrainerCount(roundId);
+        uint256 pendingCommitments = getPendingCommitmentCount(roundId);
+        if (pendingCommitments > 0) {
+            nTrainers += pendingCommitments;
+        }
         calc.registerResult(roundId, taskId, setId, modelHash, result, uint8(nTrainers));
     }
 

@@ -3,8 +3,8 @@ pragma solidity ^0.8.20;
 
 import {Test, console} from "forge-std/Test.sol";
 import {ERC1967Proxy} from "@openzeppelin-contracts-5.2.0/proxy/ERC1967/ERC1967Proxy.sol";
-import {SwarmV1} from "../../src/swarm/SwarmV1.sol";
-import {SwarmV1Factory} from "../../src/swarm/SwarmV1Factory.sol";
+import {SwarmV2} from "../../src/swarm/SwarmV2.sol";
+import {SwarmV2Factory} from "../../src/swarm/SwarmV2Factory.sol";
 import {SelectorFactory} from "../../src/sampling/SelectorFactory.sol";
 import {CalculatorFactory} from "../../src/contribution/CalculatorFactory.sol";
 import {AlwaysSampled} from "../../src/sampling/AlwaysSampled.sol";
@@ -18,14 +18,14 @@ import {CompensationFactory} from "../../src/compensation/CompensationFactory.so
 import {IERC165} from "@openzeppelin-contracts-5.2.0/utils/introspection/IERC165.sol";
 import {RoundTrainerRegistry} from "../../src/swarm/registry/RoundTrainerRegistry.sol";
 
-contract SwarmV1Test is Test {
-    SwarmV1 public implementation;
-    SwarmV1Factory public factory;
+contract SwarmV2Test is Test {
+    SwarmV2 public implementation;
+    SwarmV2Factory public factory;
     SelectorFactory public selectorFactory;
     CalculatorFactory public calculatorFactory;
     AccessControlFactory public accessControlFactory;
     CompensationFactory public compensationFactory;
-    SwarmV1 public swarm;
+    SwarmV2 public swarm;
     
     // Implementation contracts
     AlwaysSampled public trainerSelectorImpl;
@@ -52,7 +52,7 @@ contract SwarmV1Test is Test {
     
     function setUp() public {
         // Deploy implementation
-        implementation = new SwarmV1();
+        implementation = new SwarmV2();
         
         // Deploy selector factory
         selectorFactory = new SelectorFactory(address(this));
@@ -97,7 +97,7 @@ contract SwarmV1Test is Test {
         compensationFactory.registerCompensationImplementation(address(compensationImpl));
         
         // Deploy factory
-        factory = new SwarmV1Factory(
+        factory = new SwarmV2Factory(
             address(implementation), 
             address(selectorFactory),
             address(calculatorFactory),
@@ -120,27 +120,27 @@ contract SwarmV1Test is Test {
         //TODO: add evaluators to access control
 
         // Create swarm using factory
-        SwarmV1Factory.SwarmParams memory params = SwarmV1Factory.SwarmParams({
-            swarm: SwarmV1Factory.SwarmV1Params({
+        SwarmV2Factory.SwarmParams memory params = SwarmV2Factory.SwarmParams({
+            swarm: SwarmV2Factory.SwarmV2Params({
                 name: "TestSwarm"
             }),
-            trainerSelector: SwarmV1Factory.SelectorParams({
+            trainerSelector: SwarmV2Factory.SelectorParams({
                 id: TRAINER_SELECTOR_ID,
                 initData: abi.encodeWithSelector(AlwaysSampled.initialize.selector)
             }),
-            evaluatorSelector: SwarmV1Factory.SelectorParams({
+            evaluatorSelector: SwarmV2Factory.SelectorParams({
                 id: EVALUATOR_SELECTOR_ID,
                 initData: abi.encodeWithSelector(RandomSampling.initialize.selector, 1 ether) // 100% selection rate
             }),
-            contributionCalculator: SwarmV1Factory.CalculatorParams({
+            contributionCalculator: SwarmV2Factory.CalculatorParams({
                 id: CALCULATOR_ID,
                 initData: abi.encodeWithSelector(ContributionCalculator.initialize.selector, swarmAddress, 2)
             }),
-            accessControl: SwarmV1Factory.AccessControlParams({
+            accessControl: SwarmV2Factory.AccessControlParams({
                 id: ACCESS_CONTROL_ID,
                 initData: abi.encodeWithSelector(BaseAccessControl.initialize.selector, aggregator, initialTrainers, initialEvaluators)
             }),
-            compensation: SwarmV1Factory.CompensationParams({
+            compensation: SwarmV2Factory.CompensationParams({
                 id: COMPENSATION_ID,
                 initData: abi.encodeWithSelector(SimpleMintCompensation.initialize.selector, "TestToken", "TST", 1000 ether, aggregator, swarmAddress)
             }),
@@ -153,7 +153,7 @@ contract SwarmV1Test is Test {
             })
         });
         
-        swarm = SwarmV1(factory.createSwarm(keccak256("test-salt"), params));
+        swarm = SwarmV2(factory.createSwarm(keccak256("test-salt"), params));
 
         ContributionCalculator contributionCalculator = ContributionCalculator(swarm.getContributionCalculator());
     
@@ -165,7 +165,7 @@ contract SwarmV1Test is Test {
 
     function test_initialize_wrongInitialization() public {
         // Test that calling initialize() without parameters reverts
-        vm.expectRevert(SwarmV1.WrongInitialization.selector);
+        vm.expectRevert(SwarmV2.WrongInitialization.selector);
         swarm.initialize();
     }
 
@@ -192,7 +192,7 @@ contract SwarmV1Test is Test {
         
         vm.prank(trainer1);
         // Should not revert (but will revert due to phase)
-        vm.expectRevert(SwarmV1.NotTrainingPhase.selector);
+        vm.expectRevert(SwarmV2.NotTrainingPhase.selector);
         swarm.registerRoundContribution(1, keccak256("model1"));
     }
 
@@ -204,7 +204,7 @@ contract SwarmV1Test is Test {
         
         vm.prank(evaluator1);
         // Should not revert (but will revert due to phase)
-        vm.expectRevert(SwarmV1.NotEvaluatorRegistrationPhase.selector);
+        vm.expectRevert(SwarmV2.NotEvaluatorRegistrationPhase.selector);
         swarm.registerForRoundEvaluation(1);
     }
 
@@ -229,7 +229,7 @@ contract SwarmV1Test is Test {
         
         // Try to start another round
         vm.prank(aggregator);
-        vm.expectRevert(SwarmV1.NotIdle.selector);
+        vm.expectRevert(SwarmV2.NotIdle.selector);
         swarm.startTrainingRound();
     }
 
@@ -250,7 +250,7 @@ contract SwarmV1Test is Test {
     function test_registerRoundContribution_notTrainingPhase() public {
         // Try to register contribution when not in training phase
         vm.prank(trainer1);
-        vm.expectRevert(SwarmV1.NotTrainingPhase.selector);
+        vm.expectRevert(SwarmV2.NotTrainingPhase.selector);
         swarm.registerRoundContribution(1, keccak256("model1"));
     }
 
@@ -285,7 +285,7 @@ contract SwarmV1Test is Test {
     function test_registerForRoundEvaluation_notRegistrationPhase() public {
         // Try to register when not in evaluator registration phase
         vm.prank(evaluator1);
-        vm.expectRevert(SwarmV1.NotEvaluatorRegistrationPhase.selector);
+        vm.expectRevert(SwarmV2.NotEvaluatorRegistrationPhase.selector);
         swarm.registerForRoundEvaluation(1);
     }
 
@@ -335,7 +335,7 @@ contract SwarmV1Test is Test {
     function test_registerEvaluation_notEvaluationPhase() public {
         // Try to register evaluation when not in evaluation phase
         vm.prank(evaluator1);
-        vm.expectRevert(SwarmV1.NotEvaluationPhase.selector);
+        vm.expectRevert(SwarmV2.NotEvaluationPhase.selector);
         swarm.registerEvaluation(1, 1, 1, keccak256("model1"), 100);
     }
 
@@ -375,7 +375,7 @@ contract SwarmV1Test is Test {
         uint256 mask = contributionCalculator.getMask(1, taskId, 2);
         // Try to register evaluation for task not assigned to evaluator
         vm.prank(evaluator1);
-        vm.expectRevert(abi.encodeWithSelector(SwarmV1.NotAssignedTo.selector, 1, taskId, evaluator1));
+        vm.expectRevert(abi.encodeWithSelector(SwarmV2.NotAssignedTo.selector, 1, taskId, evaluator1));
         swarm.registerEvaluation(1, taskId, mask, keccak256("model1"), 100);
     }
 
@@ -439,7 +439,7 @@ contract SwarmV1Test is Test {
 
     function test_registerRoundContributionPrivacy_revertsWhenDisabled() public {
         vm.prank(aggregator);
-        vm.expectRevert(SwarmV1.PrivacyModeDisabled.selector);
+        vm.expectRevert(SwarmV2.PrivacyModeDisabled.selector);
         swarm.registerRoundContributionPrivacy(1, keccak256("commit"), keccak256("model"), uint64(block.timestamp + 1 hours));
     }
 
@@ -450,7 +450,7 @@ contract SwarmV1Test is Test {
         swarm.setTrainerPrivacyMode(true);
 
         vm.prank(trainer1);
-        vm.expectRevert(SwarmV1.PrivacyModeEnabled.selector);
+        vm.expectRevert(SwarmV2.PrivacyModeEnabled.selector);
         swarm.registerRoundContribution(1, keccak256("model1"));
     }
 
