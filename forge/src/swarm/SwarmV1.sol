@@ -64,6 +64,16 @@ contract SwarmV1 is
     error NotTrainer();
     error NotEvaluator();
     error RewardsAlreadyClaimed(uint256 roundId, address trainer);
+    error PrivacyModeDisabled();
+    error PrivacyModeEnabled();
+    error ZeroBondAmount();
+    error InvalidRecipient();
+    error RevealNotAvailable();
+    error TransferFailed(address to, uint256 amount);
+
+    event AggregatorBondDeposited(address indexed aggregator, uint256 amount, uint256 newBalance);
+    event AggregatorBondWithdrawn(address indexed aggregator, address indexed recipient, uint256 amount, uint256 newBalance);
+    event TrainerPrivacyModeUpdated(bool enabled);
 
     struct SwarmV1InitializeParams {
         string name;
@@ -140,12 +150,91 @@ contract SwarmV1 is
         _updateEvaluatorSelector(newEvaluatorSelector);
     }
 
+    bool private _trainerPrivacyEnabled;
+
     function distribute(
         uint256 roundId,
         address[] calldata trainers,
         uint64[] calldata contributions
     ) external onlyAggregator(msg.sender) {
         _distribute(roundId, trainers, contributions);
+    }
+
+    function registerRoundContributionPrivacy(uint256 roundId, bytes32 commitment, bytes32 modelHash, uint64 revealDeadline) external onlyAggregator(msg.sender) {
+        if (!_trainerPrivacyEnabled) {
+            revert PrivacyModeDisabled();
+        }
+        if (updatePhase() != TRAINING_PHASE) {
+            revert NotTrainingPhase();
+        }
+        if (roundId != currentRound()) {
+            revert ForbiddenRound(roundId);
+        }
+        _commitTrainerPrivacy(roundId, commitment, modelHash, revealDeadline);
+    }
+
+    function revealTrainerCommitment(uint256 roundId, address trainer, bytes calldata nonce) external onlyAggregator(msg.sender) {
+        bytes32 phase = getCurrentPhase();
+        if (phase == TRAINING_PHASE) {
+            revert RevealNotAvailable();
+        }
+        _revealTrainerPrivacy(roundId, trainer, nonce);
+    }
+
+    function slashTrainerCommitment(uint256 roundId, bytes32 commitment) external returns (uint256 penalty, uint256 finderReward) {
+        (penalty, finderReward) = _slashTrainerCommitment(roundId, commitment, msg.sender);
+        if (finderReward > 0) {
+            (bool success, ) = payable(msg.sender).call{value: finderReward}("");
+            if (!success) {
+                revert TransferFailed(msg.sender, finderReward);
+            }
+        }
+    }
+
+    function configureTrainerPrivacy(uint256 penalty, uint16 finderRewardBps) external onlyAggregator(msg.sender) {
+        _setTrainerPrivacyConfig(penalty, finderRewardBps);
+    }
+
+    function setTrainerPrivacyMode(bool enabled) external onlyAggregator(msg.sender) {
+        if (_trainerPrivacyEnabled == enabled) {
+            return;
+        }
+        _trainerPrivacyEnabled = enabled;
+        emit TrainerPrivacyModeUpdated(enabled);
+    }
+
+    function depositAggregatorBond() external payable onlyAggregator(msg.sender) {
+        if (msg.value == 0) {
+            revert ZeroBondAmount();
+        }
+        _increaseAggregatorBond(msg.value);
+        (uint256 balance, ) = getAggregatorBondState();
+        emit AggregatorBondDeposited(msg.sender, msg.value, balance);
+    }
+
+    function withdrawAggregatorBond(uint256 amount, address payable recipient) external onlyAggregator(msg.sender) {
+        if (amount == 0) {
+            revert ZeroBondAmount();
+        }
+        if (recipient == address(0)) {
+            revert InvalidRecipient();
+        }
+        _decreaseAggregatorBond(amount);
+        (bool success, ) = recipient.call{value: amount}("");
+        if (!success) {
+            revert TransferFailed(recipient, amount);
+        }
+        (uint256 balance, ) = getAggregatorBondState();
+        emit AggregatorBondWithdrawn(msg.sender, recipient, amount, balance);
+    }
+
+    function getAggregatorFreeBond() external view returns (uint256) {
+        (uint256 balance, uint256 reserved) = getAggregatorBondState();
+        return reserved >= balance ? 0 : balance - reserved;
+    }
+
+    function isTrainerPrivacyEnabled() external view returns (bool) {
+        return _trainerPrivacyEnabled;
     }
 
     function startTrainingRound() external onlyAggregator(msg.sender) {
@@ -165,6 +254,9 @@ contract SwarmV1 is
     }
 
     function registerRoundContribution(uint256 roundId, bytes32 modelHash) external {
+        if (_trainerPrivacyEnabled) {
+            revert PrivacyModeEnabled();
+        }
         if (!canTrain(msg.sender, roundId)) {
             revert NotTrainer();
         }

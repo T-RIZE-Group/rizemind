@@ -16,12 +16,30 @@ contract RoundTrainerRegistry is Initializable {
     /// @dev Structure to store trainers for a specific round
     struct RoundTrainers {
         mapping(address => TrainerInfo) trainers; // Maps trainer address to their info
-        uint256 count; // Total number of trainers registered
+        uint256 count; // Total number of trainers registered (revealed or pending)
+    }
+
+    /// @dev Structure storing commitment data for privacy-aware registrations
+    struct TrainerCommitment {
+        uint256 trainerId; // Reserved trainer ID
+        bytes32 modelHash; // Hash of the trainer's model
+        uint64 revealDeadline; // Deadline for aggregator reveal
+        uint64 committedAt; // Timestamp when commitment was registered
+        uint256 penalty; // Penalty amount reserved against aggregator bond
+        bool revealed; // Whether the commitment has been revealed
+        bool slashed; // Whether the commitment incurred a penalty
+        bytes32 nonceHash; // Hash of the nonce revealed on-chain
     }
 
     /// @dev Storage namespace for RoundTrainerRegistry
     struct RoundTrainerRegistryStorage {
         mapping(uint256 => RoundTrainers) roundTrainers;
+        mapping(uint256 => mapping(bytes32 => TrainerCommitment)) commitments; // roundId => commitment => data
+        mapping(uint256 => mapping(uint256 => bytes32)) commitmentByTrainerId; // roundId => trainerId => commitment
+        uint256 aggregatorBondBalance; // Total aggregator bond held by the contract
+        uint256 aggregatorBondReserved; // Portion of the bond reserved for active commitments
+        uint256 defaultRevealPenalty; // Penalty applied per commitment when reveal deadline missed
+        uint16 finderRewardBps; // Finder reward share (basis points)
     }
 
     // Storage slot for RoundTrainerRegistry namespace
@@ -39,11 +57,54 @@ contract RoundTrainerRegistry is Initializable {
     /// @param modelHash The new model hash
     event ModelHashUpdated(uint256 indexed roundId, address indexed trainer, bytes32 modelHash);
 
+    event TrainerCommitted(uint256 indexed roundId, bytes32 indexed commitment, uint256 indexed trainerId, bytes32 modelHash, uint64 revealDeadline, uint256 penalty);
+    event TrainerRevealed(uint256 indexed roundId, address indexed trainer, bytes32 indexed commitment, uint256 trainerId, bytes32 nonceHash, bool slashed);
+    event TrainerCommitmentSlashed(uint256 indexed roundId, bytes32 indexed commitment, uint256 penalty, uint256 finderReward, address finder);
+    event PrivacyConfigUpdated(uint256 penalty, uint16 finderRewardBps);
+    event AggregatorBondChanged(uint256 balance);
+    event AggregatorBondReserved(uint256 reserved);
+
     /// @notice Error thrown when trying to register a zero address trainer
     error InvalidTrainerAddress();
 
     /// @notice Error thrown when trying to access a non-existent trainer
     error TrainerNotFound(uint256 roundId, address trainer);
+
+    /// @notice Error thrown when a trainer is already registered for the round
+    error TrainerAlreadyRegistered(uint256 roundId, address trainer);
+
+    /// @notice Error thrown when a commitment hash is invalid
+    error InvalidCommitment();
+
+    /// @notice Error thrown when attempting to reuse an existing commitment
+    error CommitmentAlreadyExists(uint256 roundId, bytes32 commitment);
+
+    /// @notice Error thrown when a commitment does not exist
+    error CommitmentNotFound(uint256 roundId, bytes32 commitment);
+
+    /// @notice Error thrown when attempting to reveal an already revealed commitment
+    error CommitmentAlreadyRevealed(uint256 roundId, bytes32 commitment);
+
+    /// @notice Error thrown when attempting to slash an already slashed commitment
+    error CommitmentAlreadySlashed(uint256 roundId, bytes32 commitment);
+
+    /// @notice Error thrown when attempting to slash when no penalty is configured
+    error NoPenaltyToSlash(uint256 roundId, bytes32 commitment);
+
+    /// @notice Error thrown when attempting to reveal before the deadline has passed (for slashing)
+    error RevealDeadlineNotElapsed(uint256 roundId, bytes32 commitment, uint64 deadline);
+
+    /// @notice Error thrown when aggregator bond is insufficient to reserve or slash
+    error AggregatorBondInsufficient(uint256 required, uint256 available);
+
+    /// @notice Error thrown when attempting to withdraw more bond than is free
+    error WithdrawExceedsFreeBond(uint256 requested, uint256 freeAmount);
+
+    /// @notice Error thrown when the reveal deadline provided is invalid
+    error InvalidRevealDeadline(uint64 deadline);
+
+    /// @notice Error thrown when finder reward configuration exceeds 100%
+    error InvalidFinderRewardBps(uint16 value);
 
     /// @notice Initializes the contract
     /// @dev This function can only be called once during proxy deployment
@@ -188,6 +249,181 @@ contract RoundTrainerRegistry is Initializable {
     function hasClaimedRewards(uint256 roundId, address trainer) public view returns (bool) {
         RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
         return $.roundTrainers[roundId].trainers[trainer].rewardsClaimed;
+    }
+
+    function getCommitmentInfo(uint256 roundId, bytes32 commitment) public view returns (TrainerCommitment memory info) {
+        RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
+        info = $.commitments[roundId][commitment];
+    }
+
+    function getCommitmentInfoOrThrow(uint256 roundId, bytes32 commitment) public view returns (TrainerCommitment memory info) {
+        info = getCommitmentInfo(roundId, commitment);
+        if (info.trainerId == 0) {
+            revert CommitmentNotFound(roundId, commitment);
+        }
+    }
+
+    function getCommitmentByTrainerId(uint256 roundId, uint256 trainerId) public view returns (bytes32 commitment) {
+        RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
+        commitment = $.commitmentByTrainerId[roundId][trainerId];
+    }
+
+    function getAggregatorBondState() public view returns (uint256 balance, uint256 reserved) {
+        RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
+        balance = $.aggregatorBondBalance;
+        reserved = $.aggregatorBondReserved;
+    }
+
+    function getPrivacyConfig() public view returns (uint256 penalty, uint16 finderRewardBps) {
+        RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
+        penalty = $.defaultRevealPenalty;
+        finderRewardBps = $.finderRewardBps;
+    }
+
+    function _setTrainerPrivacyConfig(uint256 penalty, uint16 finderRewardBps) internal {
+        if (finderRewardBps > 10_000) {
+            revert InvalidFinderRewardBps(finderRewardBps);
+        }
+        RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
+        $.defaultRevealPenalty = penalty;
+        $.finderRewardBps = finderRewardBps;
+        emit PrivacyConfigUpdated(penalty, finderRewardBps);
+    }
+
+    function _increaseAggregatorBond(uint256 amount) internal {
+        if (amount == 0) {
+            return;
+        }
+        RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
+        $.aggregatorBondBalance += amount;
+        emit AggregatorBondChanged($.aggregatorBondBalance);
+    }
+
+    function _decreaseAggregatorBond(uint256 amount) internal {
+        if (amount == 0) {
+            return;
+        }
+        RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
+        uint256 freeBond = _freeAggregatorBond($);
+        if (amount > freeBond) {
+            revert WithdrawExceedsFreeBond(amount, freeBond);
+        }
+        $.aggregatorBondBalance -= amount;
+        emit AggregatorBondChanged($.aggregatorBondBalance);
+    }
+
+    function _commitTrainerPrivacy(uint256 roundId, bytes32 commitment, bytes32 modelHash, uint64 revealDeadline) internal returns (uint256 trainerId) {
+        if (commitment == bytes32(0)) {
+            revert InvalidCommitment();
+        }
+        if (revealDeadline <= block.timestamp) {
+            revert InvalidRevealDeadline(revealDeadline);
+        }
+        RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
+        TrainerCommitment storage info = $.commitments[roundId][commitment];
+        if (info.trainerId != 0) {
+            revert CommitmentAlreadyExists(roundId, commitment);
+        }
+        RoundTrainers storage roundTrainers = $.roundTrainers[roundId];
+        trainerId = ++roundTrainers.count;
+        uint256 penalty = $.defaultRevealPenalty;
+        if (penalty > 0) {
+            uint256 freeBond = _freeAggregatorBond($);
+            if (penalty > freeBond) {
+                revert AggregatorBondInsufficient(penalty, freeBond);
+            }
+            $.aggregatorBondReserved += penalty;
+            emit AggregatorBondReserved($.aggregatorBondReserved);
+        }
+        info.trainerId = trainerId;
+        info.modelHash = modelHash;
+        info.revealDeadline = revealDeadline;
+        info.committedAt = uint64(block.timestamp);
+        info.penalty = penalty;
+        info.revealed = false;
+        info.slashed = false;
+        info.nonceHash = bytes32(0);
+        $.commitmentByTrainerId[roundId][trainerId] = commitment;
+        emit TrainerCommitted(roundId, commitment, trainerId, modelHash, revealDeadline, penalty);
+    }
+
+    function _revealTrainerPrivacy(uint256 roundId, address trainer, bytes calldata nonce) internal returns (uint256 trainerId, bytes32 commitment) {
+        if (trainer == address(0)) {
+            revert InvalidTrainerAddress();
+        }
+        RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
+        RoundTrainers storage roundTrainers = $.roundTrainers[roundId];
+        if (roundTrainers.trainers[trainer].id != 0) {
+            revert TrainerAlreadyRegistered(roundId, trainer);
+        }
+        commitment = keccak256(abi.encodePacked(trainer, nonce));
+        TrainerCommitment storage info = $.commitments[roundId][commitment];
+        if (info.trainerId == 0) {
+            revert CommitmentNotFound(roundId, commitment);
+        }
+        if (info.revealed) {
+            revert CommitmentAlreadyRevealed(roundId, commitment);
+        }
+        trainerId = info.trainerId;
+        roundTrainers.trainers[trainer] = TrainerInfo({
+            id: trainerId,
+            modelHash: info.modelHash,
+            rewardsClaimed: false
+        });
+        emit TrainerRegistered(roundId, trainer, trainerId);
+        if (info.penalty > 0) {
+            $.aggregatorBondReserved -= info.penalty;
+            emit AggregatorBondReserved($.aggregatorBondReserved);
+            info.penalty = 0;
+        }
+        info.revealed = true;
+        info.nonceHash = keccak256(nonce);
+        emit TrainerRevealed(roundId, trainer, commitment, trainerId, info.nonceHash, info.slashed);
+    }
+
+    function _slashTrainerCommitment(uint256 roundId, bytes32 commitment, address finder) internal returns (uint256 penalty, uint256 finderReward) {
+        RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
+        TrainerCommitment storage info = $.commitments[roundId][commitment];
+        if (info.trainerId == 0) {
+            revert CommitmentNotFound(roundId, commitment);
+        }
+        if (info.revealed) {
+            revert CommitmentAlreadyRevealed(roundId, commitment);
+        }
+        if (info.slashed) {
+            revert CommitmentAlreadySlashed(roundId, commitment);
+        }
+        if (info.revealDeadline == 0 || block.timestamp <= info.revealDeadline) {
+            revert RevealDeadlineNotElapsed(roundId, commitment, info.revealDeadline);
+        }
+        penalty = info.penalty;
+        if (penalty == 0) {
+            revert NoPenaltyToSlash(roundId, commitment);
+        }
+        if (penalty > $.aggregatorBondReserved) {
+            revert AggregatorBondInsufficient(penalty, $.aggregatorBondReserved);
+        }
+        $.aggregatorBondReserved -= penalty;
+        emit AggregatorBondReserved($.aggregatorBondReserved);
+        if (penalty > $.aggregatorBondBalance) {
+            revert AggregatorBondInsufficient(penalty, $.aggregatorBondBalance);
+        }
+        $.aggregatorBondBalance -= penalty;
+        emit AggregatorBondChanged($.aggregatorBondBalance);
+        uint16 finderRewardBps = $.finderRewardBps;
+        finderReward = finderRewardBps == 0 ? 0 : (penalty * finderRewardBps) / 10_000;
+        info.penalty = 0;
+        info.slashed = true;
+        emit TrainerCommitmentSlashed(roundId, commitment, penalty, finderReward, finder);
+    }
+
+    function _freeAggregatorBond(RoundTrainerRegistryStorage storage $) private view returns (uint256) {
+        uint256 balance = $.aggregatorBondBalance;
+        uint256 reserved = $.aggregatorBondReserved;
+        if (reserved >= balance) {
+            return 0;
+        }
+        return balance - reserved;
     }
 
     /// @notice Returns a pointer to the storage namespace

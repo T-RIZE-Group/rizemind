@@ -24,6 +24,30 @@ contract MockRoundTrainerRegistry is RoundTrainerRegistry {
     function setModelHash(uint256 roundId, address trainer, bytes32 modelHash) external {
         _setModelHash(roundId, trainer, modelHash);
     }
+
+    function setPrivacyConfig(uint256 penalty, uint16 finderRewardBps) external {
+        _setTrainerPrivacyConfig(penalty, finderRewardBps);
+    }
+
+    function increaseAggregatorBond(uint256 amount) external {
+        _increaseAggregatorBond(amount);
+    }
+
+    function decreaseAggregatorBond(uint256 amount) external {
+        _decreaseAggregatorBond(amount);
+    }
+
+    function commitTrainerPrivacy(uint256 roundId, bytes32 commitment, bytes32 modelHash, uint64 revealDeadline) external returns (uint256 trainerId) {
+        return _commitTrainerPrivacy(roundId, commitment, modelHash, revealDeadline);
+    }
+
+    function revealTrainerPrivacy(uint256 roundId, address trainer, bytes calldata nonce) external returns (uint256 trainerId, bytes32 commitment) {
+        return _revealTrainerPrivacy(roundId, trainer, nonce);
+    }
+
+    function slashTrainerCommitment(uint256 roundId, bytes32 commitment, address finder) external returns (uint256 penalty, uint256 finderReward) {
+        return _slashTrainerCommitment(roundId, commitment, finder);
+    }
 }
 
 contract RoundTrainerRegistryTest is Test {
