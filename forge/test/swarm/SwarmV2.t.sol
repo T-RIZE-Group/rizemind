@@ -439,7 +439,7 @@ contract SwarmV1Test is Test {
 
     function test_registerRoundContributionPrivacy_revertsWhenDisabled() public {
         vm.prank(aggregator);
-        vm.expectRevert(SwarmV2.PrivacyModeDisabled.selector);
+        vm.expectRevert(SwarmV1.PrivacyModeDisabled.selector);
         swarm.registerRoundContributionPrivacy(1, keccak256("commit"), keccak256("model"), uint64(block.timestamp + 1 hours));
     }
 

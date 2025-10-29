@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.20;
 
-import "forge-std/Script.sol";
+import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
-import {SwarmV1} from "@rizemind-contracts/swarm/SwarmV1.sol";
+import {SwarmV2} from "@rizemind-contracts/swarm/SwarmV2.sol";
 import {SwarmV1Factory} from "@rizemind-contracts/swarm/SwarmV1Factory.sol";
 import {SelectorFactory} from "@rizemind-contracts/sampling/SelectorFactory.sol";
 import {CalculatorFactory} from "@rizemind-contracts/contribution/CalculatorFactory.sol";
@@ -19,16 +19,16 @@ import {SimpleMintCompensation} from "@rizemind-contracts/compensation/SimpleMin
 import {BaseTrainingPhases} from "@rizemind-contracts/training/BaseTrainingPhases.sol";
 import {DemoParams} from "./DemoParams.sol";
 
-/// @title ScalabilityPrivacyDemo
-/// @notice Demonstrates privacy-preserving trainer commitments with slashing
-contract ScalabilityPrivacyDemo is Script {
+/// @title FullCyclePrivacyTest
+/// @notice Exercises privacy-preserving trainer commitments with slashing
+contract FullCyclePrivacy is Test {
     struct PrivacyRecord {
         bytes32 commitment;
         bytes32 nonce;
         uint64 deadline;
     }
 
-    SwarmV1 public swarm;
+    SwarmV2 public swarm;
     BaseAccessControl public accessControl;
     SimpleMintCompensation public compensation;
     ContributionCalculator public calculator;
@@ -39,6 +39,12 @@ contract ScalabilityPrivacyDemo is Script {
 
     mapping(address => PrivacyRecord) private privacyRecords;
 
+    mapping(address => uint256) private trainerRewards;
+
+    uint256 private aggregatorBondDeposit;
+    uint256 private slashPenalty;
+    uint256 private slashFinderReward;
+
     address private pendingRevealTrainer;
 
     uint256 private constant TRAINER_COUNT = 3;
@@ -47,13 +53,24 @@ contract ScalabilityPrivacyDemo is Script {
     uint256 private constant PRIVACY_PENALTY = 0.5 ether;
     uint16 private constant FINDER_REWARD_BPS = 1_000; // 10%
 
-    function run() external {
-        console.log("=== Swarm Privacy Mode Demo ===");
+    function setUp() public {
+        console.log("=== Swarm Privacy Mode Test Setup ===");
+
+        slashPenalty = 0;
+        slashFinderReward = 0;
+        aggregatorBondDeposit = 0;
+        pendingRevealTrainer = address(0);
 
         _setupActors();
         _deployStack();
         _configurePrivacy();
+    }
+
+    function testFullCyclePrivacyRound() public {
+        console.log("=== Swarm Privacy Mode Demo ===");
+
         _executeRound();
+        _assertRoundOutcome();
         _printSummary();
 
         console.log("=== Demo Completed ===");
@@ -61,10 +78,14 @@ contract ScalabilityPrivacyDemo is Script {
 
     /// @notice Prepare aggregator, trainer, and evaluator addresses
     function _setupActors() internal {
+        delete trainers;
+        delete evaluators;
+
         aggregator = vm.addr(DemoParams.AGGREGATOR_KEY);
 
         for (uint256 i = 0; i < TRAINER_COUNT; ++i) {
             trainers.push(vm.addr(DemoParams.TRAINER_START_KEY + i));
+            trainerRewards[trainers[i]] = 0;
         }
 
         for (uint256 i = 0; i < EVALUATOR_COUNT; ++i) {
@@ -90,7 +111,7 @@ contract ScalabilityPrivacyDemo is Script {
         ContributionCalculator calculatorImpl = new ContributionCalculator();
         BaseAccessControl accessImpl = new BaseAccessControl();
         SimpleMintCompensation compensationImpl = new SimpleMintCompensation();
-        SwarmV1 swarmImpl = new SwarmV1();
+        SwarmV2 swarmImpl = new SwarmV2();
 
         selectorFactory.registerSelectorImplementation(address(alwaysSampled));
         selectorFactory.registerSelectorImplementation(address(randomSampling));
@@ -171,7 +192,7 @@ contract ScalabilityPrivacyDemo is Script {
             params
         );
 
-        swarm = SwarmV1(swarmAddress);
+        swarm = SwarmV2(swarmAddress);
         accessControl = BaseAccessControl(swarm.getAccessControl());
         compensation = SimpleMintCompensation(swarm.getCompensation());
         calculator = ContributionCalculator(swarm.getContributionCalculator());
@@ -197,6 +218,7 @@ contract ScalabilityPrivacyDemo is Script {
         swarm.setTrainerPrivacyMode(true);
 
         uint256 depositAmount = PRIVACY_PENALTY * TRAINER_COUNT;
+        aggregatorBondDeposit = depositAmount;
         if (depositAmount > 0) {
             vm.deal(aggregator, depositAmount);
             vm.prank(aggregator);
@@ -374,6 +396,8 @@ contract ScalabilityPrivacyDemo is Script {
             roundId,
             record.commitment
         );
+        slashPenalty = penalty;
+        slashFinderReward = reward;
         console.log(
             "Step 7: Finder %s slashed missed reveal. Penalty=%s Reward=%s",
             _addressToString(finder),
@@ -409,12 +433,39 @@ contract ScalabilityPrivacyDemo is Script {
             vm.prank(trainer);
             swarm.claimReward(roundId, trainer);
             uint256 received = compensation.balanceOf(trainer) - beforeBalance;
+            trainerRewards[trainer] = received;
             console.log(
                 " Trainer %s received %s tokens",
                 _uintToString(i + 1),
                 _uintToString(received)
             );
         }
+    }
+
+    function _assertRoundOutcome() internal view {
+        (uint256 balance, uint256 reserved) = swarm.getAggregatorBondState();
+        assertEq(reserved, 0, "Aggregator bond should have no reservations");
+        assertEq(slashPenalty, PRIVACY_PENALTY, "Unexpected slash penalty");
+        assertEq(
+            slashFinderReward,
+            (slashPenalty * FINDER_REWARD_BPS) / 10_000,
+            "Finder reward mismatch"
+        );
+        assertEq(
+            balance + slashPenalty,
+            aggregatorBondDeposit,
+            "Aggregator bond balance mismatch"
+        );
+
+        for (uint256 i = 0; i < trainers.length; ++i) {
+            assertGt(trainerRewards[trainers[i]], 0, "Trainer reward missing");
+        }
+
+        assertEq(
+            pendingRevealTrainer,
+            address(0),
+            "Pending reveal should be cleared"
+        );
     }
 
     function _printSummary() internal view {
@@ -449,7 +500,17 @@ contract ScalabilityPrivacyDemo is Script {
 
     function _addressToString(
         address account
-    ) internal view returns (string memory) {
-        return vm.toString(account);
+    ) internal pure returns (string memory) {
+        bytes16 hexSymbols = 0x30313233343536373839616263646566;
+        bytes20 addrBytes = bytes20(account);
+        bytes memory buffer = new bytes(42);
+        buffer[0] = "0";
+        buffer[1] = "x";
+        for (uint256 i = 0; i < 20; ++i) {
+            uint8 byteValue = uint8(addrBytes[i]);
+            buffer[2 + (i << 1)] = bytes1(hexSymbols[byteValue >> 4]);
+            buffer[3 + (i << 1)] = bytes1(hexSymbols[byteValue & 0x0f]);
+        }
+        return string(buffer);
     }
 }

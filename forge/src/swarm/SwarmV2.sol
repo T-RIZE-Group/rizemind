@@ -17,31 +17,21 @@ import {ICompensation} from "../compensation/types.sol";
 import {TrainerContributed} from "../contribution/types.sol";
 
 /**
- * @title SwarmV1
- * @author 
- * @notice SwarmV1 is the entrypoint for the Swarm Coordination.
- * 
- * It encapsulates the training liefecycle, access control, contribution calculation and metadata storage.
- * 
- * Overview of a round:
- * 1. Aggregator calls startTrainingRound() to start the training round
- * 2. Trainers call registerRoundContribution() to register their contributions
- * 3. Evaluators call registerForRoundEvaluations() to register for round evaluations
- * 4. Evaluators call registerEvaluation() to register their evaluations
- * 5. Aggregator calls nextRound() to finish the round
- * 
- * The swarm has a set of whitelisted trainers and evaluators based on the FLAccessControl contract.
- * Each round a subset of those nodes are selected by the SamplerSelector contract.
- * 
- * For contribution calculation, the IContributionCalculator defines the number of evaluation tasks required.
- * These tasks are assigned an incremental task ID.
- * 
- * Before the evaluation starts, the evaluators registers so the TaskAssigment module distributes tasks
- * uniformly to the evaluators.
- * 
- * After the evaluation is completed, the trainers can claim their rewards by calling claimReward().
+ * @title SwarmV2
+ * @notice SwarmV2 coordinates federated training rounds with optional privacy-preserving
+ *     trainer commitments and bond-backed enforcement for aggregator-managed reveals.
+ *
+ * SwarmV2 keeps the Swarm lifecycle (round management, access control integration,
+ * contribution tracking, and payout distribution) while extending the public API with
+ * privacy tooling:
+ * - Aggregators can toggle privacy mode to submit trainer commitments on behalf of
+ *   participants and reveal their identities after the training phase.
+ * - A configurable aggregator bond backs each commitment, enabling finder rewards and
+ *   slashing when reveals miss their deadlines.
+ * - Public helpers expose bond balances, privacy configuration, and commitment status so
+ *   off-chain automation can monitor late reveals and trigger slashing.
  */
-contract SwarmV1 is
+contract SwarmV2 is
     EIP712Upgradeable,
     RoundTraining,
     BaseTrainingPhases,
@@ -51,7 +41,7 @@ contract SwarmV1 is
     TaskAssignment,
     SwarmCore
 {
-    string private constant _VERSION = "swarm-v1.0.0";
+    string private constant _VERSION = "swarm-v2.0.0";
 
     error ForbiddenRound(uint256 roundId);
     error NotIdle();
@@ -64,8 +54,18 @@ contract SwarmV1 is
     error NotTrainer();
     error NotEvaluator();
     error RewardsAlreadyClaimed(uint256 roundId, address trainer);
+    error PrivacyModeDisabled();
+    error PrivacyModeEnabled();
+    error ZeroBondAmount();
+    error InvalidRecipient();
+    error RevealNotAvailable();
+    error TransferFailed(address to, uint256 amount);
 
-    struct SwarmV1InitializeParams {
+    event AggregatorBondDeposited(address indexed aggregator, uint256 amount, uint256 newBalance);
+    event AggregatorBondWithdrawn(address indexed aggregator, address indexed recipient, uint256 amount, uint256 newBalance);
+    event TrainerPrivacyModeUpdated(bool enabled);
+
+    struct SwarmV2InitializeParams {
         string name;
         address initialTrainerSelector;
         address initialEvaluatorSelector;
@@ -98,7 +98,7 @@ contract SwarmV1 is
     }
 
     function initialize(
-        SwarmV1InitializeParams memory params
+        SwarmV2InitializeParams memory params
     ) external virtual initializer {
         __EIP712_init(params.name, _VERSION);
         __RoundTraining_init();
@@ -140,12 +140,91 @@ contract SwarmV1 is
         _updateEvaluatorSelector(newEvaluatorSelector);
     }
 
+    bool private _trainerPrivacyEnabled;
+
     function distribute(
         uint256 roundId,
         address[] calldata trainers,
         uint64[] calldata contributions
     ) external onlyAggregator(msg.sender) {
         _distribute(roundId, trainers, contributions);
+    }
+
+    function registerRoundContributionPrivacy(uint256 roundId, bytes32 commitment, bytes32 modelHash, uint64 revealDeadline) external onlyAggregator(msg.sender) {
+        if (!_trainerPrivacyEnabled) {
+            revert PrivacyModeDisabled();
+        }
+        if (updatePhase() != TRAINING_PHASE) {
+            revert NotTrainingPhase();
+        }
+        if (roundId != currentRound()) {
+            revert ForbiddenRound(roundId);
+        }
+        _commitTrainerPrivacy(roundId, commitment, modelHash, revealDeadline);
+    }
+
+    function revealTrainerCommitment(uint256 roundId, address trainer, bytes calldata nonce) external onlyAggregator(msg.sender) {
+        bytes32 phase = getCurrentPhase();
+        if (phase == TRAINING_PHASE) {
+            revert RevealNotAvailable();
+        }
+        _revealTrainerPrivacy(roundId, trainer, nonce);
+    }
+
+    function slashTrainerCommitment(uint256 roundId, bytes32 commitment) external returns (uint256 penalty, uint256 finderReward) {
+        (penalty, finderReward) = _slashTrainerCommitment(roundId, commitment, msg.sender);
+        if (finderReward > 0) {
+            (bool success, ) = payable(msg.sender).call{value: finderReward}("");
+            if (!success) {
+                revert TransferFailed(msg.sender, finderReward);
+            }
+        }
+    }
+
+    function configureTrainerPrivacy(uint256 penalty, uint16 finderRewardBps) external onlyAggregator(msg.sender) {
+        _setTrainerPrivacyConfig(penalty, finderRewardBps);
+    }
+
+    function setTrainerPrivacyMode(bool enabled) external onlyAggregator(msg.sender) {
+        if (_trainerPrivacyEnabled == enabled) {
+            return;
+        }
+        _trainerPrivacyEnabled = enabled;
+        emit TrainerPrivacyModeUpdated(enabled);
+    }
+
+    function depositAggregatorBond() external payable onlyAggregator(msg.sender) {
+        if (msg.value == 0) {
+            revert ZeroBondAmount();
+        }
+        _increaseAggregatorBond(msg.value);
+        (uint256 balance, ) = getAggregatorBondState();
+        emit AggregatorBondDeposited(msg.sender, msg.value, balance);
+    }
+
+    function withdrawAggregatorBond(uint256 amount, address payable recipient) external onlyAggregator(msg.sender) {
+        if (amount == 0) {
+            revert ZeroBondAmount();
+        }
+        if (recipient == address(0)) {
+            revert InvalidRecipient();
+        }
+        _decreaseAggregatorBond(amount);
+        (bool success, ) = recipient.call{value: amount}("");
+        if (!success) {
+            revert TransferFailed(recipient, amount);
+        }
+        (uint256 balance, ) = getAggregatorBondState();
+        emit AggregatorBondWithdrawn(msg.sender, recipient, amount, balance);
+    }
+
+    function getAggregatorFreeBond() external view returns (uint256) {
+        (uint256 balance, uint256 reserved) = getAggregatorBondState();
+        return reserved >= balance ? 0 : balance - reserved;
+    }
+
+    function isTrainerPrivacyEnabled() external view returns (bool) {
+        return _trainerPrivacyEnabled;
     }
 
     function startTrainingRound() external onlyAggregator(msg.sender) {
@@ -165,6 +244,9 @@ contract SwarmV1 is
     }
 
     function registerRoundContribution(uint256 roundId, bytes32 modelHash) external {
+        if (_trainerPrivacyEnabled) {
+            revert PrivacyModeEnabled();
+        }
         if (!canTrain(msg.sender, roundId)) {
             revert NotTrainer();
         }
