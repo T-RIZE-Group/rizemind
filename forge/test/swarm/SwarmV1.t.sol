@@ -436,7 +436,6 @@ contract SwarmV1Test is Test {
         assertTrue(true, "Reward should be claimed successfully");
     }
 
-
     // ============================================================================
     // PHASE TRANSITION TESTS
     // ============================================================================
