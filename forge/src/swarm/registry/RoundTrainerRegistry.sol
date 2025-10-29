@@ -12,6 +12,7 @@ contract RoundTrainerRegistry is Initializable {
         bytes32 modelHash; // Hash of the trainer's model
         bool rewardsClaimed; // Whether the trainer has claimed their rewards
     }
+
     /// @dev Structure to store trainers for a specific round
     struct RoundTrainers {
         mapping(address => TrainerInfo) trainers; // Maps trainer address to their info
@@ -197,5 +198,4 @@ contract RoundTrainerRegistry is Initializable {
             $.slot := slot
         }
     }
-
 }
