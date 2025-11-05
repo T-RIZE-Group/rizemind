@@ -24,8 +24,37 @@ contract RoundTrainerRegistryV2 is Initializable {
         mapping(uint256 => RoundTrainers) roundTrainers;
     }
 
-    // Storage slot for RoundTrainerRegistry namespace
+    struct AggregatorBondState {
+        uint256 balance;
+        uint256 reserved;
+    }
+
+    struct CommitmentState {
+        bytes32 modelHash;
+        uint64 revealDeadline;
+        address trainer;
+        uint256 penalty;
+        bool active;
+        bool revealed;
+        bool slashed;
+        bool exists;
+    }
+
+    struct RoundPrivacyState {
+        mapping(bytes32 => CommitmentState) commitments;
+        uint256 pendingCount;
+    }
+
+    struct TrainerPrivacyStorage {
+        AggregatorBondState bond;
+        uint256 penalty;
+        uint16 finderRewardBps;
+        mapping(uint256 => RoundPrivacyState) rounds;
+    }
+
+    // Storage slots for namespaced storage
     bytes32 private constant ROUND_TRAINER_REGISTRY_STORAGE = keccak256("RoundTrainerRegistry.storage");
+    bytes32 private constant TRAINER_PRIVACY_STORAGE = keccak256("RoundTrainerRegistry.privacy.storage");
 
     /// @notice Emitted when a trainer is registered for a round
     /// @param roundId The round ID
@@ -44,6 +73,27 @@ contract RoundTrainerRegistryV2 is Initializable {
 
     /// @notice Error thrown when trying to access a non-existent trainer
     error TrainerNotFound(uint256 roundId, address trainer);
+
+    /// @notice Error thrown when finder reward basis points exceed 100%
+    error InvalidFinderRewardBps(uint16 finderRewardBps);
+
+    /// @notice Error thrown when attempting to commit a duplicate privacy commitment
+    error CommitmentAlreadyRegistered(uint256 roundId, bytes32 commitment);
+
+    /// @notice Error thrown when attempting to operate on a non-existent commitment
+    error CommitmentNotFound(uint256 roundId, bytes32 commitment);
+
+    /// @notice Error thrown when attempting to reveal an already revealed commitment
+    error CommitmentAlreadyRevealed(uint256 roundId, bytes32 commitment);
+
+    /// @notice Error thrown when attempting to slash an already slashed commitment
+    error CommitmentAlreadySlashed(uint256 roundId, bytes32 commitment);
+
+    /// @notice Error thrown when attempting to slash before the reveal deadline has elapsed
+    error RevealDeadlineNotReached(uint256 roundId, bytes32 commitment, uint64 deadline);
+
+    /// @notice Error thrown when the aggregator bond lacks sufficient free balance
+    error AggregatorBondInsufficient(uint256 requested, uint256 available);
 
     /// @notice Initializes the contract
     /// @dev This function can only be called once during proxy deployment
@@ -190,10 +240,220 @@ contract RoundTrainerRegistryV2 is Initializable {
         return $.roundTrainers[roundId].trainers[trainer].rewardsClaimed;
     }
 
+    /// @notice Configure the trainer privacy penalty and finder reward share
+    /// @param penalty The amount of bond to reserve per commitment
+    /// @param finderRewardBps Finder reward share expressed in basis points (max 10_000)
+    function _setTrainerPrivacyConfig(uint256 penalty, uint16 finderRewardBps) internal {
+        if (finderRewardBps > 10_000) {
+            revert InvalidFinderRewardBps(finderRewardBps);
+        }
+
+        TrainerPrivacyStorage storage $ = _getTrainerPrivacyStorage();
+        $.penalty = penalty;
+        $.finderRewardBps = finderRewardBps;
+    }
+
+    /// @notice Increase the aggregator bond balance by an amount
+    /// @param amount Amount of wei added to the bond balance
+    function _increaseAggregatorBond(uint256 amount) internal {
+        TrainerPrivacyStorage storage $ = _getTrainerPrivacyStorage();
+        $.bond.balance += amount;
+    }
+
+    /// @notice Decrease the aggregator bond balance by an amount
+    /// @param amount Amount of wei to remove from the bond balance
+    function _decreaseAggregatorBond(uint256 amount) internal {
+        TrainerPrivacyStorage storage $ = _getTrainerPrivacyStorage();
+        AggregatorBondState storage bond = $.bond;
+
+        uint256 available = bond.balance - bond.reserved;
+        if (amount > available) {
+            revert AggregatorBondInsufficient(amount, available);
+        }
+
+        bond.balance -= amount;
+    }
+
+    /// @notice Return the current aggregator bond balance and reserved amount
+    function getAggregatorBondState() public view returns (uint256 balance, uint256 reserved) {
+        TrainerPrivacyStorage storage $ = _getTrainerPrivacyStorage();
+        AggregatorBondState storage bond = $.bond;
+        balance = bond.balance;
+        reserved = bond.reserved;
+    }
+
+    /// @notice Commit to a trainer using privacy mode
+    /// @param roundId The round identifier
+    /// @param commitment The commitment hash binding trainer and nonce
+    /// @param modelHash The trainer's model hash recorded on reveal
+    /// @param revealDeadline Deadline timestamp after which the commitment can be slashed
+    /// @return pendingCommitments The updated number of pending commitments for the round
+    function _commitTrainerPrivacy(
+        uint256 roundId,
+        bytes32 commitment,
+        bytes32 modelHash,
+        uint64 revealDeadline
+    ) internal returns (uint256 pendingCommitments) {
+        TrainerPrivacyStorage storage $ = _getTrainerPrivacyStorage();
+        RoundPrivacyState storage roundPrivacy = $.rounds[roundId];
+        CommitmentState storage state = roundPrivacy.commitments[commitment];
+
+        if (state.exists) {
+            revert CommitmentAlreadyRegistered(roundId, commitment);
+        }
+
+        uint256 penalty = $.penalty;
+        if (penalty > 0) {
+            AggregatorBondState storage bond = $.bond;
+            uint256 available = bond.balance - bond.reserved;
+            if (penalty > available) {
+                revert AggregatorBondInsufficient(penalty, available);
+            }
+            bond.reserved += penalty;
+        }
+
+        state.modelHash = modelHash;
+        state.revealDeadline = revealDeadline;
+        state.trainer = address(0);
+        state.penalty = penalty;
+        state.active = true;
+        state.revealed = false;
+        state.slashed = false;
+        state.exists = true;
+
+        pendingCommitments = ++roundPrivacy.pendingCount;
+    }
+
+    /// @notice Reveal a trainer's identity for a previously committed contribution
+    /// @param roundId The training round identifier
+    /// @param trainer The trainer being revealed
+    /// @param nonce The nonce used within the commitment
+    /// @return trainerId The trainer identifier assigned within the round
+    /// @return commitment The resolved commitment hash
+    function _revealTrainerPrivacy(
+        uint256 roundId,
+        address trainer,
+        bytes calldata nonce
+    )
+        internal
+        returns (uint256 trainerId, bytes32 commitment)
+    {
+        commitment = keccak256(abi.encodePacked(trainer, nonce));
+
+        TrainerPrivacyStorage storage $ = _getTrainerPrivacyStorage();
+        RoundPrivacyState storage roundPrivacy = $.rounds[roundId];
+        CommitmentState storage state = roundPrivacy.commitments[commitment];
+
+        if (!state.exists) {
+            revert CommitmentNotFound(roundId, commitment);
+        }
+        if (state.revealed) {
+            revert CommitmentAlreadyRevealed(roundId, commitment);
+        }
+
+        if (state.active) {
+            if (state.penalty > 0) {
+                AggregatorBondState storage bond = $.bond;
+                if (bond.reserved < state.penalty) {
+                    revert AggregatorBondInsufficient(state.penalty, bond.reserved);
+                }
+                bond.reserved -= state.penalty;
+            }
+            if (roundPrivacy.pendingCount > 0) {
+                roundPrivacy.pendingCount -= 1;
+            }
+            state.active = false;
+        }
+
+        state.revealed = true;
+        state.trainer = trainer;
+
+        trainerId = _registerTrainer(roundId, trainer, state.modelHash);
+    }
+
+    /// @notice Slash a commitment whose reveal deadline has elapsed
+    /// @param roundId The training round identifier
+    /// @param commitment The commitment hash to slash
+    /// @param finder Address that triggered the slashing action
+    /// @return penalty The penalty deducted from the aggregator bond
+    /// @return finderReward The finder reward computed from the penalty
+    function _slashTrainerCommitment(
+        uint256 roundId,
+        bytes32 commitment,
+        address finder
+    )
+        internal
+        returns (uint256 penalty, uint256 finderReward)
+    {
+        finder; // silence unused parameter warning until utilized
+        TrainerPrivacyStorage storage $ = _getTrainerPrivacyStorage();
+        RoundPrivacyState storage roundPrivacy = $.rounds[roundId];
+        CommitmentState storage state = roundPrivacy.commitments[commitment];
+
+        if (!state.exists) {
+            revert CommitmentNotFound(roundId, commitment);
+        }
+        if (state.slashed) {
+            revert CommitmentAlreadySlashed(roundId, commitment);
+        }
+        if (state.revealed) {
+            revert CommitmentAlreadyRevealed(roundId, commitment);
+        }
+        if (block.timestamp <= state.revealDeadline) {
+            revert RevealDeadlineNotReached(roundId, commitment, state.revealDeadline);
+        }
+
+        penalty = state.penalty;
+
+        if (state.active) {
+            if (penalty > 0) {
+                AggregatorBondState storage bond = $.bond;
+                if (bond.reserved < penalty) {
+                    revert AggregatorBondInsufficient(penalty, bond.reserved);
+                }
+                bond.reserved -= penalty;
+                if (bond.balance < penalty) {
+                    revert AggregatorBondInsufficient(penalty, bond.balance);
+                }
+                bond.balance -= penalty;
+            }
+            if (roundPrivacy.pendingCount > 0) {
+                roundPrivacy.pendingCount -= 1;
+            }
+            state.active = false;
+        }
+
+        state.slashed = true;
+
+        finderReward = (penalty * $.finderRewardBps) / 10_000;
+    }
+
+    /// @notice Return the number of pending commitments awaiting reveal for a round
+    /// @param roundId The round identifier
+    function getPendingCommitmentCount(uint256 roundId) public view returns (uint256) {
+        TrainerPrivacyStorage storage $ = _getTrainerPrivacyStorage();
+        return $.rounds[roundId].pendingCount;
+    }
+
+    /// @notice Return the current trainer privacy configuration
+    function getTrainerPrivacyConfig() public view returns (uint256 penalty, uint16 finderRewardBps) {
+        TrainerPrivacyStorage storage $ = _getTrainerPrivacyStorage();
+        penalty = $.penalty;
+        finderRewardBps = $.finderRewardBps;
+    }
+
     /// @notice Returns a pointer to the storage namespace
     /// @dev This function provides access to the namespaced storage
     function _getRoundTrainerRegistryStorage() private pure returns (RoundTrainerRegistryStorage storage $) {
         bytes32 slot = ROUND_TRAINER_REGISTRY_STORAGE;
+        assembly {
+            $.slot := slot
+        }
+    }
+
+    /// @notice Returns a pointer to the trainer privacy storage namespace
+    function _getTrainerPrivacyStorage() private pure returns (TrainerPrivacyStorage storage $) {
+        bytes32 slot = TRAINER_PRIVACY_STORAGE;
         assembly {
             $.slot := slot
         }

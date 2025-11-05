@@ -3,11 +3,11 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {ERC1967Proxy} from "@openzeppelin-contracts-5.2.0/proxy/ERC1967/ERC1967Proxy.sol";
-import {RoundTrainerRegistry} from "../../../src/swarm/registry/RoundTrainerRegistry.sol";
+import {RoundTrainerRegistryV2} from "../../../src/swarm/registry/RoundTrainerRegistryV2.sol";
 
 /// @title MockRoundTrainerRegistry
 /// @notice Mock contract that exposes internal functions for testing
-contract MockRoundTrainerRegistry is RoundTrainerRegistry {
+contract MockRoundTrainerRegistryV2 is RoundTrainerRegistryV2 {
     /// @notice Expose the internal _registerTrainer function for testing
     /// @param roundId The round ID
     /// @param trainer The trainer address
@@ -51,9 +51,9 @@ contract MockRoundTrainerRegistry is RoundTrainerRegistry {
 }
 
 contract RoundTrainerRegistryTest is Test {
-    MockRoundTrainerRegistry public implementation;
+    MockRoundTrainerRegistryV2 public implementation;
     ERC1967Proxy public proxy;
-    MockRoundTrainerRegistry public registry;
+    MockRoundTrainerRegistryV2 public registry;
 
     address public trainer1;
     address public trainer2;
@@ -70,14 +70,14 @@ contract RoundTrainerRegistryTest is Test {
 
     function setUp() public {
         // Deploy contracts
-        implementation = new MockRoundTrainerRegistry();
+        implementation = new MockRoundTrainerRegistryV2();
         
         // Deploy proxy
         bytes memory initData = abi.encodeWithSelector(
-            RoundTrainerRegistry.initialize.selector
+            RoundTrainerRegistryV2.initialize.selector
         );
         proxy = new ERC1967Proxy(address(implementation), initData);
-        registry = MockRoundTrainerRegistry(address(proxy));
+        registry = MockRoundTrainerRegistryV2(address(proxy));
 
         // Setup test addresses
         trainer1 = makeAddr("trainer1");
@@ -231,7 +231,7 @@ contract RoundTrainerRegistryTest is Test {
         bytes32 modelHash = modelHash1;
 
         // Try to update model hash for unregistered trainer
-        vm.expectRevert(abi.encodeWithSelector(RoundTrainerRegistry.TrainerNotFound.selector, roundId, trainer));
+        vm.expectRevert(abi.encodeWithSelector(RoundTrainerRegistryV2.TrainerNotFound.selector, roundId, trainer));
         registry.setModelHash(roundId, trainer, modelHash);
     }
 
@@ -248,7 +248,7 @@ contract RoundTrainerRegistryTest is Test {
         assertEq(retrievedHash, modelHash, "Should return correct model hash");
 
         // Test getModelHashOrThrow with unregistered trainer
-        vm.expectRevert(abi.encodeWithSelector(RoundTrainerRegistry.TrainerNotFound.selector, roundId, trainer2));
+        vm.expectRevert(abi.encodeWithSelector(RoundTrainerRegistryV2.TrainerNotFound.selector, roundId, trainer2));
         registry.getModelHashOrThrow(roundId, trainer2);
     }
 
@@ -301,7 +301,7 @@ contract RoundTrainerRegistryTest is Test {
         assertEq(trainerId, 1, "Should return correct trainer ID");
 
         // Test getTrainerIdOrThrow with unregistered trainer
-        vm.expectRevert(abi.encodeWithSelector(RoundTrainerRegistry.TrainerNotFound.selector, roundId, trainer2));
+        vm.expectRevert(abi.encodeWithSelector(RoundTrainerRegistryV2.TrainerNotFound.selector, roundId, trainer2));
         registry.getTrainerIdOrThrow(roundId, trainer2);
     }
 
@@ -352,7 +352,7 @@ contract RoundTrainerRegistryTest is Test {
         uint256 roundId = 1;
         bytes32 modelHash = modelHash1;
 
-        vm.expectRevert(RoundTrainerRegistry.InvalidTrainerAddress.selector);
+        vm.expectRevert(RoundTrainerRegistryV2.InvalidTrainerAddress.selector);
         registry.registerTrainer(roundId, zeroAddress, modelHash);
     }
 
@@ -360,7 +360,7 @@ contract RoundTrainerRegistryTest is Test {
         uint256 roundId = 1;
         address unregisteredTrainer = makeAddr("unregistered");
 
-        vm.expectRevert(abi.encodeWithSelector(RoundTrainerRegistry.TrainerNotFound.selector, roundId, unregisteredTrainer));
+        vm.expectRevert(abi.encodeWithSelector(RoundTrainerRegistryV2.TrainerNotFound.selector, roundId, unregisteredTrainer));
         registry.getTrainerIdOrThrow(roundId, unregisteredTrainer);
     }
 

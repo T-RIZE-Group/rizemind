@@ -10,7 +10,7 @@ import {SwarmCore} from "./registry/SwarmCore.sol";
 import {ISelector} from "../sampling/ISelector.sol";
 import {TaskAssignment} from "../scheduling/TaskAssignment.sol";
 import {BaseTrainingPhases} from "../training/BaseTrainingPhases.sol";
-import {RoundTrainerRegistry} from "./registry/RoundTrainerRegistry.sol";
+import {RoundTrainerRegistryV2} from "./registry/RoundTrainerRegistryV2.sol";
 import {RoundEvaluatorRegistry} from "./registry/RoundEvaluatorRegistry.sol";
 import {ContributionCalculator} from "../contribution/ContributionCalculator.sol";
 import {ICompensation} from "../compensation/types.sol";
@@ -36,7 +36,7 @@ contract SwarmV2 is
     RoundTraining,
     BaseTrainingPhases,
     CertificateRegistry,
-    RoundTrainerRegistry,
+    RoundTrainerRegistryV2,
     RoundEvaluatorRegistry,
     TaskAssignment,
     SwarmCore
@@ -110,7 +110,7 @@ contract SwarmV2 is
         __SwarmCore_init(params.initialTrainerSelector, params.initialEvaluatorSelector, params.initialContributionCalculator, params.initialAccessControl, params.initialCompensation);
     }
 
-    function initialize() external virtual override(RoundTrainerRegistry, RoundEvaluatorRegistry, TaskAssignment) {
+    function initialize() external virtual override(RoundTrainerRegistryV2, RoundEvaluatorRegistry, TaskAssignment) {
         revert WrongInitialization();
     }
 

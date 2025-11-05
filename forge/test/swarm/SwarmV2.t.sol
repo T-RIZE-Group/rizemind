@@ -16,7 +16,7 @@ import {SimpleMintCompensation} from "../../src/compensation/SimpleMintCompensat
 import {AccessControlFactory} from "../../src/access/AccessControlFactory.sol";
 import {CompensationFactory} from "../../src/compensation/CompensationFactory.sol";
 import {IERC165} from "@openzeppelin-contracts-5.2.0/utils/introspection/IERC165.sol";
-import {RoundTrainerRegistry} from "../../src/swarm/registry/RoundTrainerRegistry.sol";
+import {RoundTrainerRegistryV2} from "../../src/swarm/registry/RoundTrainerRegistryV2.sol";
 
 contract SwarmV2Test is Test {
     SwarmV2 public implementation;
@@ -512,7 +512,7 @@ contract SwarmV2Test is Test {
         vm.warp(block.timestamp + evaluationConfig.ttl);
         swarm.updatePhase();
 
-        vm.expectRevert(abi.encodeWithSelector(RoundTrainerRegistry.TrainerNotFound.selector, 1, trainer1));
+        vm.expectRevert(abi.encodeWithSelector(RoundTrainerRegistryV2.TrainerNotFound.selector, 1, trainer1));
         swarm.claimReward(1, trainer1);
 
         vm.prank(aggregator);
@@ -563,7 +563,7 @@ contract SwarmV2Test is Test {
         assertEq(bondReserved, 0, "Reserved bond should clear after slash");
         assertEq(bondBalance, 3 ether - penalty, "Bond balance should decrease by penalty");
 
-        vm.expectRevert(abi.encodeWithSelector(RoundTrainerRegistry.CommitmentAlreadySlashed.selector, 1, commitment));
+        vm.expectRevert(abi.encodeWithSelector(RoundTrainerRegistryV2.CommitmentAlreadySlashed.selector, 1, commitment));
         vm.prank(finder);
         swarm.slashTrainerCommitment(1, commitment);
 
