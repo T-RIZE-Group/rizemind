@@ -26,21 +26,21 @@ contract SwarmV2Test is Test {
     AccessControlFactory public accessControlFactory;
     CompensationFactory public compensationFactory;
     SwarmV2 public swarm;
-    
+
     // Implementation contracts
     AlwaysSampled public trainerSelectorImpl;
     RandomSampling public evaluatorSelectorImpl;
     ContributionCalculator public calculatorImpl;
     BaseAccessControl public accessControlImpl;
     SimpleMintCompensation public compensationImpl;
-    
+
     address public aggregator = address(0x1);
     address public trainer1 = address(0x2);
     address public trainer2 = address(0x3);
     address public trainer3 = address(0x4);
     address public evaluator1 = address(0x5);
     address public evaluator2 = address(0x6);
-    
+
     address[] public initialTrainers;
     address[] public initialEvaluators;
     // Factory IDs
@@ -49,62 +49,74 @@ contract SwarmV2Test is Test {
     bytes32 CALCULATOR_ID;
     bytes32 ACCESS_CONTROL_ID;
     bytes32 COMPENSATION_ID;
-    
+
     function setUp() public {
         // Deploy implementation
         implementation = new SwarmV2();
-        
+
         // Deploy selector factory
         selectorFactory = new SelectorFactory(address(this));
-        
+
         // Deploy calculator factory
         calculatorFactory = new CalculatorFactory(address(this));
-        
+
         // Deploy access control factory
         accessControlFactory = new AccessControlFactory(address(this));
-        
+
         // Deploy compensation factory
         compensationFactory = new CompensationFactory(address(this));
-        
+
         // Deploy and register selector implementations
         trainerSelectorImpl = new AlwaysSampled();
         evaluatorSelectorImpl = new RandomSampling();
-        
-        (,, string memory version,,,,) = trainerSelectorImpl.eip712Domain();
+
+        (, , string memory version, , , , ) = trainerSelectorImpl
+            .eip712Domain();
         TRAINER_SELECTOR_ID = selectorFactory.getID(version);
-        (,, string memory version2,,,,) = evaluatorSelectorImpl.eip712Domain();
+        (, , string memory version2, , , , ) = evaluatorSelectorImpl
+            .eip712Domain();
         EVALUATOR_SELECTOR_ID = selectorFactory.getID(version2);
-        
-        selectorFactory.registerSelectorImplementation(address(trainerSelectorImpl));
-        selectorFactory.registerSelectorImplementation(address(evaluatorSelectorImpl));
-        
+
+        selectorFactory.registerSelectorImplementation(
+            address(trainerSelectorImpl)
+        );
+        selectorFactory.registerSelectorImplementation(
+            address(evaluatorSelectorImpl)
+        );
+
         // Deploy and register calculator implementation
         calculatorImpl = new ContributionCalculator();
-        (,, string memory version3,,,,) = calculatorImpl.eip712Domain();
+        (, , string memory version3, , , , ) = calculatorImpl.eip712Domain();
         CALCULATOR_ID = calculatorFactory.getID(version3);
-        calculatorFactory.registerCalculatorImplementation(address(calculatorImpl));
-        
+        calculatorFactory.registerCalculatorImplementation(
+            address(calculatorImpl)
+        );
+
         // Deploy and register access control implementation
         accessControlImpl = new BaseAccessControl();
-        (,, string memory version4,,,,) = accessControlImpl.eip712Domain();
+        (, , string memory version4, , , , ) = accessControlImpl.eip712Domain();
         ACCESS_CONTROL_ID = accessControlFactory.getID(version4);
-        accessControlFactory.registerAccessControlImplementation(address(accessControlImpl));
-        
+        accessControlFactory.registerAccessControlImplementation(
+            address(accessControlImpl)
+        );
+
         // Deploy and register compensation implementation
         compensationImpl = new SimpleMintCompensation();
-        (,, string memory version5,,,,) = compensationImpl.eip712Domain();
+        (, , string memory version5, , , , ) = compensationImpl.eip712Domain();
         COMPENSATION_ID = compensationFactory.getID(version5);
-        compensationFactory.registerCompensationImplementation(address(compensationImpl));
-        
+        compensationFactory.registerCompensationImplementation(
+            address(compensationImpl)
+        );
+
         // Deploy factory
         factory = new SwarmV2Factory(
-            address(implementation), 
+            address(implementation),
             address(selectorFactory),
             address(calculatorFactory),
             address(accessControlFactory),
             address(compensationFactory)
         );
-        
+
         // Set up initial trainers
         initialTrainers = new address[](3);
         initialTrainers[0] = trainer1;
@@ -114,49 +126,69 @@ contract SwarmV2Test is Test {
         initialEvaluators = new address[](2);
         initialEvaluators[0] = evaluator1;
         initialEvaluators[1] = evaluator2;
-        
+
         address swarmAddress = factory.getSwarmAddress(keccak256("test-salt"));
 
         //TODO: add evaluators to access control
 
         // Create swarm using factory
         SwarmV2Factory.SwarmParams memory params = SwarmV2Factory.SwarmParams({
-            swarm: SwarmV2Factory.SwarmV2Params({
-                name: "TestSwarm"
-            }),
+            swarm: SwarmV2Factory.SwarmV2Params({name: "TestSwarm"}),
             trainerSelector: SwarmV2Factory.SelectorParams({
                 id: TRAINER_SELECTOR_ID,
-                initData: abi.encodeWithSelector(AlwaysSampled.initialize.selector)
+                initData: abi.encodeWithSelector(
+                    AlwaysSampled.initialize.selector
+                )
             }),
             evaluatorSelector: SwarmV2Factory.SelectorParams({
                 id: EVALUATOR_SELECTOR_ID,
-                initData: abi.encodeWithSelector(RandomSampling.initialize.selector, 1 ether) // 100% selection rate
+                initData: abi.encodeWithSelector(
+                    RandomSampling.initialize.selector,
+                    1 ether
+                ) // 100% selection rate
             }),
             contributionCalculator: SwarmV2Factory.CalculatorParams({
                 id: CALCULATOR_ID,
-                initData: abi.encodeWithSelector(ContributionCalculator.initialize.selector, swarmAddress, 2)
+                initData: abi.encodeWithSelector(
+                    ContributionCalculator.initialize.selector,
+                    swarmAddress,
+                    2
+                )
             }),
             accessControl: SwarmV2Factory.AccessControlParams({
                 id: ACCESS_CONTROL_ID,
-                initData: abi.encodeWithSelector(BaseAccessControl.initialize.selector, aggregator, initialTrainers, initialEvaluators)
+                initData: abi.encodeWithSelector(
+                    BaseAccessControl.initialize.selector,
+                    aggregator,
+                    initialTrainers,
+                    initialEvaluators
+                )
             }),
             compensation: SwarmV2Factory.CompensationParams({
                 id: COMPENSATION_ID,
-                initData: abi.encodeWithSelector(SimpleMintCompensation.initialize.selector, "TestToken", "TST", 1000 ether, aggregator, swarmAddress)
+                initData: abi.encodeWithSelector(
+                    SimpleMintCompensation.initialize.selector,
+                    "TestToken",
+                    "TST",
+                    1000 ether,
+                    aggregator,
+                    swarmAddress
+                )
             }),
-            trainingPhaseConfiguration: BaseTrainingPhases.TrainingPhaseConfiguration({
-                ttl: 1000
-            }),
-            evaluationPhaseConfiguration: BaseTrainingPhases.EvaluationPhaseConfiguration({
-                ttl: 1000,
-                registrationTtl: 1000
-            })
+            trainingPhaseConfiguration: BaseTrainingPhases
+                .TrainingPhaseConfiguration({ttl: 1000}),
+            evaluationPhaseConfiguration: BaseTrainingPhases
+                .EvaluationPhaseConfiguration({
+                    ttl: 1000,
+                    registrationTtl: 1000
+                })
         });
-        
+
         swarm = SwarmV2(factory.createSwarm(keccak256("test-salt"), params));
 
-        ContributionCalculator contributionCalculator = ContributionCalculator(swarm.getContributionCalculator());
-    
+        ContributionCalculator contributionCalculator = ContributionCalculator(
+            swarm.getContributionCalculator()
+        );
     }
 
     // ============================================================================
@@ -178,7 +210,7 @@ contract SwarmV2Test is Test {
         vm.prank(trainer1);
         vm.expectRevert();
         swarm.startTrainingRound();
-        
+
         vm.prank(aggregator);
         // Should not revert
         swarm.startTrainingRound();
@@ -189,7 +221,7 @@ contract SwarmV2Test is Test {
         vm.prank(evaluator1);
         vm.expectRevert();
         swarm.registerRoundContribution(1, keccak256("model1"));
-        
+
         vm.prank(trainer1);
         // Should not revert (but will revert due to phase)
         vm.expectRevert(SwarmV2.NotTrainingPhase.selector);
@@ -201,7 +233,7 @@ contract SwarmV2Test is Test {
         vm.prank(trainer1);
         vm.expectRevert();
         swarm.registerForRoundEvaluation(1);
-        
+
         vm.prank(evaluator1);
         // Should not revert (but will revert due to phase)
         vm.expectRevert(SwarmV2.NotEvaluatorRegistrationPhase.selector);
@@ -215,18 +247,21 @@ contract SwarmV2Test is Test {
     function test_startTrainingRound() public {
         // Test starting a training round
         assertTrue(swarm.isIdle(), "Should start in idle phase");
-        
+
         vm.prank(aggregator);
         swarm.startTrainingRound();
-        
-        assertTrue(swarm.isTraining(), "Should be in training phase after starting round");
+
+        assertTrue(
+            swarm.isTraining(),
+            "Should be in training phase after starting round"
+        );
     }
 
     function test_startTrainingRound_notIdle() public {
         // Test starting training round when not idle
         vm.prank(aggregator);
         swarm.startTrainingRound();
-        
+
         // Try to start another round
         vm.prank(aggregator);
         vm.expectRevert(SwarmV2.NotIdle.selector);
@@ -237,14 +272,21 @@ contract SwarmV2Test is Test {
         // Start training round
         vm.prank(aggregator);
         swarm.startTrainingRound();
-        
+
         // Register contribution
         vm.prank(trainer1);
         swarm.registerRoundContribution(1, keccak256("model1"));
-        
+
         // Check that trainer is registered
-        assertTrue(swarm.isTrainerRegistered(1, trainer1), "Trainer should be registered");
-        assertEq(swarm.getTrainerId(1, trainer1), 1, "Trainer should have ID 1");
+        assertTrue(
+            swarm.isTrainerRegistered(1, trainer1),
+            "Trainer should be registered"
+        );
+        assertEq(
+            swarm.getTrainerId(1, trainer1),
+            1,
+            "Trainer should have ID 1"
+        );
     }
 
     function test_registerRoundContribution_notTrainingPhase() public {
@@ -262,24 +304,32 @@ contract SwarmV2Test is Test {
         // Start training round and fast forward to evaluator registration phase
         vm.prank(aggregator);
         swarm.startTrainingRound();
-        
+
         // Register some trainers first
         vm.prank(trainer1);
         swarm.registerRoundContribution(1, keccak256("model1"));
         vm.prank(trainer2);
         swarm.registerRoundContribution(1, keccak256("model2"));
-        BaseTrainingPhases.TrainingPhaseConfiguration memory trainingConfig = swarm.getTrainingPhaseConfiguration();
+        BaseTrainingPhases.TrainingPhaseConfiguration
+            memory trainingConfig = swarm.getTrainingPhaseConfiguration();
         // Fast forward to evaluator registration phase
         vm.warp(block.timestamp + trainingConfig.ttl); // Past training TTL
         //swarm.updatePhase(); we intentionally don't call updatePhase here to test automated phase transition
-        
+
         // Register evaluator
         vm.prank(evaluator1);
         swarm.registerForRoundEvaluation(1);
-        
+
         // Check that evaluator is registered
-        assertTrue(swarm.isEvaluatorRegistered(1, evaluator1), "Evaluator should be registered");
-        assertEq(swarm.getEvaluatorId(1, evaluator1), 1, "Evaluator should have ID 1");
+        assertTrue(
+            swarm.isEvaluatorRegistered(1, evaluator1),
+            "Evaluator should be registered"
+        );
+        assertEq(
+            swarm.getEvaluatorId(1, evaluator1),
+            1,
+            "Evaluator should have ID 1"
+        );
     }
 
     function test_registerForRoundEvaluation_notRegistrationPhase() public {
@@ -297,34 +347,39 @@ contract SwarmV2Test is Test {
         // Complete the full flow to evaluation phase
         vm.prank(aggregator);
         swarm.startTrainingRound();
-        
+
         // Register trainers
         vm.prank(trainer1);
         swarm.registerRoundContribution(1, keccak256("model1"));
         vm.prank(trainer2);
         swarm.registerRoundContribution(1, keccak256("model2"));
-        BaseTrainingPhases.TrainingPhaseConfiguration memory trainingConfig = swarm.getTrainingPhaseConfiguration();
-        
+        BaseTrainingPhases.TrainingPhaseConfiguration
+            memory trainingConfig = swarm.getTrainingPhaseConfiguration();
+
         // Fast forward to evaluator registration phase
         vm.warp(block.timestamp + trainingConfig.ttl);
-        
+
         // Register evaluators
         vm.prank(evaluator1);
         swarm.registerForRoundEvaluation(1);
         vm.prank(evaluator2);
         swarm.registerForRoundEvaluation(1);
-        
-        BaseTrainingPhases.EvaluationPhaseConfiguration memory evaluationPhaseConfiguration = swarm.getEvaluationPhaseConfiguration();
+
+        BaseTrainingPhases.EvaluationPhaseConfiguration
+            memory evaluationPhaseConfiguration = swarm
+                .getEvaluationPhaseConfiguration();
         // Fast forward to evaluation phase
         vm.warp(block.timestamp + evaluationPhaseConfiguration.registrationTtl); // Past registration TTL
-        
+
         // Register evaluation
         vm.startPrank(evaluator1);
         swarm.updatePhase();
         uint256 evalId = swarm.getEvaluatorId(1, evaluator1);
         uint256 taskId = swarm.nthTaskOfNode(1, evalId - 1, 0);
-        
-        ContributionCalculator contributionCalculator = ContributionCalculator(swarm.getContributionCalculator());
+
+        ContributionCalculator contributionCalculator = ContributionCalculator(
+            swarm.getContributionCalculator()
+        );
         uint256 mask = contributionCalculator.getMask(1, taskId, 2);
         swarm.registerEvaluation(1, taskId, mask, keccak256("model1"), 100);
         vm.stopPrank();
@@ -343,39 +398,50 @@ contract SwarmV2Test is Test {
         // Complete the full flow to evaluation phase
         vm.prank(aggregator);
         swarm.startTrainingRound();
-        
+
         // Register trainers
         vm.prank(trainer1);
         swarm.registerRoundContribution(1, keccak256("model1"));
         vm.prank(trainer2);
         swarm.registerRoundContribution(1, keccak256("model2"));
-        
+
         // Fast forward to evaluator registration phase using actual config
-        BaseTrainingPhases.TrainingPhaseConfiguration memory trainingConfig = swarm.getTrainingPhaseConfiguration();
+        BaseTrainingPhases.TrainingPhaseConfiguration
+            memory trainingConfig = swarm.getTrainingPhaseConfiguration();
         vm.warp(block.timestamp + trainingConfig.ttl);
         swarm.updatePhase();
-        
+
         // Register evaluators
         vm.prank(evaluator1);
         swarm.registerForRoundEvaluation(1);
 
         vm.prank(evaluator2);
         swarm.registerForRoundEvaluation(1);
-        
+
         // Fast forward to evaluation phase using actual config
-        BaseTrainingPhases.EvaluationPhaseConfiguration memory evaluationConfig = swarm.getEvaluationPhaseConfiguration();
+        BaseTrainingPhases.EvaluationPhaseConfiguration
+            memory evaluationConfig = swarm.getEvaluationPhaseConfiguration();
         vm.warp(block.timestamp + evaluationConfig.registrationTtl);
         swarm.updatePhase();
-        
+
         // using evaluator2's task
         uint256 evalId = swarm.getEvaluatorId(1, evaluator2);
         uint256 taskId = swarm.nthTaskOfNode(1, evalId - 1, 0);
-        
-        ContributionCalculator contributionCalculator = ContributionCalculator(swarm.getContributionCalculator());
+
+        ContributionCalculator contributionCalculator = ContributionCalculator(
+            swarm.getContributionCalculator()
+        );
         uint256 mask = contributionCalculator.getMask(1, taskId, 2);
         // Try to register evaluation for task not assigned to evaluator
         vm.prank(evaluator1);
-        vm.expectRevert(abi.encodeWithSelector(SwarmV2.NotAssignedTo.selector, 1, taskId, evaluator1));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                SwarmV2.NotAssignedTo.selector,
+                1,
+                taskId,
+                evaluator1
+            )
+        );
         swarm.registerEvaluation(1, taskId, mask, keccak256("model1"), 100);
     }
 
@@ -387,60 +453,71 @@ contract SwarmV2Test is Test {
         // Complete the full flow
         vm.prank(aggregator);
         swarm.startTrainingRound();
-        
+
         // Register trainers
         vm.prank(trainer1);
         swarm.registerRoundContribution(1, keccak256("model1"));
         vm.prank(trainer2);
         swarm.registerRoundContribution(1, keccak256("model2"));
-        
+
         // Fast forward to evaluator registration phase
-        BaseTrainingPhases.TrainingPhaseConfiguration memory trainingConfig = swarm.getTrainingPhaseConfiguration();
+        BaseTrainingPhases.TrainingPhaseConfiguration
+            memory trainingConfig = swarm.getTrainingPhaseConfiguration();
         vm.warp(block.timestamp + trainingConfig.ttl);
         swarm.updatePhase();
-        
+
         // Register evaluators
         vm.prank(evaluator1);
         swarm.registerForRoundEvaluation(1);
         vm.prank(evaluator2);
         swarm.registerForRoundEvaluation(1);
-        
+
         // Fast forward to evaluation phase
-        BaseTrainingPhases.EvaluationPhaseConfiguration memory evaluationConfig = swarm.getEvaluationPhaseConfiguration();
+        BaseTrainingPhases.EvaluationPhaseConfiguration
+            memory evaluationConfig = swarm.getEvaluationPhaseConfiguration();
         vm.warp(block.timestamp + evaluationConfig.registrationTtl);
         swarm.updatePhase();
-        
+
         // Register evaluations with proper flow
         vm.startPrank(evaluator1);
         uint256 evalId1 = swarm.getEvaluatorId(1, evaluator1);
         uint256 taskId1 = swarm.nthTaskOfNode(1, evalId1 - 1, 0);
-        ContributionCalculator contributionCalculator = ContributionCalculator(swarm.getContributionCalculator());
+        ContributionCalculator contributionCalculator = ContributionCalculator(
+            swarm.getContributionCalculator()
+        );
         uint256 mask1 = contributionCalculator.getMask(1, taskId1, 2);
         swarm.registerEvaluation(1, taskId1, mask1, keccak256("model1"), 100);
         vm.stopPrank();
-        
+
         vm.startPrank(evaluator2);
         uint256 evalId2 = swarm.getEvaluatorId(1, evaluator2);
         uint256 taskId2 = swarm.nthTaskOfNode(1, evalId2 - 1, 0);
         uint256 mask2 = contributionCalculator.getMask(1, taskId2, 2);
         swarm.registerEvaluation(1, taskId2, mask2, keccak256("model2"), 200);
         vm.stopPrank();
-        
+
         // Fast forward to idle
         vm.warp(block.timestamp + evaluationConfig.ttl);
         swarm.updatePhase();
-        
+
         // Claim reward
         swarm.claimReward(1, trainer1);
-        
+
         // Should not revert
         assertTrue(true, "Reward should be claimed successfully");
     }
 
-    function test_registerRoundContributionPrivacy_revertsWhenDisabled() public {
+    function test_registerRoundContributionPrivacy_revertsWhenDisabled()
+        public
+    {
         vm.prank(aggregator);
         vm.expectRevert(SwarmV2.PrivacyModeDisabled.selector);
-        swarm.registerRoundContributionPrivacy(1, keccak256("commit"), keccak256("model"), uint64(block.timestamp + 1 hours));
+        swarm.registerRoundContributionPrivacy(
+            1,
+            keccak256("commit"),
+            keccak256("model"),
+            uint64(block.timestamp + 1 hours)
+        );
     }
 
     function test_registerRoundContribution_revertsWhenPrivacyEnabled() public {
@@ -468,19 +545,37 @@ contract SwarmV2Test is Test {
         vm.prank(aggregator);
         swarm.startTrainingRound();
 
-        BaseTrainingPhases.TrainingPhaseConfiguration memory trainingConfig = swarm.getTrainingPhaseConfiguration();
-        BaseTrainingPhases.EvaluationPhaseConfiguration memory evaluationConfig = swarm.getEvaluationPhaseConfiguration();
+        BaseTrainingPhases.TrainingPhaseConfiguration
+            memory trainingConfig = swarm.getTrainingPhaseConfiguration();
+        BaseTrainingPhases.EvaluationPhaseConfiguration
+            memory evaluationConfig = swarm.getEvaluationPhaseConfiguration();
 
         bytes32 modelHash1 = keccak256("model1");
         bytes32 modelHash2 = keccak256("model2");
         bytes32 nonce1 = keccak256("nonce1");
         bytes32 nonce2 = keccak256("nonce2");
-        uint64 revealDeadline = uint64(block.timestamp + trainingConfig.ttl + evaluationConfig.registrationTtl + evaluationConfig.ttl + 1 hours);
+        uint64 revealDeadline = uint64(
+            block.timestamp +
+                trainingConfig.ttl +
+                evaluationConfig.registrationTtl +
+                evaluationConfig.ttl +
+                1 hours
+        );
 
         vm.prank(aggregator);
-        swarm.registerRoundContributionPrivacy(1, keccak256(abi.encodePacked(trainer1, nonce1)), modelHash1, revealDeadline);
+        swarm.registerRoundContributionPrivacy(
+            1,
+            keccak256(abi.encodePacked(trainer1, nonce1)),
+            modelHash1,
+            revealDeadline
+        );
         vm.prank(aggregator);
-        swarm.registerRoundContributionPrivacy(1, keccak256(abi.encodePacked(trainer2, nonce2)), modelHash2, revealDeadline);
+        swarm.registerRoundContributionPrivacy(
+            1,
+            keccak256(abi.encodePacked(trainer2, nonce2)),
+            modelHash2,
+            revealDeadline
+        );
 
         vm.warp(block.timestamp + trainingConfig.ttl);
         swarm.updatePhase();
@@ -493,7 +588,9 @@ contract SwarmV2Test is Test {
         vm.warp(block.timestamp + evaluationConfig.registrationTtl);
         swarm.updatePhase();
 
-        ContributionCalculator contributionCalculator = ContributionCalculator(swarm.getContributionCalculator());
+        ContributionCalculator contributionCalculator = ContributionCalculator(
+            swarm.getContributionCalculator()
+        );
 
         vm.startPrank(evaluator1);
         uint256 evalId1 = swarm.getEvaluatorId(1, evaluator1);
@@ -512,7 +609,13 @@ contract SwarmV2Test is Test {
         vm.warp(block.timestamp + evaluationConfig.ttl);
         swarm.updatePhase();
 
-        vm.expectRevert(abi.encodeWithSelector(RoundTrainerRegistryV2.TrainerNotFound.selector, 1, trainer1));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RoundTrainerRegistryV2.TrainerNotFound.selector,
+                1,
+                trainer1
+            )
+        );
         swarm.claimReward(1, trainer1);
 
         vm.prank(aggregator);
@@ -546,7 +649,12 @@ contract SwarmV2Test is Test {
         uint64 deadline = uint64(block.timestamp + 1 hours);
 
         vm.prank(aggregator);
-        swarm.registerRoundContributionPrivacy(1, commitment, modelHash, deadline);
+        swarm.registerRoundContributionPrivacy(
+            1,
+            commitment,
+            modelHash,
+            deadline
+        );
 
         vm.warp(deadline + 1);
 
@@ -554,30 +662,57 @@ contract SwarmV2Test is Test {
         uint256 finderBalanceBefore = finder.balance;
 
         vm.prank(finder);
-        (uint256 slashedPenalty, uint256 finderReward) = swarm.slashTrainerCommitment(1, commitment);
+        (uint256 slashedPenalty, uint256 finderReward) = swarm
+            .slashAggregatorBond(1, commitment);
         assertEq(slashedPenalty, penalty, "Penalty should match configuration");
-        assertEq(finderReward, (penalty * finderRewardBps) / 10_000, "Finder reward should match configuration");
-        assertEq(finder.balance, finderBalanceBefore + finderReward, "Finder should receive reward");
+        assertEq(
+            finderReward,
+            (penalty * finderRewardBps) / 10_000,
+            "Finder reward should match configuration"
+        );
+        assertEq(
+            finder.balance,
+            finderBalanceBefore + finderReward,
+            "Finder should receive reward"
+        );
 
-        (uint256 bondBalance, uint256 bondReserved) = swarm.getAggregatorBondState();
+        (uint256 bondBalance, uint256 bondReserved) = swarm
+            .getAggregatorBondState();
         assertEq(bondReserved, 0, "Reserved bond should clear after slash");
-        assertEq(bondBalance, 3 ether - penalty, "Bond balance should decrease by penalty");
+        assertEq(
+            bondBalance,
+            3 ether - penalty,
+            "Bond balance should decrease by penalty"
+        );
 
-        vm.expectRevert(abi.encodeWithSelector(RoundTrainerRegistryV2.CommitmentAlreadySlashed.selector, 1, commitment));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RoundTrainerRegistryV2.CommitmentAlreadySlashed.selector,
+                1,
+                commitment
+            )
+        );
         vm.prank(finder);
-        swarm.slashTrainerCommitment(1, commitment);
+        swarm.slashAggregatorBond(1, commitment);
 
-        BaseTrainingPhases.TrainingPhaseConfiguration memory trainingConfigAfter = swarm.getTrainingPhaseConfiguration();
+        BaseTrainingPhases.TrainingPhaseConfiguration
+            memory trainingConfigAfter = swarm.getTrainingPhaseConfiguration();
         vm.warp(block.timestamp + trainingConfigAfter.ttl);
         swarm.updatePhase();
 
-        BaseTrainingPhases.EvaluationPhaseConfiguration memory evaluationConfigAfter = swarm.getEvaluationPhaseConfiguration();
+        BaseTrainingPhases.EvaluationPhaseConfiguration
+            memory evaluationConfigAfter = swarm
+                .getEvaluationPhaseConfiguration();
         vm.warp(block.timestamp + evaluationConfigAfter.registrationTtl);
         swarm.updatePhase();
 
         vm.prank(aggregator);
         swarm.revealTrainerCommitment(1, trainer1, abi.encodePacked(nonce));
-        assertEq(swarm.getTrainerId(1, trainer1), 1, "Trainer should reveal after slash");
+        assertEq(
+            swarm.getTrainerId(1, trainer1),
+            1,
+            "Trainer should reveal after slash"
+        );
     }
 
     // ============================================================================
@@ -587,52 +722,62 @@ contract SwarmV2Test is Test {
     function test_fullTrainingCycle() public {
         // Test complete training cycle
         assertTrue(swarm.isIdle(), "Should start in idle");
-        
+
         // Start training
         vm.prank(aggregator);
         swarm.startTrainingRound();
         assertTrue(swarm.isTraining(), "Should be in training");
-        
+
         // Register trainers
         vm.prank(trainer1);
         swarm.registerRoundContribution(1, keccak256("model1"));
         vm.prank(trainer2);
         swarm.registerRoundContribution(1, keccak256("model2"));
-        
+
         // Fast forward to evaluator registration using actual config
-        BaseTrainingPhases.TrainingPhaseConfiguration memory trainingConfig = swarm.getTrainingPhaseConfiguration();
+        BaseTrainingPhases.TrainingPhaseConfiguration
+            memory trainingConfig = swarm.getTrainingPhaseConfiguration();
         vm.warp(block.timestamp + trainingConfig.ttl);
         swarm.updatePhase();
-        assertTrue(swarm.isEvaluation(), "Should be in evaluation (registration phase)");
-        
+        assertTrue(
+            swarm.isEvaluation(),
+            "Should be in evaluation (registration phase)"
+        );
+
         // Register evaluators
         vm.prank(evaluator1);
         swarm.registerForRoundEvaluation(1);
         vm.prank(evaluator2);
         swarm.registerForRoundEvaluation(1);
-        
+
         // Fast forward to evaluation phase using actual config
-        BaseTrainingPhases.EvaluationPhaseConfiguration memory evaluationConfig = swarm.getEvaluationPhaseConfiguration();
+        BaseTrainingPhases.EvaluationPhaseConfiguration
+            memory evaluationConfig = swarm.getEvaluationPhaseConfiguration();
         vm.warp(block.timestamp + evaluationConfig.registrationTtl);
         swarm.updatePhase();
-        assertTrue(swarm.isEvaluation(), "Should still be in evaluation (evaluation phase)");
-        
+        assertTrue(
+            swarm.isEvaluation(),
+            "Should still be in evaluation (evaluation phase)"
+        );
+
         // Register evaluations with proper flow
         vm.startPrank(evaluator1);
         uint256 evalId1 = swarm.getEvaluatorId(1, evaluator1);
         uint256 taskId1 = swarm.nthTaskOfNode(1, evalId1 - 1, 0);
-        ContributionCalculator contributionCalculator = ContributionCalculator(swarm.getContributionCalculator());
+        ContributionCalculator contributionCalculator = ContributionCalculator(
+            swarm.getContributionCalculator()
+        );
         uint256 mask1 = contributionCalculator.getMask(1, taskId1, 2);
         swarm.registerEvaluation(1, taskId1, mask1, keccak256("model1"), 100);
         vm.stopPrank();
-        
+
         vm.startPrank(evaluator2);
         uint256 evalId2 = swarm.getEvaluatorId(1, evaluator2);
         uint256 taskId2 = swarm.nthTaskOfNode(1, evalId2 - 1, 0);
         uint256 mask2 = contributionCalculator.getMask(1, taskId2, 2);
         swarm.registerEvaluation(1, taskId2, mask2, keccak256("model2"), 200);
         vm.stopPrank();
-        
+
         // Fast forward to idle using actual config
         vm.warp(block.timestamp + evaluationConfig.ttl);
         swarm.updatePhase();
@@ -646,11 +791,11 @@ contract SwarmV2Test is Test {
     function test_updateTrainerSelector() public {
         // Deploy new selector
         AlwaysSampled newSelector = new AlwaysSampled();
-        
+
         // Update selector
         vm.prank(aggregator);
         swarm.updateTrainerSelector(address(newSelector));
-        
+
         // Should not revert
         assertTrue(true, "Trainer selector should be updated");
     }
@@ -658,11 +803,11 @@ contract SwarmV2Test is Test {
     function test_updateEvaluatorSelector() public {
         // Deploy new selector
         AlwaysSampled newSelector = new AlwaysSampled();
-        
+
         // Update selector
         vm.prank(aggregator);
         swarm.updateEvaluatorSelector(address(newSelector));
-        
+
         // Should not revert
         assertTrue(true, "Evaluator selector should be updated");
     }
@@ -675,14 +820,14 @@ contract SwarmV2Test is Test {
         address[] memory trainers = new address[](2);
         trainers[0] = trainer1;
         trainers[1] = trainer2;
-        
+
         uint64[] memory contributions = new uint64[](2);
         contributions[0] = 100;
         contributions[1] = 200;
-        
+
         vm.prank(aggregator);
         swarm.distribute(1, trainers, contributions);
-        
+
         // Should not revert
         assertTrue(true, "Distribution should succeed");
     }
@@ -694,10 +839,10 @@ contract SwarmV2Test is Test {
     function test_setCertificate() public {
         bytes32 id = keccak256("test-certificate");
         bytes memory value = "test-certificate-data";
-        
+
         vm.prank(aggregator);
         swarm.setCertificate(id, value);
-        
+
         // Should not revert
         assertTrue(true, "Certificate should be set");
     }
@@ -708,10 +853,22 @@ contract SwarmV2Test is Test {
 
     function test_canTrain() public view {
         // Test canTrain function
-        assertTrue(swarm.canTrain(trainer1, 1), "Trainer1 should be able to train");
-        assertTrue(swarm.canTrain(trainer2, 1), "Trainer2 should be able to train");
-        assertTrue(swarm.canTrain(trainer3, 1), "Trainer3 should be able to train");
-        assertFalse(swarm.canTrain(evaluator1, 1), "Evaluator1 should not be able to train");
+        assertTrue(
+            swarm.canTrain(trainer1, 1),
+            "Trainer1 should be able to train"
+        );
+        assertTrue(
+            swarm.canTrain(trainer2, 1),
+            "Trainer2 should be able to train"
+        );
+        assertTrue(
+            swarm.canTrain(trainer3, 1),
+            "Trainer3 should be able to train"
+        );
+        assertFalse(
+            swarm.canTrain(evaluator1, 1),
+            "Evaluator1 should not be able to train"
+        );
     }
 
     // ============================================================================
@@ -722,14 +879,14 @@ contract SwarmV2Test is Test {
         // Start training round
         vm.prank(aggregator);
         swarm.startTrainingRound();
-        
+
         // Register contribution twice
         vm.prank(trainer1);
         swarm.registerRoundContribution(1, keccak256("model1"));
-        
+
         vm.prank(trainer1);
         swarm.registerRoundContribution(1, keccak256("model2"));
-        
+
         // Should not revert (duplicate registration should be handled)
         assertTrue(true, "Duplicate registration should be handled");
     }
@@ -738,24 +895,25 @@ contract SwarmV2Test is Test {
         // Complete setup to evaluator registration phase
         vm.prank(aggregator);
         swarm.startTrainingRound();
-        
+
         vm.prank(trainer1);
         swarm.registerRoundContribution(1, keccak256("model1"));
         vm.prank(trainer2);
         swarm.registerRoundContribution(1, keccak256("model2"));
-        
+
         // Fast forward to evaluator registration phase using actual config
-        BaseTrainingPhases.TrainingPhaseConfiguration memory trainingConfig = swarm.getTrainingPhaseConfiguration();
+        BaseTrainingPhases.TrainingPhaseConfiguration
+            memory trainingConfig = swarm.getTrainingPhaseConfiguration();
         vm.warp(block.timestamp + trainingConfig.ttl);
         swarm.updatePhase();
-        
+
         // Register evaluator twice
         vm.prank(evaluator1);
         swarm.registerForRoundEvaluation(1);
-        
+
         vm.prank(evaluator1);
         swarm.registerForRoundEvaluation(1);
-        
+
         // Should not revert (duplicate registration should be handled)
         assertTrue(true, "Duplicate evaluator registration should be handled");
     }
@@ -766,9 +924,18 @@ contract SwarmV2Test is Test {
 
     function test_supportsInterface() public view {
         // Test interface support
-        assertTrue(swarm.supportsInterface(type(IERC165).interfaceId), "Should support ERC165");
-        assertTrue(swarm.supportsInterface(swarm.canTrain.selector), "Should support canTrain");
-        assertTrue(swarm.supportsInterface(swarm.distribute.selector), "Should support distribute");
+        assertTrue(
+            swarm.supportsInterface(type(IERC165).interfaceId),
+            "Should support ERC165"
+        );
+        assertTrue(
+            swarm.supportsInterface(swarm.canTrain.selector),
+            "Should support canTrain"
+        );
+        assertTrue(
+            swarm.supportsInterface(swarm.distribute.selector),
+            "Should support distribute"
+        );
     }
 
     // ============================================================================
@@ -780,19 +947,19 @@ contract SwarmV2Test is Test {
         vm.prank(aggregator);
         swarm.startTrainingRound();
         uint256 gasUsed = gasStart - gasleft();
-        
+
         assertLt(gasUsed, 200000, "Gas usage should be reasonable");
     }
 
     function test_registerRoundContribution_gasUsage() public {
         vm.prank(aggregator);
         swarm.startTrainingRound();
-        
+
         uint256 gasStart = gasleft();
         vm.prank(trainer1);
         swarm.registerRoundContribution(1, keccak256("model1"));
         uint256 gasUsed = gasStart - gasleft();
-        
+
         assertLt(gasUsed, 150000, "Gas usage should be reasonable");
     }
 }

@@ -13,7 +13,11 @@ contract MockRoundTrainerRegistryV2 is RoundTrainerRegistryV2 {
     /// @param trainer The trainer address
     /// @param modelHash The model hash
     /// @return trainerId The assigned trainer ID
-    function registerTrainer(uint256 roundId, address trainer, bytes32 modelHash) external returns (uint256 trainerId) {
+    function registerTrainer(
+        uint256 roundId,
+        address trainer,
+        bytes32 modelHash
+    ) external returns (uint256 trainerId) {
         return _registerTrainer(roundId, trainer, modelHash);
     }
 
@@ -21,11 +25,18 @@ contract MockRoundTrainerRegistryV2 is RoundTrainerRegistryV2 {
     /// @param roundId The round ID
     /// @param trainer The trainer address
     /// @param modelHash The new model hash
-    function setModelHash(uint256 roundId, address trainer, bytes32 modelHash) external {
+    function setModelHash(
+        uint256 roundId,
+        address trainer,
+        bytes32 modelHash
+    ) external {
         _setModelHash(roundId, trainer, modelHash);
     }
 
-    function setPrivacyConfig(uint256 penalty, uint16 finderRewardBps) external {
+    function setPrivacyConfig(
+        uint256 penalty,
+        uint16 finderRewardBps
+    ) external {
         _setTrainerPrivacyConfig(penalty, finderRewardBps);
     }
 
@@ -37,16 +48,35 @@ contract MockRoundTrainerRegistryV2 is RoundTrainerRegistryV2 {
         _decreaseAggregatorBond(amount);
     }
 
-    function commitTrainerPrivacy(uint256 roundId, bytes32 commitment, bytes32 modelHash, uint64 revealDeadline) external returns (uint256 trainerId) {
-        return _commitTrainerPrivacy(roundId, commitment, modelHash, revealDeadline);
+    function commitTrainerPrivacy(
+        uint256 roundId,
+        bytes32 commitment,
+        bytes32 modelHash,
+        uint64 revealDeadline
+    ) external returns (uint256 trainerId) {
+        return
+            _commitTrainerPrivacy(
+                roundId,
+                commitment,
+                modelHash,
+                revealDeadline
+            );
     }
 
-    function revealTrainerPrivacy(uint256 roundId, address trainer, bytes calldata nonce) external returns (uint256 trainerId, bytes32 commitment) {
+    function revealTrainerPrivacy(
+        uint256 roundId,
+        address trainer,
+        bytes calldata nonce
+    ) external returns (uint256 trainerId, bytes32 commitment) {
         return _revealTrainerPrivacy(roundId, trainer, nonce);
     }
 
-    function slashTrainerCommitment(uint256 roundId, bytes32 commitment, address finder) external returns (uint256 penalty, uint256 finderReward) {
-        return _slashTrainerCommitment(roundId, commitment, finder);
+    function slashAggregatorBond(
+        uint256 roundId,
+        bytes32 commitment,
+        address finder
+    ) external returns (uint256 penalty, uint256 finderReward) {
+        return _slashAggregatorBond(roundId, commitment, finder);
     }
 }
 
@@ -65,13 +95,21 @@ contract RoundTrainerRegistryTest is Test {
     bytes32 public modelHash3 = keccak256("model3");
     bytes32 public updatedModelHash = keccak256("updated_model");
 
-    event TrainerRegistered(uint256 indexed roundId, address indexed trainer, uint256 indexed trainerId);
-    event ModelHashUpdated(uint256 indexed roundId, address indexed trainer, bytes32 modelHash);
+    event TrainerRegistered(
+        uint256 indexed roundId,
+        address indexed trainer,
+        uint256 indexed trainerId
+    );
+    event ModelHashUpdated(
+        uint256 indexed roundId,
+        address indexed trainer,
+        bytes32 modelHash
+    );
 
     function setUp() public {
         // Deploy contracts
         implementation = new MockRoundTrainerRegistryV2();
-        
+
         // Deploy proxy
         bytes memory initData = abi.encodeWithSelector(
             RoundTrainerRegistryV2.initialize.selector
@@ -114,13 +152,28 @@ contract RoundTrainerRegistryTest is Test {
         vm.expectEmit(true, true, true, false);
         emit TrainerRegistered(roundId, trainer, 1);
 
-        uint256 trainerId = registry.registerTrainer(roundId, trainer, modelHash);
+        uint256 trainerId = registry.registerTrainer(
+            roundId,
+            trainer,
+            modelHash
+        );
 
         assertEq(trainerId, 1, "First trainer should get ID 1");
-        assertEq(registry.getTrainerId(roundId, trainer), 1, "Should return correct trainer ID");
-        assertEq(registry.getModelHash(roundId, trainer), modelHash, "Should return correct model hash");
+        assertEq(
+            registry.getTrainerId(roundId, trainer),
+            1,
+            "Should return correct trainer ID"
+        );
+        assertEq(
+            registry.getModelHash(roundId, trainer),
+            modelHash,
+            "Should return correct model hash"
+        );
         assertEq(registry.getTrainerCount(roundId), 1, "Should have 1 trainer");
-        assertTrue(registry.isTrainerRegistered(roundId, trainer), "Should be registered");
+        assertTrue(
+            registry.isTrainerRegistered(roundId, trainer),
+            "Should be registered"
+        );
     }
 
     function test_registerTrainer_multipleTrainers() public {
@@ -145,15 +198,40 @@ contract RoundTrainerRegistryTest is Test {
         assertEq(id2, 2, "Second trainer should get ID 2");
         assertEq(id3, 3, "Third trainer should get ID 3");
 
-        assertEq(registry.getTrainerCount(roundId), 3, "Should have 3 trainers");
-        assertTrue(registry.isTrainerRegistered(roundId, trainer1), "Trainer1 should be registered");
-        assertTrue(registry.isTrainerRegistered(roundId, trainer2), "Trainer2 should be registered");
-        assertTrue(registry.isTrainerRegistered(roundId, trainer3), "Trainer3 should be registered");
+        assertEq(
+            registry.getTrainerCount(roundId),
+            3,
+            "Should have 3 trainers"
+        );
+        assertTrue(
+            registry.isTrainerRegistered(roundId, trainer1),
+            "Trainer1 should be registered"
+        );
+        assertTrue(
+            registry.isTrainerRegistered(roundId, trainer2),
+            "Trainer2 should be registered"
+        );
+        assertTrue(
+            registry.isTrainerRegistered(roundId, trainer3),
+            "Trainer3 should be registered"
+        );
 
         // Verify model hashes
-        assertEq(registry.getModelHash(roundId, trainer1), modelHash1, "Trainer1 should have correct model hash");
-        assertEq(registry.getModelHash(roundId, trainer2), modelHash2, "Trainer2 should have correct model hash");
-        assertEq(registry.getModelHash(roundId, trainer3), modelHash3, "Trainer3 should have correct model hash");
+        assertEq(
+            registry.getModelHash(roundId, trainer1),
+            modelHash1,
+            "Trainer1 should have correct model hash"
+        );
+        assertEq(
+            registry.getModelHash(roundId, trainer2),
+            modelHash2,
+            "Trainer2 should have correct model hash"
+        );
+        assertEq(
+            registry.getModelHash(roundId, trainer3),
+            modelHash3,
+            "Trainer3 should have correct model hash"
+        );
     }
 
     function test_registerTrainer_duplicateRegistration() public {
@@ -167,13 +245,33 @@ contract RoundTrainerRegistryTest is Test {
         uint256 firstId = registry.registerTrainer(roundId, trainer, modelHash);
 
         // Register same trainer again - should not emit event and return same ID
-        uint256 secondId = registry.registerTrainer(roundId, trainer, modelHash2);
+        uint256 secondId = registry.registerTrainer(
+            roundId,
+            trainer,
+            modelHash2
+        );
 
-        assertEq(firstId, secondId, "Should return same ID for duplicate registration");
-        assertEq(registry.getTrainerCount(roundId), 1, "Should still have only 1 trainer");
-        assertEq(registry.getTrainerId(roundId, trainer), firstId, "Should return correct ID");
+        assertEq(
+            firstId,
+            secondId,
+            "Should return same ID for duplicate registration"
+        );
+        assertEq(
+            registry.getTrainerCount(roundId),
+            1,
+            "Should still have only 1 trainer"
+        );
+        assertEq(
+            registry.getTrainerId(roundId, trainer),
+            firstId,
+            "Should return correct ID"
+        );
         // Model hash should remain the original one
-        assertEq(registry.getModelHash(roundId, trainer), modelHash, "Should keep original model hash");
+        assertEq(
+            registry.getModelHash(roundId, trainer),
+            modelHash,
+            "Should keep original model hash"
+        );
     }
 
     function test_registerTrainer_multipleRounds() public {
@@ -193,13 +291,33 @@ contract RoundTrainerRegistryTest is Test {
         assertEq(id1, 1, "Round 1 trainer should get ID 1");
         assertEq(id2, 1, "Round 2 trainer should get ID 1");
 
-        assertEq(registry.getTrainerCount(round1), 1, "Round 1 should have 1 trainer");
-        assertEq(registry.getTrainerCount(round2), 1, "Round 2 should have 1 trainer");
+        assertEq(
+            registry.getTrainerCount(round1),
+            1,
+            "Round 1 should have 1 trainer"
+        );
+        assertEq(
+            registry.getTrainerCount(round2),
+            1,
+            "Round 2 should have 1 trainer"
+        );
 
-        assertTrue(registry.isTrainerRegistered(round1, trainer1), "Should be registered in round 1");
-        assertFalse(registry.isTrainerRegistered(round1, trainer2), "Should not be registered in round 1");
-        assertTrue(registry.isTrainerRegistered(round2, trainer2), "Should be registered in round 2");
-        assertFalse(registry.isTrainerRegistered(round2, trainer1), "Should not be registered in round 2");
+        assertTrue(
+            registry.isTrainerRegistered(round1, trainer1),
+            "Should be registered in round 1"
+        );
+        assertFalse(
+            registry.isTrainerRegistered(round1, trainer2),
+            "Should not be registered in round 1"
+        );
+        assertTrue(
+            registry.isTrainerRegistered(round2, trainer2),
+            "Should be registered in round 2"
+        );
+        assertFalse(
+            registry.isTrainerRegistered(round2, trainer1),
+            "Should not be registered in round 2"
+        );
     }
 
     // ============================================================================
@@ -221,8 +339,16 @@ contract RoundTrainerRegistryTest is Test {
         registry.setModelHash(roundId, trainer, newModelHash);
 
         // Verify the model hash was updated
-        assertEq(registry.getModelHash(roundId, trainer), newModelHash, "Model hash should be updated");
-        assertEq(registry.getModelHashOrThrow(roundId, trainer), newModelHash, "getModelHashOrThrow should return updated hash");
+        assertEq(
+            registry.getModelHash(roundId, trainer),
+            newModelHash,
+            "Model hash should be updated"
+        );
+        assertEq(
+            registry.getModelHashOrThrow(roundId, trainer),
+            newModelHash,
+            "getModelHashOrThrow should return updated hash"
+        );
     }
 
     function test_setModelHash_unregisteredTrainer() public {
@@ -231,7 +357,13 @@ contract RoundTrainerRegistryTest is Test {
         bytes32 modelHash = modelHash1;
 
         // Try to update model hash for unregistered trainer
-        vm.expectRevert(abi.encodeWithSelector(RoundTrainerRegistryV2.TrainerNotFound.selector, roundId, trainer));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RoundTrainerRegistryV2.TrainerNotFound.selector,
+                roundId,
+                trainer
+            )
+        );
         registry.setModelHash(roundId, trainer, modelHash);
     }
 
@@ -248,7 +380,13 @@ contract RoundTrainerRegistryTest is Test {
         assertEq(retrievedHash, modelHash, "Should return correct model hash");
 
         // Test getModelHashOrThrow with unregistered trainer
-        vm.expectRevert(abi.encodeWithSelector(RoundTrainerRegistryV2.TrainerNotFound.selector, roundId, trainer2));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RoundTrainerRegistryV2.TrainerNotFound.selector,
+                roundId,
+                trainer2
+            )
+        );
         registry.getModelHashOrThrow(roundId, trainer2);
     }
 
@@ -261,14 +399,28 @@ contract RoundTrainerRegistryTest is Test {
         registry.registerTrainer(roundId, trainer, modelHash);
 
         // Test getTrainerInfo
-        (uint256 trainerId, bytes32 retrievedModelHash) = registry.getTrainerInfo(roundId, trainer);
+        (uint256 trainerId, bytes32 retrievedModelHash) = registry
+            .getTrainerInfo(roundId, trainer);
         assertEq(trainerId, 1, "Should return correct trainer ID");
-        assertEq(retrievedModelHash, modelHash, "Should return correct model hash");
+        assertEq(
+            retrievedModelHash,
+            modelHash,
+            "Should return correct model hash"
+        );
 
         // Test with unregistered trainer
-        (uint256 unregisteredId, bytes32 unregisteredHash) = registry.getTrainerInfo(roundId, trainer2);
-        assertEq(unregisteredId, 0, "Should return 0 for unregistered trainer ID");
-        assertEq(unregisteredHash, bytes32(0), "Should return zero hash for unregistered trainer");
+        (uint256 unregisteredId, bytes32 unregisteredHash) = registry
+            .getTrainerInfo(roundId, trainer2);
+        assertEq(
+            unregisteredId,
+            0,
+            "Should return 0 for unregistered trainer ID"
+        );
+        assertEq(
+            unregisteredHash,
+            bytes32(0),
+            "Should return zero hash for unregistered trainer"
+        );
     }
 
     // ============================================================================
@@ -301,7 +453,13 @@ contract RoundTrainerRegistryTest is Test {
         assertEq(trainerId, 1, "Should return correct trainer ID");
 
         // Test getTrainerIdOrThrow with unregistered trainer
-        vm.expectRevert(abi.encodeWithSelector(RoundTrainerRegistryV2.TrainerNotFound.selector, roundId, trainer2));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RoundTrainerRegistryV2.TrainerNotFound.selector,
+                roundId,
+                trainer2
+            )
+        );
         registry.getTrainerIdOrThrow(roundId, trainer2);
     }
 
@@ -309,7 +467,11 @@ contract RoundTrainerRegistryTest is Test {
         uint256 roundId = 1;
 
         // Initially should be 0
-        assertEq(registry.getTrainerCount(roundId), 0, "Should start with 0 trainers");
+        assertEq(
+            registry.getTrainerCount(roundId),
+            0,
+            "Should start with 0 trainers"
+        );
 
         // Register first trainer
         registry.registerTrainer(roundId, trainer1, modelHash1);
@@ -317,31 +479,52 @@ contract RoundTrainerRegistryTest is Test {
 
         // Register second trainer
         registry.registerTrainer(roundId, trainer2, modelHash2);
-        assertEq(registry.getTrainerCount(roundId), 2, "Should have 2 trainers");
+        assertEq(
+            registry.getTrainerCount(roundId),
+            2,
+            "Should have 2 trainers"
+        );
 
         // Register third trainer
         registry.registerTrainer(roundId, trainer3, modelHash3);
-        assertEq(registry.getTrainerCount(roundId), 3, "Should have 3 trainers");
+        assertEq(
+            registry.getTrainerCount(roundId),
+            3,
+            "Should have 3 trainers"
+        );
 
         // Duplicate registration should not increase count
         registry.registerTrainer(roundId, trainer1, modelHash1);
-        assertEq(registry.getTrainerCount(roundId), 3, "Duplicate registration should not increase count");
+        assertEq(
+            registry.getTrainerCount(roundId),
+            3,
+            "Duplicate registration should not increase count"
+        );
     }
 
     function test_isTrainerRegistered() public {
         uint256 roundId = 1;
 
         // Initially should not be registered
-        assertFalse(registry.isTrainerRegistered(roundId, trainer1), "Should not be registered initially");
+        assertFalse(
+            registry.isTrainerRegistered(roundId, trainer1),
+            "Should not be registered initially"
+        );
 
         // Register trainer
         registry.registerTrainer(roundId, trainer1, modelHash1);
 
         // Should be registered now
-        assertTrue(registry.isTrainerRegistered(roundId, trainer1), "Should be registered after registration");
+        assertTrue(
+            registry.isTrainerRegistered(roundId, trainer1),
+            "Should be registered after registration"
+        );
 
         // Other trainer should not be registered
-        assertFalse(registry.isTrainerRegistered(roundId, trainer2), "Other trainer should not be registered");
+        assertFalse(
+            registry.isTrainerRegistered(roundId, trainer2),
+            "Other trainer should not be registered"
+        );
     }
 
     // ============================================================================
@@ -360,7 +543,13 @@ contract RoundTrainerRegistryTest is Test {
         uint256 roundId = 1;
         address unregisteredTrainer = makeAddr("unregistered");
 
-        vm.expectRevert(abi.encodeWithSelector(RoundTrainerRegistryV2.TrainerNotFound.selector, roundId, unregisteredTrainer));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RoundTrainerRegistryV2.TrainerNotFound.selector,
+                roundId,
+                unregisteredTrainer
+            )
+        );
         registry.getTrainerIdOrThrow(roundId, unregisteredTrainer);
     }
 
@@ -379,20 +568,54 @@ contract RoundTrainerRegistryTest is Test {
         registry.registerTrainer(round2, trainer3, modelHash1);
 
         // Verify round 1 state
-        assertEq(registry.getTrainerCount(round1), 2, "Round 1 should have 2 trainers");
-        assertTrue(registry.isTrainerRegistered(round1, trainer1), "Trainer1 should be registered in round 1");
-        assertTrue(registry.isTrainerRegistered(round1, trainer2), "Trainer2 should be registered in round 1");
-        assertFalse(registry.isTrainerRegistered(round1, trainer3), "Trainer3 should not be registered in round 1");
+        assertEq(
+            registry.getTrainerCount(round1),
+            2,
+            "Round 1 should have 2 trainers"
+        );
+        assertTrue(
+            registry.isTrainerRegistered(round1, trainer1),
+            "Trainer1 should be registered in round 1"
+        );
+        assertTrue(
+            registry.isTrainerRegistered(round1, trainer2),
+            "Trainer2 should be registered in round 1"
+        );
+        assertFalse(
+            registry.isTrainerRegistered(round1, trainer3),
+            "Trainer3 should not be registered in round 1"
+        );
 
         // Verify round 2 state
-        assertEq(registry.getTrainerCount(round2), 2, "Round 2 should have 2 trainers");
-        assertTrue(registry.isTrainerRegistered(round2, trainer1), "Trainer1 should be registered in round 2");
-        assertFalse(registry.isTrainerRegistered(round2, trainer2), "Trainer2 should not be registered in round 2");
-        assertTrue(registry.isTrainerRegistered(round2, trainer3), "Trainer3 should be registered in round 2");
+        assertEq(
+            registry.getTrainerCount(round2),
+            2,
+            "Round 2 should have 2 trainers"
+        );
+        assertTrue(
+            registry.isTrainerRegistered(round2, trainer1),
+            "Trainer1 should be registered in round 2"
+        );
+        assertFalse(
+            registry.isTrainerRegistered(round2, trainer2),
+            "Trainer2 should not be registered in round 2"
+        );
+        assertTrue(
+            registry.isTrainerRegistered(round2, trainer3),
+            "Trainer3 should be registered in round 2"
+        );
 
         // Verify model hashes are isolated
-        assertEq(registry.getModelHash(round1, trainer1), modelHash1, "Round 1 trainer1 should have correct model hash");
-        assertEq(registry.getModelHash(round2, trainer1), modelHash3, "Round 2 trainer1 should have different model hash");
+        assertEq(
+            registry.getModelHash(round1, trainer1),
+            modelHash1,
+            "Round 1 trainer1 should have correct model hash"
+        );
+        assertEq(
+            registry.getModelHash(round2, trainer1),
+            modelHash3,
+            "Round 2 trainer1 should have different model hash"
+        );
     }
 
     function test_largeNumberOfTrainers() public {
@@ -403,11 +626,19 @@ contract RoundTrainerRegistryTest is Test {
         for (uint256 i = 0; i < numTrainers; i++) {
             address trainer = makeAddr(string(abi.encodePacked("trainer", i)));
             bytes32 modelHash = keccak256(abi.encodePacked("model", i));
-            uint256 trainerId = registry.registerTrainer(roundId, trainer, modelHash);
+            uint256 trainerId = registry.registerTrainer(
+                roundId,
+                trainer,
+                modelHash
+            );
             assertEq(trainerId, i + 1, "Trainer ID should match index + 1");
         }
 
-        assertEq(registry.getTrainerCount(roundId), numTrainers, "Should have correct number of trainers");
+        assertEq(
+            registry.getTrainerCount(roundId),
+            numTrainers,
+            "Should have correct number of trainers"
+        );
     }
 
     function test_roundIdZero() public {
@@ -415,8 +646,15 @@ contract RoundTrainerRegistryTest is Test {
 
         // Should work with round ID 0
         registry.registerTrainer(roundId, trainer1, modelHash1);
-        assertEq(registry.getTrainerCount(roundId), 1, "Should work with round ID 0");
-        assertTrue(registry.isTrainerRegistered(roundId, trainer1), "Should be registered in round 0");
+        assertEq(
+            registry.getTrainerCount(roundId),
+            1,
+            "Should work with round ID 0"
+        );
+        assertTrue(
+            registry.isTrainerRegistered(roundId, trainer1),
+            "Should be registered in round 0"
+        );
     }
 
     function test_largeRoundId() public {
@@ -424,8 +662,15 @@ contract RoundTrainerRegistryTest is Test {
 
         // Should work with large round ID
         registry.registerTrainer(roundId, trainer1, modelHash1);
-        assertEq(registry.getTrainerCount(roundId), 1, "Should work with large round ID");
-        assertTrue(registry.isTrainerRegistered(roundId, trainer1), "Should be registered in large round ID");
+        assertEq(
+            registry.getTrainerCount(roundId),
+            1,
+            "Should work with large round ID"
+        );
+        assertTrue(
+            registry.isTrainerRegistered(roundId, trainer1),
+            "Should be registered in large round ID"
+        );
     }
 
     // ============================================================================
@@ -503,44 +748,128 @@ contract RoundTrainerRegistryTest is Test {
         registry.registerTrainer(roundId, trainer3, modelHash3);
 
         // Verify all are registered
-        assertTrue(registry.isTrainerRegistered(roundId, trainer1), "Trainer1 should be registered");
-        assertTrue(registry.isTrainerRegistered(roundId, trainer2), "Trainer2 should be registered");
-        assertTrue(registry.isTrainerRegistered(roundId, trainer3), "Trainer3 should be registered");
+        assertTrue(
+            registry.isTrainerRegistered(roundId, trainer1),
+            "Trainer1 should be registered"
+        );
+        assertTrue(
+            registry.isTrainerRegistered(roundId, trainer2),
+            "Trainer2 should be registered"
+        );
+        assertTrue(
+            registry.isTrainerRegistered(roundId, trainer3),
+            "Trainer3 should be registered"
+        );
 
         // Verify counts and IDs
-        assertEq(registry.getTrainerCount(roundId), 3, "Should have 3 trainers");
-        assertEq(registry.getTrainerId(roundId, trainer1), 1, "Trainer1 should have ID 1");
-        assertEq(registry.getTrainerId(roundId, trainer2), 2, "Trainer2 should have ID 2");
-        assertEq(registry.getTrainerId(roundId, trainer3), 3, "Trainer3 should have ID 3");
+        assertEq(
+            registry.getTrainerCount(roundId),
+            3,
+            "Should have 3 trainers"
+        );
+        assertEq(
+            registry.getTrainerId(roundId, trainer1),
+            1,
+            "Trainer1 should have ID 1"
+        );
+        assertEq(
+            registry.getTrainerId(roundId, trainer2),
+            2,
+            "Trainer2 should have ID 2"
+        );
+        assertEq(
+            registry.getTrainerId(roundId, trainer3),
+            3,
+            "Trainer3 should have ID 3"
+        );
 
         // Verify model hashes
-        assertEq(registry.getModelHash(roundId, trainer1), modelHash1, "Trainer1 should have correct model hash");
-        assertEq(registry.getModelHash(roundId, trainer2), modelHash2, "Trainer2 should have correct model hash");
-        assertEq(registry.getModelHash(roundId, trainer3), modelHash3, "Trainer3 should have correct model hash");
+        assertEq(
+            registry.getModelHash(roundId, trainer1),
+            modelHash1,
+            "Trainer1 should have correct model hash"
+        );
+        assertEq(
+            registry.getModelHash(roundId, trainer2),
+            modelHash2,
+            "Trainer2 should have correct model hash"
+        );
+        assertEq(
+            registry.getModelHash(roundId, trainer3),
+            modelHash3,
+            "Trainer3 should have correct model hash"
+        );
 
         // Test getTrainerIdOrThrow
-        assertEq(registry.getTrainerIdOrThrow(roundId, trainer1), 1, "getTrainerIdOrThrow should work");
-        assertEq(registry.getTrainerIdOrThrow(roundId, trainer2), 2, "getTrainerIdOrThrow should work");
-        assertEq(registry.getTrainerIdOrThrow(roundId, trainer3), 3, "getTrainerIdOrThrow should work");
+        assertEq(
+            registry.getTrainerIdOrThrow(roundId, trainer1),
+            1,
+            "getTrainerIdOrThrow should work"
+        );
+        assertEq(
+            registry.getTrainerIdOrThrow(roundId, trainer2),
+            2,
+            "getTrainerIdOrThrow should work"
+        );
+        assertEq(
+            registry.getTrainerIdOrThrow(roundId, trainer3),
+            3,
+            "getTrainerIdOrThrow should work"
+        );
 
         // Test getModelHashOrThrow
-        assertEq(registry.getModelHashOrThrow(roundId, trainer1), modelHash1, "getModelHashOrThrow should work");
-        assertEq(registry.getModelHashOrThrow(roundId, trainer2), modelHash2, "getModelHashOrThrow should work");
-        assertEq(registry.getModelHashOrThrow(roundId, trainer3), modelHash3, "getModelHashOrThrow should work");
+        assertEq(
+            registry.getModelHashOrThrow(roundId, trainer1),
+            modelHash1,
+            "getModelHashOrThrow should work"
+        );
+        assertEq(
+            registry.getModelHashOrThrow(roundId, trainer2),
+            modelHash2,
+            "getModelHashOrThrow should work"
+        );
+        assertEq(
+            registry.getModelHashOrThrow(roundId, trainer3),
+            modelHash3,
+            "getModelHashOrThrow should work"
+        );
 
         // Test getTrainerInfo
-        (uint256 id1, bytes32 hash1) = registry.getTrainerInfo(roundId, trainer1);
+        (uint256 id1, bytes32 hash1) = registry.getTrainerInfo(
+            roundId,
+            trainer1
+        );
         assertEq(id1, 1, "getTrainerInfo should return correct ID");
-        assertEq(hash1, modelHash1, "getTrainerInfo should return correct model hash");
+        assertEq(
+            hash1,
+            modelHash1,
+            "getTrainerInfo should return correct model hash"
+        );
 
         // Test duplicate registration
-        uint256 duplicateId = registry.registerTrainer(roundId, trainer1, modelHash2);
-        assertEq(duplicateId, 1, "Duplicate registration should return same ID");
-        assertEq(registry.getTrainerCount(roundId), 3, "Count should not change for duplicate");
+        uint256 duplicateId = registry.registerTrainer(
+            roundId,
+            trainer1,
+            modelHash2
+        );
+        assertEq(
+            duplicateId,
+            1,
+            "Duplicate registration should return same ID"
+        );
+        assertEq(
+            registry.getTrainerCount(roundId),
+            3,
+            "Count should not change for duplicate"
+        );
 
         // Test model hash update
         registry.setModelHash(roundId, trainer1, updatedModelHash);
-        assertEq(registry.getModelHash(roundId, trainer1), updatedModelHash, "Model hash should be updated");
+        assertEq(
+            registry.getModelHash(roundId, trainer1),
+            updatedModelHash,
+            "Model hash should be updated"
+        );
     }
 
     // ============================================================================
@@ -554,8 +883,15 @@ contract RoundTrainerRegistryTest is Test {
 
         // Should be able to register with zero model hash
         registry.registerTrainer(roundId, trainer, zeroHash);
-        assertEq(registry.getModelHash(roundId, trainer), zeroHash, "Should store zero model hash");
-        assertTrue(registry.isTrainerRegistered(roundId, trainer), "Should be registered with zero hash");
+        assertEq(
+            registry.getModelHash(roundId, trainer),
+            zeroHash,
+            "Should store zero model hash"
+        );
+        assertTrue(
+            registry.isTrainerRegistered(roundId, trainer),
+            "Should be registered with zero hash"
+        );
     }
 
     function test_modelHashUpdateToZero() public {
@@ -566,11 +902,19 @@ contract RoundTrainerRegistryTest is Test {
 
         // Register with non-zero hash
         registry.registerTrainer(roundId, trainer, originalHash);
-        assertEq(registry.getModelHash(roundId, trainer), originalHash, "Should have original hash");
+        assertEq(
+            registry.getModelHash(roundId, trainer),
+            originalHash,
+            "Should have original hash"
+        );
 
         // Update to zero hash
         registry.setModelHash(roundId, trainer, zeroHash);
-        assertEq(registry.getModelHash(roundId, trainer), zeroHash, "Should update to zero hash");
+        assertEq(
+            registry.getModelHash(roundId, trainer),
+            zeroHash,
+            "Should update to zero hash"
+        );
     }
 
     function test_modelHashUpdateToSameValue() public {
@@ -586,6 +930,28 @@ contract RoundTrainerRegistryTest is Test {
         emit ModelHashUpdated(roundId, trainer, modelHash);
         registry.setModelHash(roundId, trainer, modelHash);
 
-        assertEq(registry.getModelHash(roundId, trainer), modelHash, "Model hash should remain the same");
+        assertEq(
+            registry.getModelHash(roundId, trainer),
+            modelHash,
+            "Model hash should remain the same"
+        );
+    }
+
+    function test_commitTrainerPrivacy_revertsWhenDeadlineTooLong() public {
+        uint256 roundId = 1;
+        bytes32 commitment = keccak256("commitment");
+        bytes32 modelHash = modelHash1;
+        uint64 deadline = uint64(block.timestamp + 2 days + 1);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RoundTrainerRegistryV2.RevealDeadlineTooLong.selector,
+                roundId,
+                deadline,
+                uint64(block.timestamp + 2 days)
+            )
+        );
+
+        registry.commitTrainerPrivacy(roundId, commitment, modelHash, deadline);
     }
 }

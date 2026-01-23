@@ -392,7 +392,7 @@ contract FullCyclePrivacy is Test {
 
         address finder = evaluators[0];
         vm.prank(finder);
-        (uint256 penalty, uint256 reward) = swarm.slashTrainerCommitment(
+        (uint256 penalty, uint256 reward) = swarm.slashAggregatorBond(
             roundId,
             record.commitment
         );

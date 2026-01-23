@@ -61,8 +61,17 @@ contract SwarmV2 is
     error RevealNotAvailable();
     error TransferFailed(address to, uint256 amount);
 
-    event AggregatorBondDeposited(address indexed aggregator, uint256 amount, uint256 newBalance);
-    event AggregatorBondWithdrawn(address indexed aggregator, address indexed recipient, uint256 amount, uint256 newBalance);
+    event AggregatorBondDeposited(
+        address indexed aggregator,
+        uint256 amount,
+        uint256 newBalance
+    );
+    event AggregatorBondWithdrawn(
+        address indexed aggregator,
+        address indexed recipient,
+        uint256 amount,
+        uint256 newBalance
+    );
     event TrainerPrivacyModeUpdated(bool enabled);
 
     struct SwarmV2InitializeParams {
@@ -102,15 +111,28 @@ contract SwarmV2 is
     ) external virtual initializer {
         __EIP712_init(params.name, _VERSION);
         __RoundTraining_init();
-        __BaseTrainingPhases_init(params.trainingPhaseConfiguration, params.evaluationPhaseConfiguration);
+        __BaseTrainingPhases_init(
+            params.trainingPhaseConfiguration,
+            params.evaluationPhaseConfiguration
+        );
         __CertificateRegistry_init();
         __RoundTrainerRegistry_init();
         __RoundEvaluatorRegistry_init();
         __TaskAssignment_init();
-        __SwarmCore_init(params.initialTrainerSelector, params.initialEvaluatorSelector, params.initialContributionCalculator, params.initialAccessControl, params.initialCompensation);
+        __SwarmCore_init(
+            params.initialTrainerSelector,
+            params.initialEvaluatorSelector,
+            params.initialContributionCalculator,
+            params.initialAccessControl,
+            params.initialCompensation
+        );
     }
 
-    function initialize() external virtual override(RoundTrainerRegistryV2, RoundEvaluatorRegistry, TaskAssignment) {
+    function initialize()
+        external
+        virtual
+        override(RoundTrainerRegistryV2, RoundEvaluatorRegistry, TaskAssignment)
+    {
         revert WrongInitialization();
     }
 
@@ -120,7 +142,9 @@ contract SwarmV2 is
     ) public view returns (bool) {
         ISelector selector = ISelector(getTrainerSelector());
         IAccessControl accessControl = IAccessControl(getAccessControl());
-        return accessControl.isTrainer(trainer) && selector.isSelected(trainer, roundId);
+        return
+            accessControl.isTrainer(trainer) &&
+            selector.isSelected(trainer, roundId);
     }
 
     function canEvaluate(
@@ -129,14 +153,20 @@ contract SwarmV2 is
     ) public view returns (bool) {
         ISelector selector = ISelector(getEvaluatorSelector());
         IAccessControl accessControl = IAccessControl(getAccessControl());
-        return accessControl.isEvaluator(evaluator) && selector.isSelected(evaluator, roundId);
+        return
+            accessControl.isEvaluator(evaluator) &&
+            selector.isSelected(evaluator, roundId);
     }
 
-    function updateTrainerSelector(address newTrainerSelector) external onlyAggregator(msg.sender) {
+    function updateTrainerSelector(
+        address newTrainerSelector
+    ) external onlyAggregator(msg.sender) {
         _updateTrainerSelector(newTrainerSelector);
     }
 
-    function updateEvaluatorSelector(address newEvaluatorSelector) external onlyAggregator(msg.sender) {
+    function updateEvaluatorSelector(
+        address newEvaluatorSelector
+    ) external onlyAggregator(msg.sender) {
         _updateEvaluatorSelector(newEvaluatorSelector);
     }
 
@@ -150,7 +180,13 @@ contract SwarmV2 is
         _distribute(roundId, trainers, contributions);
     }
 
-    function registerRoundContributionPrivacy(uint256 roundId, bytes32 commitment, bytes32 modelHash, uint64 revealDeadline) external onlyAggregator(msg.sender) {
+    function registerRoundContributionPrivacy(
+        uint256 roundId,
+        bytes32 commitment,
+        bytes32 modelHash,
+        uint64 revealDeadline
+    ) external onlyAggregator(msg.sender) {
+        // _commitTrainerPrivacy enforces a hard cap (2 days) on reveal deadlines to keep bond lockups bounded.
         if (!_trainerPrivacyEnabled) {
             revert PrivacyModeDisabled();
         }
@@ -163,26 +199,44 @@ contract SwarmV2 is
         _commitTrainerPrivacy(roundId, commitment, modelHash, revealDeadline);
     }
 
-    function revealTrainerCommitment(uint256 roundId, address trainer, bytes calldata nonce) external onlyAggregator(msg.sender) {
+    function revealTrainerCommitment(
+        uint256 roundId,
+        address trainer,
+        bytes calldata nonce
+    ) external onlyAggregator(msg.sender) {
         updatePhase();
         _revealTrainerPrivacy(roundId, trainer, nonce);
     }
 
-    function slashTrainerCommitment(uint256 roundId, bytes32 commitment) external returns (uint256 penalty, uint256 finderReward) {
-        (penalty, finderReward) = _slashTrainerCommitment(roundId, commitment, msg.sender);
+    function slashAggregatorBond(
+        uint256 roundId,
+        bytes32 commitment
+    ) external returns (uint256 penalty, uint256 finderReward) {
+        (penalty, finderReward) = _slashAggregatorBond(
+            roundId,
+            commitment,
+            msg.sender
+        );
         if (finderReward > 0) {
-            (bool success, ) = payable(msg.sender).call{value: finderReward}("");
+            (bool success, ) = payable(msg.sender).call{value: finderReward}(
+                ""
+            );
             if (!success) {
                 revert TransferFailed(msg.sender, finderReward);
             }
         }
     }
 
-    function configureTrainerPrivacy(uint256 penalty, uint16 finderRewardBps) external onlyAggregator(msg.sender) {
+    function configureTrainerPrivacy(
+        uint256 penalty,
+        uint16 finderRewardBps
+    ) external onlyAggregator(msg.sender) {
         _setTrainerPrivacyConfig(penalty, finderRewardBps);
     }
 
-    function setTrainerPrivacyMode(bool enabled) external onlyAggregator(msg.sender) {
+    function setTrainerPrivacyMode(
+        bool enabled
+    ) external onlyAggregator(msg.sender) {
         if (_trainerPrivacyEnabled == enabled) {
             return;
         }
@@ -190,7 +244,11 @@ contract SwarmV2 is
         emit TrainerPrivacyModeUpdated(enabled);
     }
 
-    function depositAggregatorBond() external payable onlyAggregator(msg.sender) {
+    function depositAggregatorBond()
+        external
+        payable
+        onlyAggregator(msg.sender)
+    {
         if (msg.value == 0) {
             revert ZeroBondAmount();
         }
@@ -199,7 +257,10 @@ contract SwarmV2 is
         emit AggregatorBondDeposited(msg.sender, msg.value, balance);
     }
 
-    function withdrawAggregatorBond(uint256 amount, address payable recipient) external onlyAggregator(msg.sender) {
+    function withdrawAggregatorBond(
+        uint256 amount,
+        address payable recipient
+    ) external onlyAggregator(msg.sender) {
         if (amount == 0) {
             revert ZeroBondAmount();
         }
@@ -244,7 +305,10 @@ contract SwarmV2 is
         return super._endTrainingPhase();
     }
 
-    function registerRoundContribution(uint256 roundId, bytes32 modelHash) external {
+    function registerRoundContribution(
+        uint256 roundId,
+        bytes32 modelHash
+    ) external {
         if (_trainerPrivacyEnabled) {
             revert PrivacyModeEnabled();
         }
@@ -254,7 +318,11 @@ contract SwarmV2 is
         _registerRoundContribution(roundId, msg.sender, modelHash);
     }
 
-    function _registerRoundContribution(uint256 roundId, address trainer, bytes32 modelHash) internal {
+    function _registerRoundContribution(
+        uint256 roundId,
+        address trainer,
+        bytes32 modelHash
+    ) internal {
         if (updatePhase() != TRAINING_PHASE) {
             revert NotTrainingPhase();
         }
@@ -271,7 +339,10 @@ contract SwarmV2 is
         _registerForRoundEvaluations(roundId, msg.sender);
     }
 
-    function _registerForRoundEvaluations(uint256 roundId, address evaluator) internal {
+    function _registerForRoundEvaluations(
+        uint256 roundId,
+        address evaluator
+    ) internal {
         bytes32 phase = updatePhase();
         if (phase == EVALUATION_PHASE || phase == IDLE_PHASE) {
             revert NotEvaluatorRegistrationPhase();
@@ -279,7 +350,11 @@ contract SwarmV2 is
         _registerEvaluator(roundId, evaluator);
     }
 
-    function _endEvaluatorRegistrationPhase() internal override returns (bytes32) {
+    function _endEvaluatorRegistrationPhase()
+        internal
+        override
+        returns (bytes32)
+    {
         uint256 roundId = currentRound();
         uint256 nNodes = getEvaluatorCount(roundId);
         uint256 nTrainers = getTrainerCount(roundId);
@@ -287,26 +362,25 @@ contract SwarmV2 is
         if (pendingCommitments > 0) {
             nTrainers += pendingCommitments;
         }
-        if (nNodes == 0) { // we're going to trigger a TaskAssigment#InvalidConfig error
+        if (nNodes == 0) {
+            // we're going to trigger a TaskAssigment#InvalidConfig error
             return EVALUATOR_REGISTRATION_PHASE;
         }
-        ContributionCalculator calc = ContributionCalculator(getContributionCalculator());
+        ContributionCalculator calc = ContributionCalculator(
+            getContributionCalculator()
+        );
         uint256 nTasks = calc.getEvaluationsRequired(roundId, uint8(nTrainers));
         if (nTasks == 0) {
             nTasks = calc.getEvaluationsRequired(roundId - 1, uint8(nTrainers));
             calc.setEvaluationsRequired(roundId, nTasks);
         }
-    
+
         uint256 nTasksPerNode = 1;
         if (nTasks > nNodes) {
             // TODO: handle potential rounding error
             nTasksPerNode = nTasks / nNodes;
         }
-        _setConfig(roundId, Config({
-            T: nTasks,
-            N: nNodes,
-            R: nTasksPerNode
-        }));
+        _setConfig(roundId, Config({T: nTasks, N: nNodes, R: nTasksPerNode}));
         return super._endEvaluatorRegistrationPhase();
     }
 
@@ -317,16 +391,23 @@ contract SwarmV2 is
         bytes32 modelHash,
         int256 result
     ) external {
-        _registerEvaluation(roundId, evalId, setId, modelHash, result, msg.sender);
+        _registerEvaluation(
+            roundId,
+            evalId,
+            setId,
+            modelHash,
+            result,
+            msg.sender
+        );
     }
 
-/**
- * @param roundId   The round ID    
- * @param taskId    The task ID
- * @param modelHash  The model hash
- * @param result     The evaluation result
- * @param evaluator  The evaluator address
- */
+    /**
+     * @param roundId   The round ID
+     * @param taskId    The task ID
+     * @param modelHash  The model hash
+     * @param result     The evaluation result
+     * @param evaluator  The evaluator address
+     */
     function _registerEvaluation(
         uint256 roundId,
         uint256 taskId,
@@ -338,7 +419,9 @@ contract SwarmV2 is
         if (updatePhase() != EVALUATION_PHASE) {
             revert NotEvaluationPhase();
         }
-        ContributionCalculator calc = ContributionCalculator(getContributionCalculator());
+        ContributionCalculator calc = ContributionCalculator(
+            getContributionCalculator()
+        );
         uint256 evaluatorId = getEvaluatorIdOrThrow(roundId, evaluator);
         // evaluator id starts at 1,but TaskAssigment starts at 0
         if (!isAssigned(roundId, evaluatorId - 1, taskId)) {
@@ -349,22 +432,38 @@ contract SwarmV2 is
         if (pendingCommitments > 0) {
             nTrainers += pendingCommitments;
         }
-        calc.registerResult(roundId, taskId, setId, modelHash, result, uint8(nTrainers));
+        calc.registerResult(
+            roundId,
+            taskId,
+            setId,
+            modelHash,
+            result,
+            uint8(nTrainers)
+        );
     }
 
     function claimReward(uint256 roundId, address trainer) external {
-        if(hasClaimedRewards(roundId, trainer)) {
+        if (hasClaimedRewards(roundId, trainer)) {
             revert RewardsAlreadyClaimed(roundId, trainer);
         }
         uint256 currentRound = currentRound();
-        if (roundId > currentRound || (roundId == currentRound && updatePhase() != IDLE_PHASE)) {
+        if (
+            roundId > currentRound ||
+            (roundId == currentRound && updatePhase() != IDLE_PHASE)
+        ) {
             revert ForbiddenRound(roundId);
         }
 
-        ContributionCalculator calc = ContributionCalculator(getContributionCalculator());
+        ContributionCalculator calc = ContributionCalculator(
+            getContributionCalculator()
+        );
         uint256 trainerId = getTrainerIdOrThrow(roundId, trainer);
         // trainer id starts at 1,but ContributionCalculator starts at 0
-        int256 contribution = calc.calculateContribution(roundId, trainerId - 1, uint8(getTrainerCount(roundId)));
+        int256 contribution = calc.calculateContribution(
+            roundId,
+            trainerId - 1,
+            uint8(getTrainerCount(roundId))
+        );
         emit TrainerContributed(trainer, contribution);
         _setClaimedRewards(roundId, trainer);
         address[] memory trainers = new address[](1);

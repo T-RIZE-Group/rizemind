@@ -52,21 +52,34 @@ contract RoundTrainerRegistryV2 is Initializable {
         mapping(uint256 => RoundPrivacyState) rounds;
     }
 
+    // Maximum allowed time window (in seconds) for aggregator reveals.
+    uint64 private constant MAX_REVEAL_DEADLINE = 2 days;
+
     // Storage slots for namespaced storage
-    bytes32 private constant ROUND_TRAINER_REGISTRY_STORAGE = keccak256("RoundTrainerRegistry.storage");
-    bytes32 private constant TRAINER_PRIVACY_STORAGE = keccak256("RoundTrainerRegistry.privacy.storage");
+    bytes32 private constant ROUND_TRAINER_REGISTRY_STORAGE =
+        keccak256("RoundTrainerRegistry.storage");
+    bytes32 private constant TRAINER_PRIVACY_STORAGE =
+        keccak256("RoundTrainerRegistry.privacy.storage");
 
     /// @notice Emitted when a trainer is registered for a round
     /// @param roundId The round ID
     /// @param trainer The trainer address
     /// @param trainerId The assigned trainer ID
-    event TrainerRegistered(uint256 indexed roundId, address indexed trainer, uint256 indexed trainerId);
+    event TrainerRegistered(
+        uint256 indexed roundId,
+        address indexed trainer,
+        uint256 indexed trainerId
+    );
 
     /// @notice Emitted when a trainer's model hash is updated
     /// @param roundId The round ID
     /// @param trainer The trainer address
     /// @param modelHash The new model hash
-    event ModelHashUpdated(uint256 indexed roundId, address indexed trainer, bytes32 modelHash);
+    event ModelHashUpdated(
+        uint256 indexed roundId,
+        address indexed trainer,
+        bytes32 modelHash
+    );
 
     /// @notice Error thrown when trying to register a zero address trainer
     error InvalidTrainerAddress();
@@ -76,6 +89,9 @@ contract RoundTrainerRegistryV2 is Initializable {
 
     /// @notice Error thrown when finder reward basis points exceed 100%
     error InvalidFinderRewardBps(uint16 finderRewardBps);
+
+    /// @notice Error thrown when the reveal deadline exceeds the allowed horizon
+    error RevealDeadlineTooLong(uint256 roundId, uint64 deadline, uint64 maxAllowed);
 
     /// @notice Error thrown when attempting to commit a duplicate privacy commitment
     error CommitmentAlreadyRegistered(uint256 roundId, bytes32 commitment);
@@ -90,7 +106,11 @@ contract RoundTrainerRegistryV2 is Initializable {
     error CommitmentAlreadySlashed(uint256 roundId, bytes32 commitment);
 
     /// @notice Error thrown when attempting to slash before the reveal deadline has elapsed
-    error RevealDeadlineNotReached(uint256 roundId, bytes32 commitment, uint64 deadline);
+    error RevealDeadlineNotReached(
+        uint256 roundId,
+        bytes32 commitment,
+        uint64 deadline
+    );
 
     /// @notice Error thrown when the aggregator bond lacks sufficient free balance
     error AggregatorBondInsufficient(uint256 requested, uint256 available);
@@ -111,14 +131,19 @@ contract RoundTrainerRegistryV2 is Initializable {
     /// @param trainer The trainer address
     /// @param modelHash The model hash
     /// @return trainerId The assigned trainer ID
-    function _registerTrainer(uint256 roundId, address trainer, bytes32 modelHash) internal returns (uint256 trainerId) {
+    function _registerTrainer(
+        uint256 roundId,
+        address trainer,
+        bytes32 modelHash
+    ) internal returns (uint256 trainerId) {
         if (trainer == address(0)) {
             revert InvalidTrainerAddress();
         }
 
-        RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
+        RoundTrainerRegistryStorage
+            storage $ = _getRoundTrainerRegistryStorage();
         RoundTrainers storage roundTrainers = $.roundTrainers[roundId];
-        
+
         // If this is a new trainer for this round, assign a new ID
         if (roundTrainers.trainers[trainer].id == 0) {
             trainerId = ++roundTrainers.count;
@@ -138,15 +163,20 @@ contract RoundTrainerRegistryV2 is Initializable {
     /// @param roundId The round ID
     /// @param trainer The trainer address
     /// @param modelHash The new model hash
-    function _setModelHash(uint256 roundId, address trainer, bytes32 modelHash) internal {
-        RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
+    function _setModelHash(
+        uint256 roundId,
+        address trainer,
+        bytes32 modelHash
+    ) internal {
+        RoundTrainerRegistryStorage
+            storage $ = _getRoundTrainerRegistryStorage();
         RoundTrainers storage roundTrainers = $.roundTrainers[roundId];
-        
+
         // Check if trainer is registered
         if (roundTrainers.trainers[trainer].id == 0) {
             revert TrainerNotFound(roundId, trainer);
         }
-        
+
         roundTrainers.trainers[trainer].modelHash = modelHash;
         emit ModelHashUpdated(roundId, trainer, modelHash);
     }
@@ -155,8 +185,12 @@ contract RoundTrainerRegistryV2 is Initializable {
     /// @param roundId The round ID
     /// @param trainer The trainer address
     /// @return The trainer's ID
-    function getTrainerId(uint256 roundId, address trainer) public view returns (uint256) {
-        RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
+    function getTrainerId(
+        uint256 roundId,
+        address trainer
+    ) public view returns (uint256) {
+        RoundTrainerRegistryStorage
+            storage $ = _getRoundTrainerRegistryStorage();
         return $.roundTrainers[roundId].trainers[trainer].id;
     }
 
@@ -164,8 +198,12 @@ contract RoundTrainerRegistryV2 is Initializable {
     /// @param roundId The round ID
     /// @param trainer The trainer address
     /// @return The trainer's ID
-    function getTrainerIdOrThrow(uint256 roundId, address trainer) public view returns (uint256) {
-        RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
+    function getTrainerIdOrThrow(
+        uint256 roundId,
+        address trainer
+    ) public view returns (uint256) {
+        RoundTrainerRegistryStorage
+            storage $ = _getRoundTrainerRegistryStorage();
         uint256 trainerId = $.roundTrainers[roundId].trainers[trainer].id;
         if (trainerId == 0) {
             revert TrainerNotFound(roundId, trainer);
@@ -177,8 +215,12 @@ contract RoundTrainerRegistryV2 is Initializable {
     /// @param roundId The round ID
     /// @param trainer The trainer address
     /// @return The trainer's model hash
-    function getModelHash(uint256 roundId, address trainer) public view returns (bytes32) {
-        RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
+    function getModelHash(
+        uint256 roundId,
+        address trainer
+    ) public view returns (bytes32) {
+        RoundTrainerRegistryStorage
+            storage $ = _getRoundTrainerRegistryStorage();
         return $.roundTrainers[roundId].trainers[trainer].modelHash;
     }
 
@@ -186,9 +228,15 @@ contract RoundTrainerRegistryV2 is Initializable {
     /// @param roundId The round ID
     /// @param trainer The trainer address
     /// @return The trainer's model hash
-    function getModelHashOrThrow(uint256 roundId, address trainer) public view returns (bytes32) {
-        RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
-        TrainerInfo storage trainerInfo = $.roundTrainers[roundId].trainers[trainer];
+    function getModelHashOrThrow(
+        uint256 roundId,
+        address trainer
+    ) public view returns (bytes32) {
+        RoundTrainerRegistryStorage
+            storage $ = _getRoundTrainerRegistryStorage();
+        TrainerInfo storage trainerInfo = $.roundTrainers[roundId].trainers[
+            trainer
+        ];
         if (trainerInfo.id == 0) {
             revert TrainerNotFound(roundId, trainer);
         }
@@ -200,9 +248,15 @@ contract RoundTrainerRegistryV2 is Initializable {
     /// @param trainer The trainer address
     /// @return trainerId The trainer's ID
     /// @return modelHash The trainer's model hash
-    function getTrainerInfo(uint256 roundId, address trainer) public view returns (uint256 trainerId, bytes32 modelHash) {
-        RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
-        TrainerInfo storage trainerInfo = $.roundTrainers[roundId].trainers[trainer];
+    function getTrainerInfo(
+        uint256 roundId,
+        address trainer
+    ) public view returns (uint256 trainerId, bytes32 modelHash) {
+        RoundTrainerRegistryStorage
+            storage $ = _getRoundTrainerRegistryStorage();
+        TrainerInfo storage trainerInfo = $.roundTrainers[roundId].trainers[
+            trainer
+        ];
         return (trainerInfo.id, trainerInfo.modelHash);
     }
 
@@ -210,7 +264,8 @@ contract RoundTrainerRegistryV2 is Initializable {
     /// @param roundId The round ID
     /// @return The number of trainers registered for the round
     function getTrainerCount(uint256 roundId) public view returns (uint256) {
-        RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
+        RoundTrainerRegistryStorage
+            storage $ = _getRoundTrainerRegistryStorage();
         return $.roundTrainers[roundId].count;
     }
 
@@ -218,8 +273,12 @@ contract RoundTrainerRegistryV2 is Initializable {
     /// @param roundId The round ID
     /// @param trainer The trainer address
     /// @return True if the trainer is registered for the round
-    function isTrainerRegistered(uint256 roundId, address trainer) public view returns (bool) {
-        RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
+    function isTrainerRegistered(
+        uint256 roundId,
+        address trainer
+    ) public view returns (bool) {
+        RoundTrainerRegistryStorage
+            storage $ = _getRoundTrainerRegistryStorage();
         return $.roundTrainers[roundId].trainers[trainer].id > 0;
     }
 
@@ -227,7 +286,8 @@ contract RoundTrainerRegistryV2 is Initializable {
     /// @param roundId The round ID
     /// @param trainer The trainer address
     function _setClaimedRewards(uint256 roundId, address trainer) internal {
-        RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
+        RoundTrainerRegistryStorage
+            storage $ = _getRoundTrainerRegistryStorage();
         $.roundTrainers[roundId].trainers[trainer].rewardsClaimed = true;
     }
 
@@ -235,15 +295,22 @@ contract RoundTrainerRegistryV2 is Initializable {
     /// @param roundId The round ID
     /// @param trainer The trainer address
     /// @return True if the trainer has claimed their rewards
-    function hasClaimedRewards(uint256 roundId, address trainer) public view returns (bool) {
-        RoundTrainerRegistryStorage storage $ = _getRoundTrainerRegistryStorage();
+    function hasClaimedRewards(
+        uint256 roundId,
+        address trainer
+    ) public view returns (bool) {
+        RoundTrainerRegistryStorage
+            storage $ = _getRoundTrainerRegistryStorage();
         return $.roundTrainers[roundId].trainers[trainer].rewardsClaimed;
     }
 
     /// @notice Configure the trainer privacy penalty and finder reward share
     /// @param penalty The amount of bond to reserve per commitment
     /// @param finderRewardBps Finder reward share expressed in basis points (max 10_000)
-    function _setTrainerPrivacyConfig(uint256 penalty, uint16 finderRewardBps) internal {
+    function _setTrainerPrivacyConfig(
+        uint256 penalty,
+        uint16 finderRewardBps
+    ) internal {
         if (finderRewardBps > 10_000) {
             revert InvalidFinderRewardBps(finderRewardBps);
         }
@@ -275,7 +342,11 @@ contract RoundTrainerRegistryV2 is Initializable {
     }
 
     /// @notice Return the current aggregator bond balance and reserved amount
-    function getAggregatorBondState() public view returns (uint256 balance, uint256 reserved) {
+    function getAggregatorBondState()
+        public
+        view
+        returns (uint256 balance, uint256 reserved)
+    {
         TrainerPrivacyStorage storage $ = _getTrainerPrivacyStorage();
         AggregatorBondState storage bond = $.bond;
         balance = bond.balance;
@@ -283,6 +354,7 @@ contract RoundTrainerRegistryV2 is Initializable {
     }
 
     /// @notice Commit to a trainer using privacy mode
+    /// @dev Aggregator bond is reserved until reveal or slash; long deadlines therefore lock capital.
     /// @param roundId The round identifier
     /// @param commitment The commitment hash binding trainer and nonce
     /// @param modelHash The trainer's model hash recorded on reveal
@@ -294,6 +366,11 @@ contract RoundTrainerRegistryV2 is Initializable {
         bytes32 modelHash,
         uint64 revealDeadline
     ) internal returns (uint256 pendingCommitments) {
+        uint64 maxDeadline = uint64(block.timestamp + MAX_REVEAL_DEADLINE);
+        if (revealDeadline > maxDeadline) {
+            revert RevealDeadlineTooLong(roundId, revealDeadline, maxDeadline);
+        }
+
         TrainerPrivacyStorage storage $ = _getTrainerPrivacyStorage();
         RoundPrivacyState storage roundPrivacy = $.rounds[roundId];
         CommitmentState storage state = roundPrivacy.commitments[commitment];
@@ -334,10 +411,7 @@ contract RoundTrainerRegistryV2 is Initializable {
         uint256 roundId,
         address trainer,
         bytes calldata nonce
-    )
-        internal
-        returns (uint256 trainerId, bytes32 commitment)
-    {
+    ) internal returns (uint256 trainerId, bytes32 commitment) {
         commitment = keccak256(abi.encodePacked(trainer, nonce));
 
         TrainerPrivacyStorage storage $ = _getTrainerPrivacyStorage();
@@ -355,7 +429,10 @@ contract RoundTrainerRegistryV2 is Initializable {
             if (state.penalty > 0) {
                 AggregatorBondState storage bond = $.bond;
                 if (bond.reserved < state.penalty) {
-                    revert AggregatorBondInsufficient(state.penalty, bond.reserved);
+                    revert AggregatorBondInsufficient(
+                        state.penalty,
+                        bond.reserved
+                    );
                 }
                 bond.reserved -= state.penalty;
             }
@@ -377,14 +454,11 @@ contract RoundTrainerRegistryV2 is Initializable {
     /// @param finder Address that triggered the slashing action
     /// @return penalty The penalty deducted from the aggregator bond
     /// @return finderReward The finder reward computed from the penalty
-    function _slashTrainerCommitment(
+    function _slashAggregatorBond(
         uint256 roundId,
         bytes32 commitment,
         address finder
-    )
-        internal
-        returns (uint256 penalty, uint256 finderReward)
-    {
+    ) internal returns (uint256 penalty, uint256 finderReward) {
         finder; // silence unused parameter warning until utilized
         TrainerPrivacyStorage storage $ = _getTrainerPrivacyStorage();
         RoundPrivacyState storage roundPrivacy = $.rounds[roundId];
@@ -400,7 +474,11 @@ contract RoundTrainerRegistryV2 is Initializable {
             revert CommitmentAlreadyRevealed(roundId, commitment);
         }
         if (block.timestamp <= state.revealDeadline) {
-            revert RevealDeadlineNotReached(roundId, commitment, state.revealDeadline);
+            revert RevealDeadlineNotReached(
+                roundId,
+                commitment,
+                state.revealDeadline
+            );
         }
 
         penalty = state.penalty;
@@ -430,13 +508,19 @@ contract RoundTrainerRegistryV2 is Initializable {
 
     /// @notice Return the number of pending commitments awaiting reveal for a round
     /// @param roundId The round identifier
-    function getPendingCommitmentCount(uint256 roundId) public view returns (uint256) {
+    function getPendingCommitmentCount(
+        uint256 roundId
+    ) public view returns (uint256) {
         TrainerPrivacyStorage storage $ = _getTrainerPrivacyStorage();
         return $.rounds[roundId].pendingCount;
     }
 
     /// @notice Return the current trainer privacy configuration
-    function getTrainerPrivacyConfig() public view returns (uint256 penalty, uint16 finderRewardBps) {
+    function getTrainerPrivacyConfig()
+        public
+        view
+        returns (uint256 penalty, uint16 finderRewardBps)
+    {
         TrainerPrivacyStorage storage $ = _getTrainerPrivacyStorage();
         penalty = $.penalty;
         finderRewardBps = $.finderRewardBps;
@@ -444,7 +528,11 @@ contract RoundTrainerRegistryV2 is Initializable {
 
     /// @notice Returns a pointer to the storage namespace
     /// @dev This function provides access to the namespaced storage
-    function _getRoundTrainerRegistryStorage() private pure returns (RoundTrainerRegistryStorage storage $) {
+    function _getRoundTrainerRegistryStorage()
+        private
+        pure
+        returns (RoundTrainerRegistryStorage storage $)
+    {
         bytes32 slot = ROUND_TRAINER_REGISTRY_STORAGE;
         assembly {
             $.slot := slot
@@ -452,7 +540,11 @@ contract RoundTrainerRegistryV2 is Initializable {
     }
 
     /// @notice Returns a pointer to the trainer privacy storage namespace
-    function _getTrainerPrivacyStorage() private pure returns (TrainerPrivacyStorage storage $) {
+    function _getTrainerPrivacyStorage()
+        private
+        pure
+        returns (TrainerPrivacyStorage storage $)
+    {
         bytes32 slot = TRAINER_PRIVACY_STORAGE;
         assembly {
             $.slot := slot
