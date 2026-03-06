@@ -42,6 +42,8 @@ log = logging.getLogger("enclave")
 
 # vsock constants
 VSOCK_PORT = 5000
+AF_VSOCK = getattr(socket, "AF_VSOCK", 40)
+VMADDR_CID_ANY = getattr(socket, "VMADDR_CID_ANY", 0xFFFFFFFF)
 HEADER_FMT = "!Q"
 HEADER_SIZE = struct.calcsize(HEADER_FMT)
 RECV_CHUNK = 65536
@@ -205,8 +207,8 @@ def main() -> None:
     log.info("Enclave started, ECDH public key generated (%d bytes)", len(public_key_bytes))
 
     # Listen on vsock
-    sock = socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM)
-    sock.bind((socket.VMADDR_CID_ANY, VSOCK_PORT))
+    sock = socket.socket(AF_VSOCK, socket.SOCK_STREAM)
+    sock.bind((VMADDR_CID_ANY, VSOCK_PORT))
     sock.listen(5)
     log.info("Listening on vsock port %d", VSOCK_PORT)
 

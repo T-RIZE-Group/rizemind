@@ -19,6 +19,10 @@ log = logging.getLogger(__name__)
 MSG_GET_ATTESTATION = b"GET_ATTESTATION"
 MSG_AGGREGATE = b"AGGREGATE"
 
+# Some Python builds on Linux don't expose AF_VSOCK in ``socket`` even when
+# the kernel supports it. Linux's AF_VSOCK constant is 40.
+AF_VSOCK = getattr(socket, "AF_VSOCK", 40)
+
 
 class NitroTEEEnclave(TEEEnclave):
     """Manages an AWS Nitro Enclave from the parent EC2 instance.
@@ -73,7 +77,7 @@ class NitroTEEEnclave(TEEEnclave):
 
     def _fetch_attestation(self) -> None:
         """Connect to enclave over vsock and fetch attestation + public key."""
-        sock = socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM)
+        sock = socket.socket(AF_VSOCK, socket.SOCK_STREAM)
         try:
             sock.connect((self._enclave_cid, ENCLAVE_VSOCK_PORT))
             vsock_send(sock, MSG_GET_ATTESTATION)
@@ -114,7 +118,7 @@ class NitroTEEEnclave(TEEEnclave):
             encrypted_updates, num_examples, server_round
         )
 
-        sock = socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM)
+        sock = socket.socket(AF_VSOCK, socket.SOCK_STREAM)
         try:
             sock.connect((self._enclave_cid, ENCLAVE_VSOCK_PORT))
             vsock_send(sock, MSG_AGGREGATE + payload)
