@@ -22,3 +22,5 @@ poetry.lock
 **/.swp
 
 **/*.csv
+enclave.eif
+results/nitro_build_output.txt
