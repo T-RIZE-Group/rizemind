@@ -256,7 +256,7 @@ from rizemind.tee import NitroAttestationVerifier, TEEAggregationStrategy
 from rizemind.tee.nitro.nitro_enclave import NitroTEEEnclave
 
 base_strategy = FedAvg(...)
-tee_enclave = NitroTEEEnclave(eif_path="enclave.eif", cpu_count=2, memory_mib=4096)
+tee_enclave = NitroTEEEnclave(eif_path="enclave.eif", cpu_count=2, memory_mib=2048)
 tee_verifier = NitroAttestationVerifier()
 tee_strategy = TEEAggregationStrategy(base_strategy, tee_enclave, tee_verifier)
 auth_strategy = EthAccountStrategy(tee_strategy, swarm, account)

@@ -6,6 +6,7 @@ for AES-GCM encryption and follows the project's existing SECP256K1 curve choice
 """
 
 import os
+from typing import TYPE_CHECKING, Any
 
 from cryptography.hazmat.primitives.asymmetric.ec import (
     ECDH,
@@ -19,7 +20,11 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.hashes import SHA256
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
-from eth_account.signers.base import BaseAccount
+
+if TYPE_CHECKING:
+    from eth_account.signers.base import BaseAccount
+else:
+    BaseAccount = Any
 
 # Domain separation label for HKDF, ensuring keys derived here
 # cannot be confused with keys derived in other contexts.
