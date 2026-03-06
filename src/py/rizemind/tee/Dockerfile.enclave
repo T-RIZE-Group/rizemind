@@ -1,0 +1,29 @@
+# Dockerfile for building the Nitro Enclave EIF.
+#
+# Build:
+#   docker build -t rizemind-enclave -f Dockerfile.enclave .
+#   nitro-cli build-enclave --docker-uri rizemind-enclave --output-file enclave.eif
+#
+# The resulting enclave.eif can be run on an EC2 instance with Nitro Enclaves enabled.
+
+FROM python:3.12-slim
+
+RUN pip install --no-cache-dir \
+    flwr>=1.17.0 \
+    cryptography \
+    numpy
+
+# Copy the modules needed inside the enclave
+COPY crypto.py /app/rizemind/tee/crypto.py
+COPY params.py /app/rizemind/tee/params.py
+COPY enclave.py /app/rizemind/tee/enclave.py
+COPY nitro/enclave_server.py /app/rizemind/tee/nitro/enclave_server.py
+
+# Create __init__.py files for the package
+RUN touch /app/rizemind/__init__.py \
+    /app/rizemind/tee/__init__.py \
+    /app/rizemind/tee/nitro/__init__.py
+
+WORKDIR /app
+
+ENTRYPOINT ["python", "-u", "-m", "rizemind.tee.nitro.enclave_server"]
