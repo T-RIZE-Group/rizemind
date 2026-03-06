@@ -48,10 +48,6 @@ ml = [
     "torch>=2.6.0",
     "torchvision>=0.21.0"
 ]
-tee = [
-    "cbor2>=5.6.0",
-    "cose>=1.0.1",
-]
 
 [tool.hatch.version]
 source = "uv-dynamic-versioning"
