@@ -52,7 +52,7 @@ def _parse_args(repo_root: Path) -> argparse.Namespace:
     parser.add_argument(
         "--memory-mib",
         type=int,
-        default=4096,
+        default=2048,
         help="Memory in MiB for enclave.",
     )
     parser.add_argument(

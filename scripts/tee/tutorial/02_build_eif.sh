@@ -58,6 +58,11 @@ info "Building Docker image for enclave code..."
 )
 pass "Docker image built: $DOCKER_URI"
 
+info "Running enclave image import smoke test..."
+docker run --rm --entrypoint python "$DOCKER_URI" -c \
+  "import rizemind.tee.nitro.enclave_server; print('import_ok')"
+pass "Enclave image import smoke test passed"
+
 info "Building EIF with nitro-cli..."
 BUILD_OUTPUT="$(nitro-cli build-enclave --docker-uri "$DOCKER_URI" --output-file "$EIF_PATH")"
 printf "%s\n" "$BUILD_OUTPUT" | tee "$BUILD_LOG" >/dev/null

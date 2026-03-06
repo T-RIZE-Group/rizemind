@@ -9,7 +9,7 @@
 FROM python:3.12-slim
 
 RUN pip install --no-cache-dir \
-    flwr>=1.17.0 \
+    "flwr>=1.17.0" \
     cryptography \
     numpy
 
