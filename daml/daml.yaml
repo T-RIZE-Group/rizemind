@@ -1,0 +1,10 @@
+sdk-version: 2.9.4
+name: rizemind-daml
+version: 0.1.0
+source: .
+dependencies:
+  - daml-prim
+  - daml-stdlib
+  - daml-script
+build-options:
+  - --target=2.1

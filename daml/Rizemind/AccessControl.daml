@@ -1,0 +1,61 @@
+-- | Membership and permissioning.
+--
+-- Port of forge/src/access. The role-based model of BaseAccessControl.sol
+-- (AGGREGATOR / TRAINER / EVALUATOR roles checked against `msg.sender`)
+-- maps onto Daml parties: the trainer and evaluator sets live in the Swarm
+-- template payload and choices are controlled by the relevant party, so
+-- EIP-712 signature recovery and ERC-165 interface checks have no Daml
+-- counterpart -- ledger authorization subsumes both.
+--
+-- This module ports the alternative, vote-based membership contract
+-- FLDemocraticWhitelist.sol.
+module Rizemind.AccessControl where
+
+import DA.List (delete)
+import DA.Map (Map)
+import qualified DA.Map as Map
+import DA.Optional (fromOptional)
+
+-- | Mirrors FLDemocraticWhitelist: members vote to admit trainers; a
+-- candidate is whitelisted once it reaches `approvalThreshold` votes.
+template DemocraticWhitelist
+  with
+    operator : Party
+    swarmId : Text
+    members : [Party]            -- ^ parties allowed to vote
+    approvalThreshold : Int
+    votes : Map Party [Party]    -- ^ candidate -> voters
+  where
+    signatory operator
+    observer members
+    key (operator, swarmId) : (Party, Text)
+    maintainer key._1
+
+    -- Mirrors approveTrainer; the TrainerApproved event is the transaction
+    -- itself.
+    choice ApproveTrainer : ContractId DemocraticWhitelist
+      with
+        voter : Party
+        candidate : Party
+      controller voter
+      do
+        assertMsg "voter is not a member" (voter `elem` members)
+        let voters = fromOptional [] (Map.lookup candidate votes)
+        assertMsg "Already approved this trainer" (voter `notElem` voters)
+        create this with votes = Map.insert candidate (voter :: voters) votes
+
+    -- Mirrors revokeTrainerApproval.
+    choice RevokeTrainerApproval : ContractId DemocraticWhitelist
+      with
+        voter : Party
+        candidate : Party
+      controller voter
+      do
+        let voters = fromOptional [] (Map.lookup candidate votes)
+        assertMsg "No approval to revoke" (voter `elem` voters)
+        create this with votes = Map.insert candidate (delete voter voters) votes
+
+-- | Mirrors isWhitelisted.
+isWhitelisted : DemocraticWhitelist -> Party -> Bool
+isWhitelisted wl candidate =
+  length (fromOptional [] (Map.lookup candidate wl.votes)) >= wl.approvalThreshold

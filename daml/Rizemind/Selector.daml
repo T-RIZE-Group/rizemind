@@ -1,0 +1,28 @@
+-- | Per-round participant sampling.
+--
+-- Port of forge/src/sampling: ISelector.sol, AlwaysSampled.sol,
+-- RandomSampling.sol. On chain a selector is a separate contract referenced
+-- by SwarmCore; here it is a pure policy value carried in the Swarm
+-- template's payload, so "updating the selector" (SwarmCore's
+-- updateTrainerSelector) is just recreating the Swarm contract with a new
+-- policy.
+module Rizemind.Selector where
+
+import Rizemind.Rng
+
+data SelectorPolicy
+  = -- | AlwaysSampled.sol: every whitelisted node is selected.
+    AlwaysSampled
+  | -- | RandomSampling.sol: select with probability ratioBps/10000.
+    -- Solidity uses an 18-decimal ratio; basis points keep the Daml port in
+    -- Int arithmetic.
+    RandomSampling with
+      ratioBps : Int
+      seed : Int
+  deriving (Eq, Show)
+
+-- | Mirrors ISelector.isSelected(addr, roundId).
+isSelected : SelectorPolicy -> Int -> Party -> Bool
+isSelected AlwaysSampled _ _ = True
+isSelected RandomSampling{ratioBps, seed} roundId p =
+  draw (mixText (partyToText p) (seed + roundId)) 0 10000 < ratioBps

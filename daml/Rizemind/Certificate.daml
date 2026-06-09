@@ -1,0 +1,26 @@
+-- | Certificate storage.
+--
+-- Port of forge/src/swarm/registry/CertificateRegistry.sol: a generic
+-- `bytes32 id => bytes` store. Each certificate is its own keyed contract;
+-- re-setting an id archives and recreates it, and the `NewCertificate`
+-- event is subsumed by the ledger transaction log.
+module Rizemind.Certificate where
+
+template Certificate
+  with
+    aggregator : Party
+    swarmId : Text
+    certId : Text       -- ^ hex-encoded bytes32 id
+    payload : Text      -- ^ hex-encoded certificate bytes
+    observers : [Party] -- ^ swarm members who may read the certificate
+  where
+    signatory aggregator
+    observer observers
+    key (aggregator, swarmId, certId) : (Party, Text, Text)
+    maintainer key._1
+
+    choice ReplaceCertificate : ContractId Certificate
+      with
+        newPayload : Text
+      controller aggregator
+      do create this with payload = newPayload

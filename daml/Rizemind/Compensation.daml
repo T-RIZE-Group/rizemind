@@ -1,0 +1,44 @@
+-- | Reward distribution.
+--
+-- Port of forge/src/compensation: ICompensation / SimpleMintCompensation.sol.
+-- The ERC-20 mint becomes the creation of a `RewardToken` holding contract
+-- issued by the aggregator; the ledger transaction log replaces the
+-- `CompensationSent` event. Reward math mirrors `_calculateRewards`:
+-- rewards = contribution * targetRewardsPerRound, where the Solidity 1e6
+-- fixed-point contribution is a Decimal score in [0, 1] here.
+module Rizemind.Compensation where
+
+-- | A minted reward balance, the analogue of an ERC-20 balance entry.
+template RewardToken
+  with
+    issuer : Party   -- ^ the swarm aggregator (holds SimpleMintCompensation's MINTER_ROLE)
+    owner : Party
+    swarmId : Text
+    roundId : Int
+    amount : Decimal
+  where
+    signatory issuer
+    observer owner
+    ensure amount > 0.0
+
+    -- Minimal transferability; a production port would use a
+    -- propose-accept transfer or Daml Finance holdings.
+    choice Transfer : ContractId RewardToken
+      with
+        newOwner : Party
+      controller owner
+      do create this with owner = newOwner
+
+    choice Split : (ContractId RewardToken, ContractId RewardToken)
+      with
+        splitAmount : Decimal
+      controller owner
+      do assertMsg "BadRewards: split exceeds amount" (splitAmount < amount)
+         a <- create this with amount = splitAmount
+         b <- create this with amount = amount - splitAmount
+         pure (a, b)
+
+-- | Mirrors SimpleMintCompensation._calculateRewards.
+calculateRewards : Decimal -> Decimal -> Decimal
+calculateRewards targetRewardsPerRound contribution =
+  contribution * targetRewardsPerRound

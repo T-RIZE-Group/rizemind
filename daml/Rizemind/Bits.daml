@@ -1,0 +1,36 @@
+-- | Pure bit-twiddling helpers over Int.
+--
+-- Daml-LF exposes no bitwise primitives, so coalition masks (Solidity
+-- `uint256` bitmasks in ShapleyValueCalculator.sol) are manipulated with
+-- integer arithmetic. Masks here are bounded by 2^nPlayers with nPlayers <= 8
+-- on chain (uint8), so 63-bit Ints are ample.
+module Rizemind.Bits where
+
+-- | 2^n for n >= 0. Defined by iteration to avoid relying on an Int power
+-- operator.
+pow2 : Int -> Int
+pow2 n = foldl (\acc _ -> acc * 2) 1 [1 .. n]
+
+-- | Is bit @i@ set in @x@?
+testBit : Int -> Int -> Bool
+testBit x i = (x / pow2 i) % 2 == 1
+
+-- | Set bit @i@ in @x@ (mirrors `mask | (1 << i)`).
+setBit : Int -> Int -> Int
+setBit x i = if testBit x i then x else x + pow2 i
+
+-- | Clear bit @i@ in @x@ (mirrors `mask & ~(1 << i)`).
+clearBit : Int -> Int -> Int
+clearBit x i = if testBit x i then x - pow2 i else x
+
+-- | Number of set bits (mirrors ShapleyValueCalculator.popcount).
+popcount : Int -> Int
+popcount x
+  | x <= 0 = 0
+  | otherwise = (x % 2) + popcount (x / 2)
+
+-- | Hamming distance between two masks of at most @bits@ bits
+-- (mirrors `popcount(a ^ b)`).
+hammingDistance : Int -> Int -> Int -> Int
+hammingDistance bits a b =
+  length [ i | i <- [0 .. bits - 1], testBit a i /= testBit b i ]

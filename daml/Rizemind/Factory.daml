@@ -1,0 +1,72 @@
+-- | Swarm creation.
+--
+-- Port of forge/src/swarm/SwarmV1Factory.sol and the per-module
+-- sub-factories (SelectorFactory, CalculatorFactory, AccessControlFactory,
+-- CompensationFactory). On the EVM the factory exists to deploy proxies,
+-- wire module addresses and guarantee deterministic CREATE2 addresses; on a
+-- Daml ledger none of that machinery is needed -- modules are values in the
+-- Swarm payload and contract keys give deterministic lookup. What remains
+-- is a workflow anchor: a reusable, on-ledger record that swarms of a given
+-- version were instantiated by an operator with validated parameters.
+module Rizemind.Factory where
+
+import qualified DA.Map as Map
+import DA.Time (RelTime)
+
+import Rizemind.Selector
+import Rizemind.Swarm
+import Rizemind.Types
+
+-- | Mirrors SwarmV1Factory.SwarmParams, minus the module-address plumbing.
+data SwarmParams = SwarmParams with
+    swarmId : Text
+    name : Text
+    trainers : [Party]
+    evaluators : [Party]
+    trainerSelector : SelectorPolicy
+    evaluatorSelector : SelectorPolicy
+    numSamples : Int
+    shapleySeed : Int
+    targetRewardsPerRound : Decimal
+    trainingTtl : RelTime
+    evalRegistrationTtl : RelTime
+    evaluationTtl : RelTime
+  deriving (Eq, Show)
+
+template SwarmFactory
+  with
+    operator : Party
+    version : Text -- ^ e.g. "swarm-v1.0.0", the EIP-712 version string on chain
+  where
+    signatory operator
+    key (operator, version) : (Party, Text)
+    maintainer key._1
+
+    -- | Mirrors SwarmV1Factory.createSwarm + SwarmV1.initialize: a single
+    -- action that instantiates a fully configured swarm in the IDLE phase.
+    nonconsuming choice CreateSwarm : ContractId Swarm
+      with
+        params : SwarmParams
+      controller operator
+      do
+        now <- getTime
+        create Swarm with
+          aggregator = operator
+          swarmId = params.swarmId
+          name = params.name
+          trainers = params.trainers
+          evaluators = params.evaluators
+          trainerSelector = params.trainerSelector
+          evaluatorSelector = params.evaluatorSelector
+          numSamples = params.numSamples
+          shapleySeed = params.shapleySeed
+          targetRewardsPerRound = params.targetRewardsPerRound
+          trainingTtl = params.trainingTtl
+          evalRegistrationTtl = params.evalRegistrationTtl
+          evaluationTtl = params.evaluationTtl
+          currentRound = 0
+          phase = Idle
+          phaseStart = now
+          trainerCounts = Map.empty
+          evaluatorCounts = Map.empty
+          taskConfigs = Map.empty

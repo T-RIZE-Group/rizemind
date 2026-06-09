@@ -1,0 +1,36 @@
+-- | Affine assignment of T evaluation tasks to N evaluator nodes.
+--
+-- Port of forge/src/scheduling/TaskAssignment.sol. The Solidity contract is
+-- already pure math over a tiny per-round config, which translates directly
+-- into pure functions; the per-round `Config` lives in the Swarm template's
+-- `taskConfigs` map instead of contract storage.
+module Rizemind.TaskAssignment where
+
+-- | Mirrors TaskAssignment.Config { N, T, R }.
+data TaskConfig = TaskConfig with
+    nNodes : Int       -- ^ N: number of evaluator nodes (ids 0..N-1)
+    nTasks : Int       -- ^ T: number of tasks (ids 0..T-1)
+    tasksPerNode : Int -- ^ R: tasks per node (>= 1)
+  deriving (Eq, Show)
+
+-- | Mirrors `_setConfig` validation: T > 1, N > 0, 1 <= R <= T.
+validConfig : TaskConfig -> Bool
+validConfig c = c.nTasks > 1 && c.nNodes > 0 && c.tasksPerNode >= 1 && c.tasksPerNode <= c.nTasks
+
+-- | base = ((T-1) * nodeId + roundId) mod T
+assignmentBase : TaskConfig -> Int -> Int -> Int
+assignmentBase c roundId nodeId = ((c.nTasks - 1) * nodeId + roundId) % c.nTasks
+
+-- | Mirrors `tasksOfNode`: the R tasks of node n,
+-- task_r = (base + r*(T-1)) mod T.
+tasksOfNode : TaskConfig -> Int -> Int -> [Int]
+tasksOfNode c roundId nodeId =
+  let base = assignmentBase c roundId nodeId
+  in [ (base + r * (c.nTasks - 1)) % c.nTasks | r <- [0 .. c.tasksPerNode - 1] ]
+
+-- | Mirrors `isAssigned(roundId, n, t)`:
+-- (base - t) mod T < R, with nodeId and taskId range-checked by the caller.
+isAssigned : TaskConfig -> Int -> Int -> Int -> Bool
+isAssigned c roundId nodeId taskId =
+  nodeId < c.nNodes && taskId < c.nTasks &&
+  (assignmentBase c roundId nodeId + c.nTasks - taskId) % c.nTasks < c.tasksPerNode

@@ -1,0 +1,84 @@
+-- | Evaluation results and Shapley-value contribution scoring.
+--
+-- Port of forge/src/contribution: EvaluationStorage.sol,
+-- ShapleyValueCalculator.sol and ContributionCalculator.sol. Evaluation
+-- results become `EvaluationResult` contracts keyed by
+-- (aggregator, swarmId, roundId, setId); the merge-by-averaging behaviour of
+-- EvaluationStorage._mergeResults is preserved by archiving and recreating
+-- the keyed contract. Results are Decimals rather than 1e18 fixed-point ints.
+module Rizemind.Contribution where
+
+import Rizemind.Bits
+import Rizemind.Rng
+import Rizemind.Types
+
+-- | Mirrors EvaluationStorage.EvaluationResult, one contract per
+-- (round, coalition set). The ledger transaction log replaces the
+-- `ResultRegistered` event.
+template EvaluationResult
+  with
+    aggregator : Party
+    swarmId : Text
+    roundId : Int
+    setId : Int          -- ^ coalition bitmask over trainer indices
+    modelHash : ModelHash
+    result : Decimal
+    merges : Int         -- ^ how many submissions were folded in
+  where
+    signatory aggregator
+    key (aggregator, swarmId, roundId, setId) : (Party, Text, Int, Int)
+    maintainer key._1
+
+    -- Mirrors _mergeResults: pairwise running average.
+    choice MergeResult : ContractId EvaluationResult
+      with
+        newResult : Decimal
+      controller aggregator
+      do create this with
+           result = (result + newResult) / 2.0
+           merges = merges + 1
+
+-- | Coalition mask sampled for (roundId, sampleId), mirroring
+-- ShapleyValueCalculator._getMask. The keccak-derived seed becomes a
+-- Lehmer-LCG seed mixed from the swarm id (see Rizemind.Rng).
+shapleyMask : Int -> Text -> Int -> Int -> Int -> Int
+shapleyMask seed swarmId roundId sampleId nPlayers =
+  draw (mixText swarmId (seed + roundId)) sampleId (pow2 nPlayers)
+
+-- | Mirrors ShapleyValueCalculator.weight: the Shapley coefficient
+-- 1 / (n * C(n-1, s)) computed by the same multiplicative recurrence,
+-- in Decimal instead of 1e18 fixed point.
+shapleyWeight : Int -> Int -> Decimal
+shapleyWeight n s =
+  let t = min s (n - 1 - s)
+      w0 = 1.0 / intToDecimal n
+  in foldl
+       (\w k -> w * intToDecimal (k + 1) / intToDecimal (n - 1 - k))
+       w0
+       [0 .. t - 1]
+
+-- | Mirrors ShapleyValueCalculator._calcShapley: a weighted average of the
+-- trainer's marginal contribution over the sampled coalitions. The result
+-- lookup is abstracted so the caller resolves coalition results from
+-- `EvaluationResult` contracts (missing results default to 0, like
+-- EvaluationStorage.getResult on an unset slot).
+calcShapley
+  : (Int -> Update Decimal) -- ^ result of a coalition setId
+  -> (Int -> Int)           -- ^ sampled mask for a sampleId
+  -> Int                    -- ^ number of samples
+  -> Int                    -- ^ trainer index (0-based)
+  -> Int                    -- ^ number of players
+  -> Update Decimal
+calcShapley getResult maskOf numSamples trainerIx nPlayers = do
+  terms <- forA [0 .. numSamples - 1] $ \i -> do
+    let m = maskOf i
+        withMask = setBit m trainerIx
+        withoutMask = clearBit m trainerIx
+    withResult <- getResult withMask
+    withoutResult <- getResult withoutMask
+    let w = shapleyWeight nPlayers (popcount withoutMask)
+    pure ((withResult - withoutResult) * w, w)
+  let totalWeight = sum (map snd terms)
+  pure $ if totalWeight == 0.0
+    then 0.0
+    else sum (map fst terms) / totalWeight

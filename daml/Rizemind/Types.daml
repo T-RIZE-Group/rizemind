@@ -1,0 +1,15 @@
+module Rizemind.Types where
+
+-- | Hex-encoded keccak256 hash of the serialized model parameters.
+-- Mirrors `bytes32 modelHash` on chain. The empty string plays the role of
+-- `bytes32(0)` and is rejected wherever Solidity rejects the zero hash.
+type ModelHash = Text
+
+-- | Round/phase state machine, mirroring BaseTrainingPhases.sol:
+-- IDLE -> TRAINING -> EVALUATOR_REGISTRATION -> EVALUATION -> IDLE.
+data Phase
+  = Idle
+  | Training
+  | EvaluatorRegistration
+  | Evaluation
+  deriving (Eq, Show)

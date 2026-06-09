@@ -1,0 +1,114 @@
+-- | End-to-end happy path of one training round, mirroring the round
+-- overview documented on SwarmV1.sol:
+--
+-- 1. aggregator starts the training round
+-- 2. trainers register their model-hash contributions
+-- 3. an evaluator registers for round evaluations
+-- 4. the evaluator registers evaluation results for its assigned tasks
+-- 5. the phase machine returns to IDLE and a trainer claims its reward
+--
+-- Run with: daml test (uses sandbox static time via setTime).
+module Rizemind.Test.RoundFlow where
+
+import DA.Assert ((===))
+import DA.Date (Month(..), date)
+import DA.Optional (fromSome)
+import DA.Time (addRelTime, hours, time)
+import Daml.Script
+
+import Rizemind.Bits (clearBit, popcount, setBit, testBit)
+import Rizemind.Contribution (shapleyMask)
+import Rizemind.Factory
+import Rizemind.Selector
+import Rizemind.Swarm
+import Rizemind.Compensation
+
+roundFlow : Script ()
+roundFlow = do
+  aggregator <- allocateParty "Aggregator"
+  alice <- allocateParty "Alice"
+  bob <- allocateParty "Bob"
+  eve <- allocateParty "Eve"
+
+  let t0 = time (date 2026 Jan 1) 12 0 0
+  setTime t0
+
+  factoryCid <- submit aggregator $ createCmd SwarmFactory with
+    operator = aggregator
+    version = "swarm-v1.0.0"
+
+  let params = SwarmParams with
+        swarmId = "swarm-test-1"
+        name = "test swarm"
+        trainers = [alice, bob]
+        evaluators = [eve]
+        trainerSelector = AlwaysSampled
+        evaluatorSelector = AlwaysSampled
+        numSamples = 2
+        shapleySeed = 42
+        targetRewardsPerRound = 100.0
+        trainingTtl = hours 1
+        evalRegistrationTtl = hours 1
+        evaluationTtl = hours 1
+
+  swarmCid <- submit aggregator $ exerciseCmd factoryCid CreateSwarm with params
+
+  -- 1. start the round: IDLE -> TRAINING, round 1
+  swarmCid <- submit aggregator $ exerciseCmd swarmCid StartTrainingRound
+
+  -- 2. trainers commit model hashes
+  (swarmCid, _) <- submit alice $ exerciseCmd swarmCid RegisterRoundContribution with
+    trainer = alice; roundId = 1; modelHash = "0xaaa"
+  (swarmCid, _) <- submit bob $ exerciseCmd swarmCid RegisterRoundContribution with
+    trainer = bob; roundId = 1; modelHash = "0xbbb"
+
+  -- 3. evaluator registers (allowed during TRAINING, like on chain)
+  (swarmCid, _) <- submit eve $ exerciseCmd swarmCid RegisterForRoundEvaluation with
+    evaluator = eve; roundId = 1
+
+  -- a non-trainer cannot contribute
+  submitMustFail aggregator $ exerciseCmd swarmCid RegisterRoundContribution with
+    trainer = aggregator; roundId = 1; modelHash = "0xccc"
+
+  -- past training (1h) and evaluator-registration (1h) TTLs: EVALUATION phase
+  setTime (addRelTime t0 (hours 2))
+
+  -- 4. evaluator submits results for its assigned tasks. With 1 evaluator
+  -- and 2 tasks the affine assignment gives it every task. For each task we
+  -- evaluate the sampled coalition and both single-trainer flips, which the
+  -- Hamming-distance-1 rule accepts and which covers every with/without
+  -- pair Shapley needs. The score of a coalition is its size, so each
+  -- trainer's marginal contribution is exactly 1.
+  let nTrainers = 2
+      score setId = intToDecimal (popcount setId)
+      setsForTask taskId =
+        let m = shapleyMask params.shapleySeed params.swarmId 1 taskId nTrainers
+            flipBit s i = if testBit s i then clearBit s i else setBit s i
+        in dedupInts [m, flipBit m 0, flipBit m 1]
+  mapA_ (\(taskId, setId) ->
+      submit eve $ exerciseCmd swarmCid RegisterEvaluation with
+        evaluator = eve; roundId = 1; taskId; setId
+        modelHash = "0xcoalition"; result = score setId)
+    [ (taskId, setId) | taskId <- [0, 1], setId <- setsForTask taskId ]
+  -- claiming before the round is back to IDLE is forbidden
+  submitMustFail alice $ exerciseCmd swarmCid ClaimReward with
+    trainer = alice; roundId = 1
+
+  -- past the evaluation TTL: back to IDLE
+  setTime (addRelTime t0 (hours 4))
+
+  -- 5. trainer claims; marginal contribution 1.0 * target 100.0
+  tokenCid <- fromSome <$> submit alice (exerciseCmd swarmCid ClaimReward with
+    trainer = alice; roundId = 1)
+  token <- fromSome <$> queryContractId alice tokenCid
+  token.amount === 100.0
+  token.owner === alice
+
+  -- double claim is rejected
+  submitMustFail alice $ exerciseCmd swarmCid ClaimReward with
+    trainer = alice; roundId = 1
+
+  pure ()
+
+dedupInts : [Int] -> [Int]
+dedupInts = foldr (\x acc -> if x `elem` acc then acc else x :: acc) []

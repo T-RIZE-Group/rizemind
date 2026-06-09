@@ -1,0 +1,373 @@
+-- | The swarm coordination workflow.
+--
+-- Port of forge/src/swarm (SwarmV1.sol, SwarmCore.sol,
+-- RoundTrainerRegistry.sol, RoundEvaluatorRegistry.sol), forge/src/training
+-- (RoundTraining.sol, BaseTrainingPhases.sol) and the glue that SwarmV1
+-- provides over scheduling, contribution and compensation.
+--
+-- Key translation decisions:
+--
+-- * SwarmV1's inherited mutable storage becomes one `Swarm` template whose
+--   payload carries the round counter, phase state and per-round counters;
+--   state changes archive and recreate the contract (Daml's standard
+--   "mutable state" idiom). Per-(round, participant) records become child
+--   contracts (`TrainerSubmission`, `EvaluatorSlot`) keyed like the Solidity
+--   mappings they replace.
+-- * SwarmCore's module *addresses* (selector, calculator, compensation,
+--   access control) become *values and code*: selector policies and the
+--   Shapley calculator are pure functions, membership is a party list, and
+--   compensation mints `RewardToken` contracts. The `update*` choices mirror
+--   SwarmCore's setters.
+-- * `msg.sender` + EIP-712 signatures become choice controllers: a trainer
+--   can only exercise `RegisterRoundContribution` as itself, so signature
+--   recovery (EthAccountStrategy's job off-chain) is unnecessary.
+-- * BaseTrainingPhases' TTL transitions cannot fire autonomously on a Daml
+--   ledger. Instead, `advance` replays `updatePhase()` deterministically
+--   from ledger time whenever any choice runs, and phase boundaries are
+--   computed from the recorded phase start plus TTLs, so the observable
+--   schedule is identical regardless of when choices arrive.
+-- * Solidity events are subsumed by the ledger transaction log, which is the
+--   audit trail.
+module Rizemind.Swarm where
+
+import DA.Map (Map)
+import qualified DA.Map as Map
+import DA.Optional (fromOptional)
+import DA.Time (RelTime, addRelTime, seconds)
+
+import Rizemind.Bits (hammingDistance)
+import Rizemind.Compensation
+import Rizemind.Certificate
+import Rizemind.Contribution
+import Rizemind.Selector
+import Rizemind.TaskAssignment
+import Rizemind.Types
+
+-- | Mirrors RoundTrainerRegistry.TrainerInfo, one contract per
+-- (round, trainer). Creation is the `TrainerRegistered` /
+-- `ModelHashUpdated` audit record.
+template TrainerSubmission
+  with
+    aggregator : Party
+    swarmId : Text
+    roundId : Int
+    trainer : Party
+    trainerId : Int        -- ^ sequential, 1-based, like the Solidity registry
+    modelHash : ModelHash
+    rewardsClaimed : Bool
+  where
+    signatory aggregator, trainer
+    key (aggregator, swarmId, roundId, trainer) : (Party, Text, Int, Party)
+    maintainer key._1
+
+-- | Mirrors RoundEvaluatorRegistry's per-round evaluator ids.
+template EvaluatorSlot
+  with
+    aggregator : Party
+    swarmId : Text
+    roundId : Int
+    evaluator : Party
+    evaluatorId : Int      -- ^ sequential, 1-based
+  where
+    signatory aggregator, evaluator
+    key (aggregator, swarmId, roundId, evaluator) : (Party, Text, Int, Party)
+    maintainer key._1
+
+template Swarm
+  with
+    aggregator : Party
+    swarmId : Text
+    name : Text
+    -- BaseAccessControl's TRAINER_ROLE / EVALUATOR_ROLE sets
+    trainers : [Party]
+    evaluators : [Party]
+    -- SwarmCore module slots, as values instead of contract addresses
+    trainerSelector : SelectorPolicy
+    evaluatorSelector : SelectorPolicy
+    numSamples : Int               -- ^ ShapleyValueCalculator numSamples / evaluationsRequired
+    shapleySeed : Int              -- ^ replaces keccak256(address(this), roundId) seeding
+    targetRewardsPerRound : Decimal
+    -- BaseTrainingPhases configuration
+    trainingTtl : RelTime
+    evalRegistrationTtl : RelTime
+    evaluationTtl : RelTime
+    -- RoundTraining + BaseTrainingPhases state
+    currentRound : Int
+    phase : Phase
+    phaseStart : Time
+    -- per-round registry counters and task configs (Solidity mappings)
+    trainerCounts : Map Int Int
+    evaluatorCounts : Map Int Int
+    taskConfigs : Map Int TaskConfig
+  where
+    signatory aggregator
+    observer trainers, evaluators
+    ensure numSamples > 1 -- TaskAssignment requires T > 1
+      && trainingTtl > seconds 0
+      && evalRegistrationTtl > seconds 0
+      && evaluationTtl > seconds 0
+    key (aggregator, swarmId) : (Party, Text)
+    maintainer key._1
+
+    -- | Mirrors updatePhase(): persist the time-derived phase transitions.
+    -- Anyone may call updatePhase() on chain; on the ledger the aggregator
+    -- persists it, while every other choice applies the same pure function,
+    -- so an unadvanced contract never changes observable behaviour.
+    choice AdvancePhase : ContractId Swarm
+      controller aggregator
+      do
+        now <- getTime
+        create (advance this now)
+
+    -- | Mirrors startTrainingRound(): IDLE -> next round -> TRAINING.
+    choice StartTrainingRound : ContractId Swarm
+      controller aggregator
+      do
+        now <- getTime
+        let s = advance this now
+        assertMsg "NotIdle" (s.phase == Idle)
+        create s with
+          currentRound = s.currentRound + 1
+          phase = Training
+          phaseStart = now
+
+    -- | Mirrors registerRoundContribution(roundId, modelHash): the trainer
+    -- commits the hash of its model update for the round.
+    choice RegisterRoundContribution : (ContractId Swarm, ContractId TrainerSubmission)
+      with
+        trainer : Party
+        roundId : Int
+        modelHash : ModelHash
+      controller trainer
+      do
+        now <- getTime
+        let s = advance this now
+        assertMsg "NotTrainer" (canTrain s trainer roundId)
+        assertMsg "NotTrainingPhase" (s.phase == Training)
+        assertMsg "ForbiddenRound" (roundId == s.currentRound)
+        assertMsg "InvalidParameters: empty model hash" (modelHash /= "")
+        existing <- lookupByKey @TrainerSubmission (aggregator, swarmId, roundId, trainer)
+        case existing of
+          -- re-registration keeps the id and updates the hash
+          Some subCid -> do
+            sub <- fetch subCid
+            archive subCid
+            subCid' <- create sub with modelHash
+            swarmCid <- create s
+            pure (swarmCid, subCid')
+          None -> do
+            let count = countFor s.trainerCounts roundId
+            subCid <- create TrainerSubmission with
+              aggregator; swarmId; roundId; trainer
+              trainerId = count + 1
+              modelHash
+              rewardsClaimed = False
+            swarmCid <- create s with
+              trainerCounts = Map.insert roundId (count + 1) s.trainerCounts
+            pure (swarmCid, subCid)
+
+    -- | Mirrors registerForRoundEvaluation(roundId). Allowed during TRAINING
+    -- and EVALUATOR_REGISTRATION, exactly like _registerForRoundEvaluations.
+    choice RegisterForRoundEvaluation : (ContractId Swarm, ContractId EvaluatorSlot)
+      with
+        evaluator : Party
+        roundId : Int
+      controller evaluator
+      do
+        now <- getTime
+        let s = advance this now
+        assertMsg "NotEvaluator" (canEvaluate s evaluator roundId)
+        assertMsg "NotEvaluatorRegistrationPhase"
+          (s.phase /= Evaluation && s.phase /= Idle)
+        existing <- lookupByKey @EvaluatorSlot (aggregator, swarmId, roundId, evaluator)
+        case existing of
+          -- already registered: keep the existing id, like the Solidity registry
+          Some slotCid -> do
+            swarmCid <- create s
+            pure (swarmCid, slotCid)
+          None -> do
+            let count = countFor s.evaluatorCounts roundId
+            slotCid <- create EvaluatorSlot with
+              aggregator; swarmId; roundId; evaluator
+              evaluatorId = count + 1
+            swarmCid <- create s with
+              evaluatorCounts = Map.insert roundId (count + 1) s.evaluatorCounts
+            pure (swarmCid, slotCid)
+
+    -- | Mirrors registerEvaluation(roundId, evalId, setId, modelHash, result):
+    -- an assigned evaluator reports the score of a coalition model.
+    nonconsuming choice RegisterEvaluation : ContractId EvaluationResult
+      with
+        evaluator : Party
+        roundId : Int
+        taskId : Int
+        setId : Int
+        modelHash : ModelHash
+        result : Decimal
+      controller evaluator
+      do
+        now <- getTime
+        let s = advance this now
+        assertMsg "NotEvaluationPhase" (s.phase == Evaluation)
+        assertMsg "InvalidParameters: empty model hash" (modelHash /= "")
+        (_, slot) <- fetchByKey @EvaluatorSlot (aggregator, swarmId, roundId, evaluator)
+        let cfg = fromOptional (error "no task config for round") $
+              Map.lookup roundId s.taskConfigs
+        -- evaluator ids are 1-based, TaskAssignment node ids 0-based
+        assertMsg "NotAssignedTo" (isAssigned cfg roundId (slot.evaluatorId - 1) taskId)
+        -- ShapleyValueCalculator accepts the target set or any set at
+        -- Hamming distance 1 (the with/without-player pair)
+        let nTrainers = countFor s.trainerCounts roundId
+            targetSet = shapleyMask shapleySeed swarmId roundId taskId nTrainers
+        assertMsg "setIdTooFar" (hammingWithin nTrainers setId targetSet)
+        existing <- lookupByKey @EvaluationResult (aggregator, swarmId, roundId, setId)
+        case existing of
+          Some resCid -> exercise resCid MergeResult with newResult = result
+          None -> create EvaluationResult with
+            aggregator; swarmId; roundId; setId; modelHash; result
+            merges = 1
+
+    -- | Mirrors claimReward(roundId, trainer): computes the trainer's
+    -- Shapley contribution from registered evaluations, marks the
+    -- submission claimed and mints the reward. The `TrainerContributed`
+    -- event is subsumed by the transaction; negative contributions mint
+    -- nothing (Solidity truncates them through a uint64 cast).
+    nonconsuming choice ClaimReward : Optional (ContractId RewardToken)
+      with
+        trainer : Party
+        roundId : Int
+      controller trainer
+      do
+        now <- getTime
+        let s = advance this now
+        (subCid, sub) <- fetchByKey @TrainerSubmission (aggregator, swarmId, roundId, trainer)
+        assertMsg "RewardsAlreadyClaimed" (not sub.rewardsClaimed)
+        assertMsg "ForbiddenRound"
+          (roundId < s.currentRound || (roundId == s.currentRound && s.phase == Idle))
+        let nTrainers = countFor s.trainerCounts roundId
+            maskOf i = shapleyMask shapleySeed swarmId roundId i nTrainers
+            getResult setId = do
+              res <- lookupByKey @EvaluationResult (aggregator, swarmId, roundId, setId)
+              case res of
+                None -> pure 0.0
+                Some cid -> do
+                  evaluation <- fetch cid
+                  pure evaluation.result
+        contribution <- calcShapley getResult maskOf numSamples (sub.trainerId - 1) nTrainers
+        archive subCid
+        _ <- create sub with rewardsClaimed = True
+        let amount = calculateRewards targetRewardsPerRound contribution
+        if amount <= 0.0
+          then pure None
+          else Some <$> create RewardToken with
+            issuer = aggregator; owner = trainer; swarmId; roundId; amount
+
+    -- | Mirrors SwarmV1.distribute: aggregator-driven batch payout.
+    nonconsuming choice Distribute : [ContractId RewardToken]
+      with
+        roundId : Int
+        payouts : [(Party, Decimal)]
+      controller aggregator
+      do
+        forA payouts $ \(recipient, contribution) ->
+          create RewardToken with
+            issuer = aggregator; owner = recipient; swarmId; roundId
+            amount = calculateRewards targetRewardsPerRound contribution
+
+    -- | Mirror SwarmCore.updateTrainerSelector / updateEvaluatorSelector.
+    choice UpdateTrainerSelector : ContractId Swarm
+      with
+        newSelector : SelectorPolicy
+      controller aggregator
+      do create this with trainerSelector = newSelector
+
+    choice UpdateEvaluatorSelector : ContractId Swarm
+      with
+        newSelector : SelectorPolicy
+      controller aggregator
+      do create this with evaluatorSelector = newSelector
+
+    -- | Mirror BaseAccessControl.addTrainer / addEvaluator.
+    choice AddTrainer : ContractId Swarm
+      with
+        trainer : Party
+      controller aggregator
+      do create this with trainers = if trainer `elem` trainers then trainers else trainer :: trainers
+
+    choice AddEvaluator : ContractId Swarm
+      with
+        evaluator : Party
+      controller aggregator
+      do create this with evaluators = if evaluator `elem` evaluators then evaluators else evaluator :: evaluators
+
+    -- | Mirrors CertificateRegistry.setCertificate.
+    nonconsuming choice SetCertificate : ContractId Certificate
+      with
+        certId : Text
+        payload : Text
+      controller aggregator
+      do
+        existing <- lookupByKey @Certificate (aggregator, swarmId, certId)
+        case existing of
+          Some certCid -> exercise certCid ReplaceCertificate with newPayload = payload
+          None -> create Certificate with
+            aggregator; swarmId; certId; payload
+            observers = trainers <> evaluators
+
+-- | Mirrors SwarmV1.canTrain: whitelisted and selected for the round.
+canTrain : Swarm -> Party -> Int -> Bool
+canTrain s p roundId =
+  p `elem` s.trainers && isSelected s.trainerSelector roundId p
+
+-- | Mirrors SwarmV1.canEvaluate.
+canEvaluate : Swarm -> Party -> Int -> Bool
+canEvaluate s p roundId =
+  p `elem` s.evaluators && isSelected s.evaluatorSelector roundId p
+
+countFor : Map Int Int -> Int -> Int
+countFor counts roundId = fromOptional 0 (Map.lookup roundId counts)
+
+-- | Hamming distance <= 1, the acceptance rule of
+-- ShapleyValueCalculator._registerResult.
+hammingWithin : Int -> Int -> Int -> Bool
+hammingWithin bits a b = hammingDistance bits a b <= 1
+
+-- | Pure replay of BaseTrainingPhases.updatePhase() at ledger time @now@.
+--
+-- Transition guards mirror SwarmV1's overrides: the training phase cannot
+-- end with zero trainers, and evaluator registration cannot end with zero
+-- evaluators; leaving evaluator registration freezes the round's
+-- TaskAssignment config (SwarmV1._endEvaluatorRegistrationPhase). Phase
+-- starts roll forward by exact TTLs, so the schedule does not drift with
+-- when the function happens to run.
+advance : Swarm -> Time -> Swarm
+advance s now = case s.phase of
+  Idle -> s
+  Training ->
+    let ends = addRelTime s.phaseStart s.trainingTtl
+        nTrainers = countFor s.trainerCounts s.currentRound
+    in if now >= ends && nTrainers > 0
+         then advance (s with phase = EvaluatorRegistration, phaseStart = ends) now
+         else s
+  EvaluatorRegistration ->
+    let ends = addRelTime s.phaseStart s.evalRegistrationTtl
+        nNodes = countFor s.evaluatorCounts s.currentRound
+    in if now >= ends && nNodes > 0
+         then
+           let nTasks = s.numSamples -- ContributionCalculator.getEvaluationsRequired
+               cfg = TaskConfig with
+                 nNodes
+                 nTasks
+                 tasksPerNode = max 1 (nTasks / nNodes)
+           in advance
+                (s with
+                   phase = Evaluation
+                   phaseStart = ends
+                   taskConfigs = Map.insert s.currentRound cfg s.taskConfigs)
+                now
+         else s
+  Evaluation ->
+    let ends = addRelTime s.phaseStart s.evaluationTtl
+    in if now >= ends
+         then s with phase = Idle, phaseStart = ends
+         else s

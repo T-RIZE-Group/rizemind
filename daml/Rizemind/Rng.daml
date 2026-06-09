@@ -1,0 +1,31 @@
+-- | Deterministic pseudo-randomness.
+--
+-- Stand-in for forge/src/randomness (RNG.sol, RNGPermutations.sol,
+-- WeakSeedProvider.sol). On chain those derive masks from
+-- `keccak256(contractAddress, roundId)`; Daml has no keccak primitive in
+-- older SDKs, so this draft uses a Lehmer LCG over a seed mixed from the
+-- swarm id and round. Like WeakSeedProvider, this is deterministic and
+-- predictable -- adequate for coordination, not for adversarial randomness.
+module Rizemind.Rng where
+
+import DA.Text (toCodePoints)
+
+lehmerM : Int
+lehmerM = 2147483647 -- 2^31 - 1
+
+-- | One Lehmer LCG step (Park-Miller).
+lehmerNext : Int -> Int
+lehmerNext x = (48271 * nonZero) % lehmerM
+  where nonZero = if x % lehmerM == 0 then 1 else x % lehmerM
+
+-- | Mix a text label into an integer seed.
+mixText : Text -> Int -> Int
+mixText label seed =
+  foldl (\h cp -> (h * 31 + cp) % lehmerM) (seed % lehmerM) (toCodePoints label)
+
+-- | The i-th pseudo-random draw in [0, bound) for a given mixed seed.
+-- Mirrors `RandPerm.rand(seed, i, bound)`.
+draw : Int -> Int -> Int -> Int
+draw seed i bound =
+  let stepped = foldl (\x _ -> lehmerNext x) (lehmerNext (seed + i + 1)) [1 .. 2]
+  in stepped % max 1 bound
