@@ -211,8 +211,9 @@ template Swarm
         assertMsg "NotEvaluationPhase" (s.phase == Evaluation)
         assertMsg "InvalidParameters: empty model hash" (modelHash /= "")
         (_, slot) <- fetchByKey @EvaluatorSlot (aggregator, swarmId, roundId, evaluator)
-        let cfg = fromOptional (error "no task config for round") $
-              Map.lookup roundId s.taskConfigs
+        cfg <- case Map.lookup roundId s.taskConfigs of
+          Some c -> pure c
+          None -> abort "no task config for round"
         -- evaluator ids are 1-based, TaskAssignment node ids 0-based
         assertMsg "NotAssignedTo" (isAssigned cfg roundId (slot.evaluatorId - 1) taskId)
         -- ShapleyValueCalculator accepts the target set or any set at
@@ -226,6 +227,7 @@ template Swarm
           None -> create EvaluationResult with
             aggregator; swarmId; roundId; setId; modelHash; result
             merges = 1
+            observers = trainers <> evaluators
 
     -- | Mirrors claimReward(roundId, trainer): computes the trainer's
     -- Shapley contribution from registered evaluations, marks the

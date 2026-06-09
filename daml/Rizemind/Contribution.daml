@@ -24,8 +24,13 @@ template EvaluationResult
     modelHash : ModelHash
     result : Decimal
     merges : Int         -- ^ how many submissions were folded in
+    observers : [Party]  -- ^ swarm members; on a public chain results are
+                         --   world-readable, here evaluators need visibility
+                         --   to merge and trainers to compute their Shapley
+                         --   value at claim time
   where
     signatory aggregator
+    observer observers
     key (aggregator, swarmId, roundId, setId) : (Party, Text, Int, Int)
     maintainer key._1
 

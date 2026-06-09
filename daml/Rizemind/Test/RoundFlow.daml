@@ -21,7 +21,6 @@ import Rizemind.Contribution (shapleyMask)
 import Rizemind.Factory
 import Rizemind.Selector
 import Rizemind.Swarm
-import Rizemind.Compensation
 
 roundFlow : Script ()
 roundFlow = do
@@ -85,11 +84,11 @@ roundFlow = do
         let m = shapleyMask params.shapleySeed params.swarmId 1 taskId nTrainers
             flipBit s i = if testBit s i then clearBit s i else setBit s i
         in dedupInts [m, flipBit m 0, flipBit m 1]
-  mapA_ (\(taskId, setId) ->
+  _ <- forA [ (taskId, setId) | taskId <- [0, 1], setId <- setsForTask taskId ] $
+    \(taskId, setId) ->
       submit eve $ exerciseCmd swarmCid RegisterEvaluation with
         evaluator = eve; roundId = 1; taskId; setId
-        modelHash = "0xcoalition"; result = score setId)
-    [ (taskId, setId) | taskId <- [0, 1], setId <- setsForTask taskId ]
+        modelHash = "0xcoalition"; result = score setId
   -- claiming before the round is back to IDLE is forbidden
   submitMustFail alice $ exerciseCmd swarmCid ClaimReward with
     trainer = alice; roundId = 1

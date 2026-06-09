@@ -4,10 +4,9 @@ A draft port of the Solidity contracts in `forge/src` to
 [Daml](https://docs.daml.com/), targeting Daml 2.x / Canton. It is a
 **semantic** port, not a line-by-line one: Daml's ledger model (party-based
 authorization, immutable contracts, no autonomous execution) makes several
-EVM mechanisms unnecessary and forces a different shape for others. This
-draft has **not been compiled** — no Daml SDK was available in the
-environment that produced it — so expect minor syntax fixes on first
-`daml build`.
+EVM mechanisms unnecessary and forces a different shape for others. The
+project builds with SDK 2.9.4 and the end-to-end round test
+(`Rizemind.Test.RoundFlow`) passes under `daml test`.
 
 ## Module map
 
@@ -56,9 +55,12 @@ environment that produced it — so expect minor syntax fixes on first
    becomes a Lehmer LCG seeded from the swarm id (`Rng.daml`). Like
    `WeakSeedProvider`, it is predictable; a production port should source
    randomness differently.
-8. **Privacy (a gain, not a loss).** On Canton, `EvaluationResult`,
-   `TrainerSubmission` and `RewardToken` contracts are only visible to their
-   stakeholders — sub-transaction privacy the EVM version cannot offer.
+8. **Privacy and visibility.** On Canton, contracts are only visible to
+   their stakeholders — sub-transaction privacy the EVM version cannot
+   offer. The flip side: state that is world-readable on a public chain
+   must be shared explicitly. `EvaluationResult` lists the swarm's members
+   as observers because evaluators fetch it to merge results and trainers
+   fetch it to compute their Shapley value at claim time.
 
 ## Known simplifications
 
