@@ -22,3 +22,5 @@ poetry.lock
 **/.swp
 
 **/*.csv
+# Daml build outputs
+daml/.daml/
