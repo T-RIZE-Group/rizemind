@@ -14,6 +14,7 @@ Meet Rizemind
    install
    quickstarts/index
    how-tos/index
+   architecture/index
    references/index
    developers/index
 
