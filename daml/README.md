@@ -75,10 +75,141 @@ project builds with SDK 2.9.4 and the end-to-end round test
 - `SetCertificate` is aggregator-only; the Solidity interface leaves the
   caller policy to the implementer.
 
-## Building and testing
+## Running
+
+### Prerequisites
+
+- **JDK 11+** (the sandbox and script runner are JVM-based; tested with
+  OpenJDK 21).
+- **Daml SDK 2.9.4**. Standard install:
+
+  ```bash
+  curl -sSL https://get.daml.com/ | sh -s 2.9.4
+  export PATH="$HOME/.daml/bin:$PATH"
+  ```
+
+  If `get.daml.com` is blocked in your environment (it is in some CI
+  sandboxes), the same SDK ships as a GitHub release artifact:
+
+  ```bash
+  curl -sSL -o /tmp/daml-sdk.tar.gz \
+    https://github.com/digital-asset/daml/releases/download/v2.9.4/daml-sdk-2.9.4-linux.tar.gz
+  tar xzf /tmp/daml-sdk.tar.gz -C /tmp && /tmp/sdk-2.9.4/install.sh
+  export PATH="$HOME/.daml/bin:$PATH"
+  ```
+
+### Build and test (fast loop)
+
+All commands run from this `daml/` directory:
 
 ```bash
-cd daml
-daml build
-daml test   # runs Rizemind.Test.RoundFlow.roundFlow
+daml build   # compiles to .daml/dist/rizemind-daml-0.1.0.dar
+daml test    # runs all Daml Scripts under Rizemind/Test/ on an in-memory ledger
 ```
+
+`daml test` compiles in memory and does **not** refresh the DAR — run
+`daml build` again before uploading anywhere.
+
+For an IDE with type-on-hover, jump-to-definition and inline script
+results, open the project with `daml studio` (VS Code).
+
+### Run against a local Canton sandbox
+
+The demo script manipulates ledger time with `setTime`, so the sandbox must
+run in **static time** mode:
+
+```bash
+# terminal 1: start a local Canton sandbox (takes ~30s to be ready)
+daml sandbox --static-time --port 6865
+
+# terminal 2: upload the package, then drive a full training round
+daml build
+daml ledger upload-dar --host localhost --port 6865 .daml/dist/rizemind-daml-0.1.0.dar
+daml script --dar .daml/dist/rizemind-daml-0.1.0.dar \
+  --script-name Rizemind.Test.RoundFlow:roundFlow \
+  --ledger-host localhost --ledger-port 6865 --static-time
+```
+
+Two sharp edges, both observed in practice:
+
+- **Ledger time is monotonic.** `setTime` cannot move backwards, so the
+  round-flow script runs once per sandbox; restart the sandbox to run it
+  again.
+- **Stale DARs fail confusingly.** If you edit code and re-upload without
+  `daml build`, the ledger keeps executing the old package. When sandbox
+  behaviour contradicts `daml test`, rebuild first.
+
+To poke at the resulting ledger state interactively, use
+`daml repl .daml/dist/rizemind-daml-0.1.0.dar --ledger-host localhost --ledger-port 6865`
+or point Navigator at the sandbox with `daml navigator server localhost 6865`.
+
+## Contributing
+
+### Ground rules
+
+1. **`forge/src` is the source of truth.** This port tracks the Solidity
+   contracts; it does not fork their semantics. If a behaviour change is
+   needed, land it (or at least agree on it) on the Solidity side first,
+   then mirror it here.
+2. **Keep the module map honest.** Every module's doc comment names the
+   Solidity file(s) it ports, and choice-level comments name the function
+   they mirror (`-- | Mirrors registerRoundContribution(...)`). When you
+   add or move logic, update the mapping table and the
+   "Translation decisions" section above.
+3. **Intentional divergences are documented, not silent.** Anything that
+   deviates from the EVM behaviour (numerics, randomness, visibility,
+   clamping) belongs in "Known simplifications" with a one-line rationale.
+
+### Workflow
+
+```bash
+daml build && daml test       # must both pass before pushing
+```
+
+- Put pure logic (math, sampling, bit twiddling) in standalone modules like
+  `Bits`, `Rng`, `TaskAssignment`, `Contribution` — pure functions are
+  directly reusable in test scripts, as `Test/RoundFlow.daml` does when it
+  recomputes coalition masks.
+- Workflow state and choices live in `Swarm.daml`; new participant-facing
+  operations should be choices on `Swarm` so the phase machine (`advance`)
+  is applied uniformly.
+- Every workflow change needs Daml Script coverage in `Rizemind/Test/`:
+  the happy path plus `submitMustFail` cases for each authorization or
+  phase guard you add. Scripts must stay sandbox-compatible (no
+  IDE-ledger-only features) so they double as live demos.
+
+### Daml pitfalls to watch for
+
+Lessons already paid for while getting this port green:
+
+- **Daml is strict.** Never pass `error ...` as a default argument
+  (e.g. to `fromOptional`) — it evaluates even when unused. Pattern-match
+  and `abort` instead.
+- **Visibility is explicit.** On Canton a party can only fetch/exercise
+  contracts it is a stakeholder or observer of, even when authorization
+  would otherwise pass. If a party must read or merge a contract by key
+  (as evaluators and claiming trainers do with `EvaluationResult`), add it
+  to the observers and say why in a comment.
+- **`daml test` is not the sandbox.** The in-memory ledger forgives
+  nothing about types but differs operationally (time handling, package
+  upload). Validate workflow changes against `daml sandbox` before calling
+  them done.
+
+### Versioning
+
+Bump `version` in `daml.yaml` for any change to templates or choice
+signatures — Daml packages are content-addressed, and live ledgers can only
+migrate between properly versioned packages (see Smart Contract Upgrade in
+Daml 2.9+).
+
+## Status / roadmap
+
+Open items, roughly in priority order:
+
+- Wire `DemocraticWhitelist` into `canTrain` as an alternative membership
+  policy (mirroring how swarms choose an `IAccessControl` implementation).
+- Replace `RewardToken`'s direct `Transfer` with propose-accept or Daml
+  Finance holdings.
+- Per-round `numSamples` override with previous-round fallback, as in
+  `ContributionCalculator`.
+- A CI job running `daml build && daml test`, alongside `forge-test.yml`.
