@@ -1,0 +1,62 @@
+[project]
+name = "prefect-delegation"
+version = "0.1.0"
+description = "Rizemind trainer that delegates training to Prefect on its own infrastructure, with MLflow logging."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "flwr[simulation]>=1.18.0",
+    "torch>=2.7.0",
+    "numpy>=1.26.4",
+    "prefect>=3.0.0",
+    "mlflow>=3.3.2",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.flwr.app]
+publisher = "trizelabs"
+
+[tool.flwr.app.components]
+serverapp = "src.server:app"
+clientapp = "src.client:app"
+
+[tool.flwr.app.config]
+num-server-rounds = 3
+min-available-clients = 2
+fraction-fit = 0.5
+fraction-evaluate = 0.5
+num-supernodes = 4
+mlflow-uri = "./mlruns"
+
+[tool.flwr.federations]
+default = "local-simulation"
+
+[tool.flwr.federations.local-simulation]
+options.num-supernodes = 4
+
+# --- Delegation / infrastructure settings (per-trainer in production) ---
+[tool.delegation]
+# Object store the ETL, training step, and trainer share. Swap "local" for an
+# S3/GCS ArtifactStore implementation; store_location becomes the bucket/prefix.
+store_backend = "local"
+store_location = ".delegation_bucket"
+epochs = 1
+lr = 0.01
+mlflow_uri = "./mlruns"
+mlflow_experiment = "prefect-delegation"
+# Additional security step (inferred): digest of the approved training image the
+# Prefect flow is allowed to run. Empty = accept the local subprocess demo image.
+approved_image_digest = ""
+
+# --- Blockchain / identity ---
+[tool.web3.swarm.factory_v1]
+name = "test_model"
+local_factory_deployment_path = "../../forge/broadcast/SwarmV1Factory.s.sol/31337/run-latest.json"
+
+[tool.eth.account]
+mnemonic = "test test test test test test test test test test test junk"
+
+[tool.web3]
+url = "http://127.0.0.1:8545"

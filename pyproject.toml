@@ -126,6 +126,7 @@ rizemind = { workspace = true }
 
 [tool.uv.workspace]
 members = [
+    "examples/prefect_delegation",
     "examples/rizenet_testnet",
     "examples/torch_basic",
     "examples/torch_diff_privacy",
