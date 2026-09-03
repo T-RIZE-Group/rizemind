@@ -1,14 +1,34 @@
 name: Forge Test
 
+# Only the paths that actually feed `forge build` / `forge test`. Notably absent:
+# `forge/broadcast` (deployment logs), `forge/mutation` (the mutation gate's own
+# tooling, which has its own workflow) and the shell/markdown files, none of
+# which can change the outcome of this job. The push and pull_request lists are
+# kept identical — GitHub Actions does not support YAML anchors, so they have to
+# be edited together.
 on:
   push:
     branches:
       - "*"
     paths:
-      - "forge/**"
+      - "forge/src/**"
+      - "forge/test/**"
+      - "forge/script/**"
+      - "forge/foundry.toml"
+      - "forge/remappings.txt"
+      - "forge/soldeer.lock"
+      - ".github/workflows/forge-test.yml"
   pull_request:
     branches:
       - "*"
+    paths:
+      - "forge/src/**"
+      - "forge/test/**"
+      - "forge/script/**"
+      - "forge/foundry.toml"
+      - "forge/remappings.txt"
+      - "forge/soldeer.lock"
+      - ".github/workflows/forge-test.yml"
   workflow_dispatch:
 
 env:

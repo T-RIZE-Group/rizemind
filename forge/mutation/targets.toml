@@ -9,11 +9,22 @@
 #     absent. Scripts, tests and vendored dependencies are never mutated.
 #   * Targets are gated individually. A single repository-wide average would let
 #     the strong score on `randomness` hide the survivors in `access`.
-#   * `min_score` is a floor taken from a recorded baseline, never an
-#     aspiration. Raise it only after the suite actually clears the new value.
+#   * `min_score` is a floor taken from a recorded range, never an aspiration.
+#     Raise it only after repeated campaigns actually clear the new value.
 #
-# Baseline campaign: Foundry v1.8.1, profile `ci`, 4 jobs, 2026-09-03.
-# Every number below is reproducible with `python3 mutation/run.py --all`.
+# Baselines: Foundry v1.8.1, profile `ci`, 4 jobs, 8 full campaigns on
+# 2026-09-03. Each target records the observed RANGE, not a single run.
+#
+# Forge's mutation testing is a preview and is not reproducible across
+# environments. Within one machine state it is exact — five consecutive
+# campaigns were bit-identical — but across states, mutants migrate between
+# `survived`, `skipped` and `invalid`, moving the score by up to 8.5 points on
+# `access` and `swarm` (the targets with the most churn) and ~2 points
+# elsewhere. Pinning `jobs` narrows this but does not remove it.
+#
+# So `min_score` is the observed MINIMUM less a margin covering that target's
+# measured spread — not the last number someone saw. A floor set just under a
+# single run will flake CI without any code changing.
 
 [defaults]
 # Sized to a 4-vCPU GitHub-hosted runner. Pinned rather than left to default
@@ -38,8 +49,9 @@ paths = [
   "src/access/FLDemocraticWhitelist.sol",
 ]
 critical = true
-# Baseline: 42.86% (18 killed / 24 survived), 28.7% invalid.
-min_score = 40.0
+# Observed 42.86-51.35% over 8 campaigns (spread 8.49); invalid 27.9-30.1%.
+# Floor = 42.86 - 10.5 margin.
+min_score = 32.0
 max_invalid_rate = 40.0
 
 # --- Accounting ---------------------------------------------------------------
@@ -48,8 +60,9 @@ max_invalid_rate = 40.0
 [targets.compensation]
 paths = ["src/compensation/SimpleMintCompensation.sol"]
 critical = true
-# Baseline: 92.68% (38 killed / 3 survived), 8.9% invalid.
-min_score = 90.0
+# Observed 91.67-92.68% over 8 campaigns (spread 1.01); invalid 8.9%.
+# Floor = 91.67 - 5 margin.
+min_score = 86.0
 max_invalid_rate = 20.0
 
 # --- Swarm core ---------------------------------------------------------------
@@ -61,8 +74,9 @@ paths = [
   "src/swarm/registry/CertificateRegistry.sol",
   "src/swarm/registry/SwarmCore.sol",
 ]
-# Baseline: 45.83% (11 killed / 13 survived), 31.6% invalid.
-min_score = 45.0
+# Observed 45.83-53.85% over 8 campaigns (spread 8.02); invalid 27.2-31.6%.
+# Floor = 45.83 - 10 margin.
+min_score = 35.0
 max_invalid_rate = 45.0
 
 # --- Trainer sampling ---------------------------------------------------------
@@ -72,8 +86,9 @@ paths = [
   "src/sampling/RandomSampling.sol",
   "src/sampling/SelectorFactory.sol",
 ]
-# Baseline: 55.00% (22 killed / 18 survived), 26.2% invalid.
-min_score = 52.0
+# Observed 53.85-56.76% over 8 campaigns (spread 2.91); invalid 21.5-26.2%.
+# Floor = 53.85 - 6 margin.
+min_score = 48.0
 max_invalid_rate = 40.0
 
 # --- Randomness ---------------------------------------------------------------
@@ -82,16 +97,18 @@ paths = [
   "src/randomness/RNG.sol",
   "src/randomness/RNGPermutations.sol",
 ]
-# Baseline: 87.88% (116 killed / 16 survived), 8.6% invalid.
+# Observed 86.67-87.88% over 8 campaigns (spread 1.21); invalid 7.8-8.6%.
+# Floor = 86.67 - 5 margin.
 # By far the slowest target (~2 min): every mutant replays the permutation
 # tests, which are the most expensive in the suite.
-min_score = 85.0
+min_score = 81.0
 max_invalid_rate = 20.0
 
 # --- Round training -----------------------------------------------------------
 [targets.training]
 paths = ["src/training/RoundTraining.sol"]
-# Baseline: 71.43% (10 killed / 4 survived), 40.5% invalid — the highest invalid
-# rate in the repository, a consequence of how little code there is to mutate.
-min_score = 70.0
+# Observed 71.43-76.47% over 8 campaigns (spread 5.04); invalid 32.4-40.5% —
+# the highest invalid rate in the repository, a consequence of how little code
+# there is to mutate. Floor = 71.43 - 7 margin.
+min_score = 64.0
 max_invalid_rate = 55.0

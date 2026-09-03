@@ -57,26 +57,53 @@ hold:
 
 ## Current baseline
 
-Foundry `v1.8.1`, profile `ci`, `--mutation-jobs 4`, recorded 2026-09-03.
-Reproduce with `python3 mutation/run.py --all`.
+Foundry `v1.8.1`, profile `ci`, `--mutation-jobs 4`. Latest campaign plus the
+range observed over 8 full campaigns on 2026-09-03.
 
-| Target | Score | Killed | Survived | Invalid | Skipped | Floor |
-| --- | --: | --: | --: | --: | --: | --: |
-| `access` | 42.86% | 18 | 24 | 39 | 55 | 40% |
-| `compensation` | 92.68% | 38 | 3 | 5 | 10 | 90% |
-| `swarm` | 45.83% | 11 | 13 | 36 | 54 | 45% |
-| `sampling` | 55.00% | 22 | 18 | 28 | 39 | 52% |
-| `randomness` | 87.88% | 116 | 16 | 23 | 113 | 85% |
-| `training` | 71.43% | 10 | 4 | 15 | 8 | 70% |
+| Target | Score | Observed range | Killed | Survived | Invalid | Skipped | Floor |
+| --- | --: | --: | --: | --: | --: | --: | --: |
+| `access` | 47.50% | 42.86–51.35% | 19 | 21 | 38 | 58 | 32% |
+| `compensation` | 92.31% | 91.67–92.68% | 36 | 3 | 7 | 10 | 86% |
+| `swarm` | 50.00% | 45.83–53.85% | 13 | 13 | 37 | 51 | 35% |
+| `sampling` | 53.85% | 53.85–56.76% | 21 | 18 | 26 | 42 | 48% |
+| `randomness` | 87.30% | 86.67–87.88% | 110 | 16 | 20 | 122 | 81% |
+| `training` | 76.47% | 71.43–76.47% | 13 | 4 | 13 | 7 | 64% |
 
-78 mutants survive today. The floors sit just under each measured score, so the
-gate blocks regressions from day one while the survivor backlog is worked down.
-The whole campaign takes roughly 15 minutes on a 4-vCPU runner, most of it in
-`randomness`.
+75 mutants survive in the latest run. The whole campaign takes roughly 15–20
+minutes on a 4-vCPU runner, most of it in `randomness`.
 
 `access` and `swarm` are the two worth attacking first: they are the lowest
 scores in the repository *and* the ones where a survivor maps to a privilege or
 lifecycle bug rather than a cosmetic one.
+
+### The score is not reproducible across environments
+
+This is the most important caveat on this page, and it shapes every floor above.
+
+Within one machine state, campaigns are **exact**: five consecutive full runs
+were bit-identical, and re-running a single target three times gives the same
+number every time. Across machine states they are not. Rebuilding `out/`, or
+simply coming back later, migrates mutants between `survived`, `skipped` and
+`invalid` — `access` alone produced 42.86%, 48.65% and 51.35% from identical
+source, and `swarm` moved 8 points the same way. Targets with fewer mutants and
+less `invalid` churn (`compensation`, `randomness`, `training`, `sampling`)
+stayed within ~2 points.
+
+Pinning `--mutation-jobs` narrows this but does not remove it; the totals stay
+constant (`access` is always 136 mutants) while the classification shifts.
+
+Two consequences:
+
+* **Floors carry a margin.** Each `min_score` is the observed *minimum* less a
+  margin covering that target's measured spread — 10 points for `access` and
+  `swarm`, 5 for the rest. A floor set 1–2 points under a single measurement,
+  which is what the tempting "record the baseline and gate on it" reading
+  produces, turns CI red without anyone changing a line of code.
+* **The survivor list is the durable artifact, not the percentage.** Treat the
+  score as a coarse regression alarm — it catches a subsystem falling off a
+  cliff — and do the real work from the survivor list in the job summary.
+
+Re-measure the range, rather than a single run, before tightening any floor.
 
 ## How the PR gate picks targets
 
@@ -120,11 +147,13 @@ when runtime becomes unmanageable, and it costs real detection.
 
 `min_score` is a floor, not a goal. The procedure:
 
-1. Land the target at `min_score = 0.0` and let the nightly campaign record a
-   few runs.
-2. Set `min_score` to the observed baseline, so the score cannot regress.
-3. Raise it as survivors get killed, one step at a time, never above what the
-   suite currently clears.
+1. Land the target at `min_score = 0.0` and let the nightly campaign record
+   several runs — several, not one, because of the spread described above.
+2. Set `min_score` to the observed *minimum* less a margin covering that
+   target's spread, so the score cannot regress but ordinary tool wander cannot
+   trip it either.
+3. Raise it as survivors get killed, one step at a time, never above what
+   repeated campaigns currently clear.
 
 `90%+` is a reasonable objective for authorization and accounting logic. There
 is no universal threshold, and a target is gated on its own number precisely so
@@ -158,15 +187,21 @@ from the same seed) and disables `ffi`, and the workflow pins Foundry to an
 exact version rather than `nightly` or `stable` — mutation operators and worker
 behaviour change between releases, which makes scores incomparable.
 
-Known fragility: `test/randomness/RNG.t.sol::test_randFuzzStatistical` asserts
-that 100 samples average within 10% of `max / 2`. That is roughly a 3.5-sigma
-bound, so it fails for some `max` values (it does for `max = 102`). The pinned
-seed keeps it green and reproducible, but the assertion should be widened or the
-sample count raised before the seed is ever changed.
-
 `--mutation-jobs` is likewise pinned in `targets.toml` rather than left to
 default to the core count, because `skipped` and `invalid` counts drift with
-concurrency and would make baselines runner-dependent.
+concurrency and would make baselines runner-dependent. The mutation workflow
+also sets `cache: false` on `foundry-toolchain`: that cache only holds RPC and
+Etherscan responses, which this suite never uses, so here it is pure run-to-run
+variance.
+
+This is also why `test/randomness/RNG.t.sol::test_randFuzzStatistical` was
+fixed rather than merely pinned. It compared a 100-sample mean against a 10%
+tolerance — only 3.46 standard errors, so it failed for roughly one `max` in
+1900, or about one plain `forge test` run in eight. Measured over 40 seeds it
+failed 3 times; at 300 samples, where the same 10% tolerance is exactly six
+standard errors, it failed 0 times. A pinned seed would have hidden that rather
+than removed it, and any mutant whose run happened to trip the flake would have
+been recorded as killed.
 
 ## Reference
 

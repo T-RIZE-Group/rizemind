@@ -14,6 +14,7 @@ on:
       - "forge/src/**/*.sol"
       - "forge/test/**/*.sol"
       - "forge/foundry.toml"
+      - "forge/remappings.txt"
       - "forge/soldeer.lock"
       - "forge/mutation/**"
       - ".github/workflows/mutation-testing.yml"
@@ -58,6 +59,10 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: ${{ env.FOUNDRY_VERSION }}
+          # This job compares scores between runs, so it wants to be hermetic.
+          # The action's cache only holds RPC/Etherscan responses, which this
+          # suite never uses — it is pure run-to-run variance here.
+          cache: false
 
       - name: Show toolchain version
         run: forge --version
