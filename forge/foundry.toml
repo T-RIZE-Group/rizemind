@@ -11,6 +11,29 @@ fs_permissions = [
   { access = "read", path = "./reports" },
 ]
 
+# CI profile. Inherits everything from `default` and only adds determinism:
+# mutation testing compares a mutated run against a baseline run, so a test whose
+# outcome depends on the seed can "kill" a mutant it never actually detected.
+[profile.ci]
+# `ffi` is rejected by mutation testing and is not needed by this suite.
+ffi = false
+
+# Invariant campaigns derive their randomness from the fuzz seed as well —
+# `[invariant]` has no `seed` key of its own — so pinning it here fixes both.
+[profile.ci.fuzz]
+seed = "0x0000000000000000000000000000000000000000000000000000000000000001"
+
+[profile.ci.mutation]
+# Best-effort per-mutant wall clock, in seconds. Mutants that exceed it are
+# reported as `timed_out` and excluded from the score, so `forge/mutation/run.py`
+# fails the run rather than letting them pass as kills.
+timeout = 30
+# Every operator stays enabled. An operator is only excluded once it is
+# documented as systematically producing equivalent or uncompilable mutants —
+# never to improve the score.
+include_operators = []
+exclude_operators = []
+
 [rpc_endpoints]
 local = "http://127.0.0.1:8545"
 rizenet-testnet = "https://testnet.rizenet.io"

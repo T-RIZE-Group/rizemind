@@ -29,7 +29,9 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: nightly
+          # Pinned exactly rather than `nightly`: the mutation gate compares
+          # scores across runs, which is only meaningful on a fixed toolchain.
+          version: v1.8.1
 
       - name: Install Dependencies
         working-directory: forge

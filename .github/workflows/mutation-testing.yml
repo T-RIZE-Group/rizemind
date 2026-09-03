@@ -1,0 +1,122 @@
+name: Mutation Testing
+
+# Mutation testing is far more expensive than the ordinary suite, and Forge's
+# implementation is still a preview. The policy is therefore split in two:
+#
+#   * every PR touching Solidity runs a targeted gate — the high-risk
+#     subsystems plus whatever the branch actually changed — and blocks on it;
+#   * a nightly campaign covers all of `src/` and stays report-only for now, so
+#     that widening the scope surfaces survivors without breaking `main`
+#     overnight (see forge/mutation/README.md).
+on:
+  pull_request:
+    paths:
+      - "forge/src/**/*.sol"
+      - "forge/test/**/*.sol"
+      - "forge/foundry.toml"
+      - "forge/soldeer.lock"
+      - "forge/mutation/**"
+      - ".github/workflows/mutation-testing.yml"
+  schedule:
+    # 03:30 UTC daily.
+    - cron: "30 3 * * *"
+  workflow_dispatch:
+    inputs:
+      report_only:
+        description: "Report violations without failing the job"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FOUNDRY_PROFILE: ci
+  # Pinned exactly. `nightly` and floating `stable` change mutation operators
+  # and worker behaviour between runs, which makes scores incomparable.
+  FOUNDRY_VERSION: v1.8.1
+
+jobs:
+  mutation:
+    name: ${{ github.event_name == 'pull_request' && 'PR gate' || 'Full campaign' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          # The PR gate diffs against the base branch to decide which targets
+          # to mutate, so it needs more than the tip commit.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+
+      - name: Show toolchain version
+        run: forge --version
+
+      - name: Install dependencies
+        working-directory: forge
+        run: forge soldeer install
+
+      - name: Build
+        working-directory: forge
+        run: forge build
+
+      # A mutation score is only meaningful against a green baseline: a test
+      # that already fails would "kill" every mutant it touches.
+      - name: Baseline test run
+        working-directory: forge
+        run: forge test
+
+      # `actions/checkout` leaves a PR checkout without a local ref for the base
+      # branch, so fetch it explicitly before diffing against it.
+      - name: Fetch base branch
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          git fetch --no-tags origin "+refs/heads/$BASE_REF:refs/remotes/origin/$BASE_REF"
+
+      - name: Run mutation campaign (PR gate)
+        if: github.event_name == 'pull_request'
+        working-directory: forge
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          python3 mutation/run.py \
+            --changed-since "origin/$BASE_REF" \
+            --report mutation-report.json
+
+      # Report-only on the schedule: the PR gate is the blocking one, and a
+      # nightly that can turn `main` red on its own is a nightly people learn to
+      # ignore. Once the survivor backlog in forge/mutation/README.md is worked
+      # down, drop `--report-only` from the schedule branch to make it blocking.
+      #
+      # `--timeout 60` gives the wider scope more room than the 30s PR budget;
+      # anything still timing out at 60s is a genuine finding.
+      - name: Run mutation campaign (full)
+        if: github.event_name != 'pull_request'
+        working-directory: forge
+        run: |
+          python3 mutation/run.py \
+            --all \
+            --timeout 60 \
+            --report mutation-report.json \
+            ${{ (github.event_name == 'schedule' || inputs.report_only) && '--report-only' || '' }}
+
+      - name: Upload mutation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-report-${{ github.run_id }}
+          path: forge/mutation-report.json
+          if-no-files-found: ignore
+          retention-days: 30
