@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import sys
 from pathlib import Path
@@ -56,3 +57,31 @@ def test_validate_policy_accepts_exact_exclusion(
     }
 
     mutation_runner.validate_policy(defaults, targets)
+
+
+def test_select_targets_runs_all_for_global_input(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    targets = {
+        "access": mutation_runner.Target(
+            name="access",
+            paths=["src/access/FLAccessControl.sol"],
+            min_score=30.0,
+            critical=True,
+        ),
+        "randomness": mutation_runner.Target(
+            name="randomness",
+            paths=["src/randomness/RNG.sol"],
+            min_score=80.0,
+        ),
+    }
+    monkeypatch.setattr(
+        mutation_runner,
+        "changed_files",
+        lambda _base_ref: ["forge/mutation/targets.toml"],
+    )
+    args = argparse.Namespace(all=False, target=[], changed_since="origin/main")
+
+    selected = mutation_runner.select_targets(args, targets)
+
+    assert [target.name for target in selected] == ["access", "randomness"]

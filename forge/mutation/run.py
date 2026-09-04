@@ -34,6 +34,14 @@ from pathlib import Path
 
 FORGE_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG = FORGE_ROOT / "mutation" / "targets.toml"
+GLOBAL_MUTATION_INPUTS = {
+    ".github/workflows/mutation-testing.yml",
+    "forge/foundry.toml",
+    "forge/mutation/run.py",
+    "forge/mutation/targets.toml",
+    "forge/remappings.txt",
+    "forge/soldeer.lock",
+}
 
 
 @dataclass
@@ -217,21 +225,18 @@ def validate_policy(defaults: Defaults, targets: dict[str, Target]) -> None:
         sys.exit("\n\n".join(problems))
 
 
-def changed_sources(base_ref: str) -> list[str]:
-    """Finds the Solidity files this branch changed.
+def changed_files(base_ref: str) -> list[str]:
+    """Finds the repository files this branch changed.
 
-    Test files count, and so do deletions: weakening or removing
-    `test/swarm/SwarmCore.t.sol` lowers the swarm score just as surely as editing
-    the contract does, and a regression gate that ignores that is trivially
-    bypassed.
+    Deletions are included because weakening or removing a test must still select
+    the subsystem whose mutation score it can lower.
 
     Args:
         base_ref: Branch or revision to compare against, such as `origin/main`.
           The comparison runs from its merge base with HEAD where one exists.
 
     Returns:
-        Paths of the changed `.sol` files under `src` or `test`, relative to the
-        forge directory. Empty when the branch changed no Solidity.
+        Changed paths relative to the repository root.
 
     Raises:
         SystemExit: If the diff against `base_ref` fails.
@@ -247,7 +252,7 @@ def changed_sources(base_ref: str) -> list[str]:
     # Deletions are deliberately included: removing a test is the strongest way
     # to weaken a subsystem, so it has to select that subsystem's target. Only
     # the path string is used here, never the file, and a deleted *target* path
-    # is caught separately by validate_paths.
+    # is caught separately by validate_policy.
     diff = subprocess.run(
         ["git", "diff", "--name-only", diff_from, "HEAD"],
         cwd=FORGE_ROOT,
@@ -257,12 +262,7 @@ def changed_sources(base_ref: str) -> list[str]:
     if diff.returncode != 0:
         sys.exit(f"git diff against {base_ref} failed: {diff.stderr.strip()}")
 
-    return [
-        line[len("forge/") :]
-        for line in diff.stdout.splitlines()
-        if line.endswith(".sol")
-        and (line.startswith("forge/src/") or line.startswith("forge/test/"))
-    ]
+    return diff.stdout.splitlines()
 
 
 def subsystem_of(path: str) -> str | None:
@@ -286,9 +286,10 @@ def select_targets(
 ) -> list[Target]:
     """Decides which targets to run for this invocation.
 
-    Under `--changed-since`, selection is the union of the targets marked
-    critical and those owning a changed subsystem. A changed subsystem that no
-    target owns is reported as a warning rather than passing unnoticed.
+    Under `--changed-since`, a global campaign-input change selects every target.
+    Otherwise selection is the union of targets marked critical and those owning
+    a changed subsystem. A changed subsystem that no target owns is reported as a
+    warning rather than passing unnoticed.
 
     Args:
         args: Parsed arguments carrying exactly one of `all`, `target` or
@@ -315,7 +316,21 @@ def select_targets(
         return [targets[name] for name in args.target]
 
     if args.changed_since:
-        touched = sorted(set(changed_sources(args.changed_since)))
+        changed = sorted(set(changed_files(args.changed_since)))
+        global_changes = sorted(set(changed) & GLOBAL_MUTATION_INPUTS)
+        if global_changes:
+            print(
+                "global mutation inputs changed; running every target: "
+                + ", ".join(global_changes)
+            )
+            return list(targets.values())
+
+        touched = [
+            path[len("forge/") :]
+            for path in changed
+            if path.endswith(".sol")
+            and (path.startswith("forge/src/") or path.startswith("forge/test/"))
+        ]
         if touched:
             print(f"changed Solidity sources: {', '.join(touched)}")
         else:

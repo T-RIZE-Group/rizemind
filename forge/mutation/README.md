@@ -123,6 +123,11 @@ base and selects:
   so editing `test/swarm/registry/SwarmCore.t.sol` re-runs the `swarm` target —
   weakening a test lowers the score exactly as editing the contract does.
 
+A change to a global campaign input runs every target. These inputs are the CI
+workflow, `foundry.toml`, dependency metadata, the runner, and `targets.toml`.
+They can change the meaning or enforcement of every score, so validating only
+critical targets would leave the rest of the policy untested.
+
 A changed file in a subsystem no target owns prints a warning rather than
 passing silently, which is the signal to add it to `targets.toml`.
 
