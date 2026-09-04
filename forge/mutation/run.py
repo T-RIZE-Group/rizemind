@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
-"""Run Foundry mutation campaigns per target and enforce the repository policy.
+"""Runs Foundry mutation campaigns per target and enforces the mutation policy.
 
-`forge test --mutate` reports surviving mutants but still exits 0, so the gate
-has to live outside Forge: this script runs one campaign per target, parses the
-`--json` report, and fails when a target regresses.
+`forge test --mutate` reports surviving mutants but still exits 0, and its score
+excludes invalid, skipped and timed-out mutants, so the gate has to live outside
+Forge. This module runs one campaign per target defined in `targets.toml`, parses
+the `--json` report, and exits non-zero when a target regresses.
 
-Examples
---------
-    # PR gate: high-risk targets plus whatever the branch touched
+Targets are evaluated individually rather than against a repository-wide average,
+so a strong score on one subsystem cannot mask survivors in another.
+
+Typical usage example:
+
+    # PR gate: critical targets plus whatever the branch touched
     python3 mutation/run.py --changed-since origin/main
 
     # Nightly: everything, report-only
@@ -34,6 +38,18 @@ DEFAULT_CONFIG = FORGE_ROOT / "mutation" / "targets.toml"
 
 @dataclass
 class Target:
+    """A group of contracts mutated and gated together.
+
+    Attributes:
+        name: The target's key in `targets.toml`, used on the command line.
+        paths: Production contracts to mutate, relative to the forge directory.
+        min_score: Score floor, below which the campaign fails. Taken from an
+          observed minimum less a margin, never from a single measurement.
+        critical: Whether to run on every pull request even when untouched.
+        max_invalid_rate: Ceiling on the share of mutants that fail to compile,
+          overriding the global default when set.
+    """
+
     name: str
     paths: list[str]
     min_score: float
@@ -43,6 +59,16 @@ class Target:
 
 @dataclass
 class Defaults:
+    """Campaign settings shared by every target.
+
+    Attributes:
+        jobs: Mutation workers to run in parallel. Pinned rather than left to
+          the core count, which would make results runner-dependent.
+        timeout: Per-mutant wall clock in seconds.
+        max_invalid_rate: Ceiling on the share of mutants that fail to compile,
+          for targets that do not set their own.
+    """
+
     jobs: int = 4
     timeout: int = 30
     max_invalid_rate: float = 50.0
@@ -50,6 +76,15 @@ class Defaults:
 
 @dataclass
 class Result:
+    """The outcome of one target's mutation campaign.
+
+    Attributes:
+        target: Name of the target this result belongs to.
+        summary: Forge's `summary` object, or empty if the campaign never ran.
+        survivors: Surviving mutants keyed by source path, as Forge reports them.
+        failures: Policy violations found; empty means the target passed.
+    """
+
     target: str
     summary: dict
     survivors: dict
@@ -57,10 +92,27 @@ class Result:
 
     @property
     def ok(self) -> bool:
+        """Whether the target satisfied every policy check."""
         return not self.failures
 
 
 def load_config(path: Path) -> tuple[Defaults, dict[str, Target]]:
+    """Reads the mutation policy from a TOML file.
+
+    Unknown keys are rejected rather than ignored, in both `[defaults]` and each
+    `[targets.<name>]`: a misspelled key would otherwise leave a policy field at
+    its permissive default and silently weaken the gate.
+
+    Args:
+        path: Location of the policy file, normally `mutation/targets.toml`.
+
+    Returns:
+        A tuple `(defaults, targets)`, where `defaults` holds the shared campaign
+        settings and `targets` maps each target name to its definition.
+
+    Raises:
+        SystemExit: If the file defines no targets or contains an unknown key.
+    """
     with path.open("rb") as handle:
         raw = tomllib.load(handle)
 
@@ -73,8 +125,17 @@ def load_config(path: Path) -> tuple[Defaults, dict[str, Target]]:
         )
     defaults = Defaults(**raw.get("defaults", {}))
 
+    target_keys = {f.name for f in fields(Target)} - {"name"}
     targets: dict[str, Target] = {}
     for name, body in raw.get("targets", {}).items():
+        # Without this, a typo like `min_socre` would leave min_score at 0.0 and
+        # silently disable the floor for that target.
+        unknown = sorted(body.keys() - target_keys)
+        if unknown:
+            sys.exit(
+                f"unknown key(s) in [targets.{name}] of {path}: "
+                f"{', '.join(unknown)} (known: {', '.join(sorted(target_keys))})"
+            )
         targets[name] = Target(
             name=name,
             paths=list(body["paths"]),
@@ -102,11 +163,23 @@ def validate_paths(targets: dict[str, Target]) -> None:
 
 
 def changed_sources(base_ref: str) -> list[str]:
-    """Solidity files under `forge/src` or `forge/test` touched since `base_ref`.
+    """Finds the Solidity files this branch changed.
 
-    Test files count: weakening `test/swarm/SwarmCore.t.sol` lowers the swarm
-    score just as surely as editing the contract does, and a regression gate
-    that ignores that is trivially bypassed.
+    Test files count, and so do deletions: weakening or removing
+    `test/swarm/SwarmCore.t.sol` lowers the swarm score just as surely as editing
+    the contract does, and a regression gate that ignores that is trivially
+    bypassed.
+
+    Args:
+        base_ref: Branch or revision to compare against, such as `origin/main`.
+          The comparison runs from its merge base with HEAD where one exists.
+
+    Returns:
+        Paths of the changed `.sol` files under `src` or `test`, relative to the
+        forge directory. Empty when the branch changed no Solidity.
+
+    Raises:
+        SystemExit: If the diff against `base_ref` fails.
     """
     merge_base = subprocess.run(
         ["git", "merge-base", base_ref, "HEAD"],
@@ -116,8 +189,12 @@ def changed_sources(base_ref: str) -> list[str]:
     )
     diff_from = merge_base.stdout.strip() if merge_base.returncode == 0 else base_ref
 
+    # Deletions are deliberately included: removing a test is the strongest way
+    # to weaken a subsystem, so it has to select that subsystem's target. Only
+    # the path string is used here, never the file, and a deleted *target* path
+    # is caught separately by validate_paths.
     diff = subprocess.run(
-        ["git", "diff", "--name-only", "--diff-filter=d", diff_from, "HEAD"],
+        ["git", "diff", "--name-only", diff_from, "HEAD"],
         cwd=FORGE_ROOT,
         capture_output=True,
         text=True,
@@ -134,10 +211,16 @@ def changed_sources(base_ref: str) -> list[str]:
 
 
 def subsystem_of(path: str) -> str | None:
-    """`src/swarm/registry/SwarmCore.sol` and `test/swarm/X.t.sol` -> `swarm`.
+    """Returns the subsystem directory owning a path, or None if it has none.
 
-    `src/` and `test/` mirror each other one directory deep, which is what lets
-    a changed test select the target that owns the contracts it covers.
+    `src/swarm/registry/SwarmCore.sol` and `test/swarm/X.t.sol` both give
+    `swarm`: `src` and `test` mirror each other one directory deep, which is what
+    lets a changed test select the target that owns the contracts it covers.
+    A path shallower than that, such as a helper directly under `test`, belongs
+    to no single subsystem and yields None.
+
+    Args:
+        path: A repository path relative to the forge directory.
     """
     parts = Path(path).parts
     return parts[1] if len(parts) > 2 else None
@@ -146,6 +229,24 @@ def subsystem_of(path: str) -> str | None:
 def select_targets(
     args: argparse.Namespace, targets: dict[str, Target]
 ) -> list[Target]:
+    """Decides which targets to run for this invocation.
+
+    Under `--changed-since`, selection is the union of the targets marked
+    critical and those owning a changed subsystem. A changed subsystem that no
+    target owns is reported as a warning rather than passing unnoticed.
+
+    Args:
+        args: Parsed arguments carrying exactly one of `all`, `target` or
+          `changed_since`.
+        targets: Every target defined by the policy, keyed by name.
+
+    Returns:
+        The targets to run, in policy order for `--all` and alphabetical order
+        for `--changed-since`. May be empty when nothing needs mutating.
+
+    Raises:
+        SystemExit: If no selection mode was given, or a named target is unknown.
+    """
     if args.all:
         return list(targets.values())
 
@@ -187,6 +288,16 @@ def select_targets(
 
 
 def build_command(target: Target, defaults: Defaults, extra: list[str]) -> list[str]:
+    """Builds the `forge test --mutate` argument vector for one target.
+
+    Args:
+        target: The target whose paths are to be mutated.
+        defaults: Campaign settings supplying worker count and per-mutant timeout.
+        extra: Additional arguments forwarded verbatim to `forge test`.
+
+    Returns:
+        The command to execute, suitable for `subprocess.run`.
+    """
     return [
         "forge",
         "test",
@@ -202,6 +313,20 @@ def build_command(target: Target, defaults: Defaults, extra: list[str]) -> list[
 
 
 def run_campaign(target: Target, defaults: Defaults, extra: list[str]) -> Result:
+    """Runs one target's mutation campaign and evaluates it against the policy.
+
+    A forge failure or an unparseable report is recorded as a policy violation
+    rather than raised, so that remaining targets still run and the summary
+    reports every problem at once.
+
+    Args:
+        target: The target to mutate.
+        defaults: Campaign settings for this run.
+        extra: Additional arguments forwarded verbatim to `forge test`.
+
+    Returns:
+        The campaign result, carrying any violations found.
+    """
     command = build_command(target, defaults, extra)
     print(f"\n::group::mutation campaign: {target.name}")
     print("$ " + " ".join(command), flush=True)
@@ -233,6 +358,23 @@ def run_campaign(target: Target, defaults: Defaults, extra: list[str]) -> Result
 
 
 def evaluate(target: Target, defaults: Defaults, report: dict) -> Result:
+    """Applies the mutation policy to one Forge report.
+
+    A target fails if no mutant was actually evaluated, if any mutant timed out,
+    if too many mutants were invalid, or if the score is below the target's
+    floor. The first two matter because Forge excludes both from its score: a
+    campaign producing only invalid mutants would otherwise report a perfect
+    result over an empty denominator, and a timeout would silently leave the
+    denominator rather than count as an escape.
+
+    Args:
+        target: The target the report belongs to, supplying its floor.
+        defaults: Campaign settings, used for the fallback invalid-rate ceiling.
+        report: The parsed `--json` output of `forge test --mutate`.
+
+    Returns:
+        The result, whose `failures` list is empty when the target passed.
+    """
     summary = report.get("summary", {})
     survivors = report.get("survived_mutants", {})
 
@@ -286,6 +428,17 @@ def evaluate(target: Target, defaults: Defaults, report: dict) -> Result:
 
 
 def format_summary(results: list[Result], report_only: bool) -> str:
+    """Renders campaign results as a GitHub job summary.
+
+    Args:
+        results: One result per target that ran, in the order they ran.
+        report_only: Whether violations are being reported without failing, which
+          changes how each target's gate column reads.
+
+    Returns:
+        A Markdown report: a per-target table, a collapsed list of every
+        surviving mutant with its source rewrite, and any policy violations.
+    """
     lines = ["## Mutation testing", ""]
     lines.append(
         "| Target | Score | Killed | Survived | Invalid | Skipped | Timed out | Gate |"
@@ -334,6 +487,12 @@ def format_summary(results: list[Result], report_only: bool) -> str:
 
 
 def main() -> int:
+    """Runs the selected mutation campaigns and applies the policy.
+
+    Returns:
+        A process exit status: 0 when every selected target satisfied the policy
+        or `--report-only` was given, and 1 when any target violated it.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     selection = parser.add_mutually_exclusive_group()
     selection.add_argument("--all", action="store_true", help="run every target")
