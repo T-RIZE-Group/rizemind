@@ -1,11 +1,9 @@
 name: Forge Test
 
-# Only the paths that actually feed `forge build` / `forge test`. Notably absent:
-# `forge/broadcast` (deployment logs), `forge/mutation` (the mutation gate's own
-# tooling, which has its own workflow) and the shell/markdown files, none of
-# which can change the outcome of this job. The push and pull_request lists are
-# kept identical — GitHub Actions does not support YAML anchors, so they have to
-# be edited together.
+# Pushes are filtered to inputs that feed `forge build` / `forge test`. Pull
+# requests always create the job because a workflow skipped by a path filter
+# leaves a required check pending; an initial diff check avoids installing
+# Foundry or running the suite when the PR does not touch those inputs.
 on:
   push:
     branches:
@@ -21,14 +19,6 @@ on:
   pull_request:
     branches:
       - "*"
-    paths:
-      - "forge/src/**"
-      - "forge/test/**"
-      - "forge/script/**"
-      - "forge/foundry.toml"
-      - "forge/remappings.txt"
-      - "forge/soldeer.lock"
-      - ".github/workflows/forge-test.yml"
   workflow_dispatch:
 
 env:
@@ -45,8 +35,32 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
+
+      - name: Check for Forge changes
+        if: github.event_name == 'pull_request'
+        id: changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          relevant=false
+          while IFS= read -r path; do
+            case "$path" in
+              forge/src/*|forge/test/*|forge/script/*|forge/foundry.toml|forge/remappings.txt|forge/soldeer.lock|.github/workflows/forge-test.yml)
+                relevant=true
+                break
+                ;;
+            esac
+          done < <(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          echo "forge=$relevant" >> "$GITHUB_OUTPUT"
+
+      - name: No Forge changes
+        if: github.event_name == 'pull_request' && steps.changes.outputs.forge != 'true'
+        run: echo "No Forge inputs changed; required check satisfied without running the suite."
 
       - name: Install Foundry
+        if: github.event_name != 'pull_request' || steps.changes.outputs.forge == 'true'
         uses: foundry-rs/foundry-toolchain@v1
         with:
           # Pinned exactly rather than `nightly`: the mutation gate compares
@@ -54,10 +68,12 @@ jobs:
           version: v1.8.1
 
       - name: Install Dependencies
+        if: github.event_name != 'pull_request' || steps.changes.outputs.forge == 'true'
         working-directory: forge
         run: forge soldeer install
 
       - name: Run Forge build
+        if: github.event_name != 'pull_request' || steps.changes.outputs.forge == 'true'
         working-directory: forge
         run: |
           forge --version
@@ -65,6 +81,7 @@ jobs:
         id: build
 
       - name: Run Forge tests
+        if: github.event_name != 'pull_request' || steps.changes.outputs.forge == 'true'
         working-directory: forge
         run: |
           forge test -vvv

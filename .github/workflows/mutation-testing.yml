@@ -9,15 +9,9 @@ name: Mutation Testing
 #     that widening the scope surfaces survivors without breaking `main`
 #     overnight (see forge/mutation/README.md).
 on:
+  # Always create the PR job so it can be a required check. The first step
+  # detects relevant paths and skips the expensive campaign when none changed.
   pull_request:
-    paths:
-      - "forge/src/**/*.sol"
-      - "forge/test/**/*.sol"
-      - "forge/foundry.toml"
-      - "forge/remappings.txt"
-      - "forge/soldeer.lock"
-      - "forge/mutation/**"
-      - ".github/workflows/mutation-testing.yml"
   schedule:
     # 03:30 UTC daily.
     - cron: "30 3 * * *"
@@ -55,7 +49,30 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Check for mutation-testing changes
+        if: github.event_name == 'pull_request'
+        id: changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          relevant=false
+          while IFS= read -r path; do
+            case "$path" in
+              forge/src/*.sol|forge/test/*.sol|forge/foundry.toml|forge/remappings.txt|forge/soldeer.lock|forge/mutation/run.py|forge/mutation/targets.toml|.github/workflows/mutation-testing.yml)
+                relevant=true
+                break
+                ;;
+            esac
+          done < <(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          echo "mutation=$relevant" >> "$GITHUB_OUTPUT"
+
+      - name: No mutation-testing changes
+        if: github.event_name == 'pull_request' && steps.changes.outputs.mutation != 'true'
+        run: echo "No mutation-testing inputs changed; required check satisfied without a campaign."
+
       - name: Install Foundry
+        if: github.event_name != 'pull_request' || steps.changes.outputs.mutation == 'true'
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: ${{ env.FOUNDRY_VERSION }}
@@ -65,33 +82,37 @@ jobs:
           cache: false
 
       - name: Show toolchain version
+        if: github.event_name != 'pull_request' || steps.changes.outputs.mutation == 'true'
         run: forge --version
 
       - name: Install dependencies
+        if: github.event_name != 'pull_request' || steps.changes.outputs.mutation == 'true'
         working-directory: forge
         run: forge soldeer install
 
       - name: Build
+        if: github.event_name != 'pull_request' || steps.changes.outputs.mutation == 'true'
         working-directory: forge
         run: forge build
 
       # A mutation score is only meaningful against a green baseline: a test
       # that already fails would "kill" every mutant it touches.
       - name: Baseline test run
+        if: github.event_name != 'pull_request' || steps.changes.outputs.mutation == 'true'
         working-directory: forge
         run: forge test
 
       # `actions/checkout` leaves a PR checkout without a local ref for the base
       # branch, so fetch it explicitly before diffing against it.
       - name: Fetch base branch
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.changes.outputs.mutation == 'true'
         env:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
           git fetch --no-tags origin "+refs/heads/$BASE_REF:refs/remotes/origin/$BASE_REF"
 
       - name: Run mutation campaign (PR gate)
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.changes.outputs.mutation == 'true'
         working-directory: forge
         env:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
