@@ -1,6 +1,6 @@
 # End-to-end tests for the examples — implementation plan
 
-Revision 2 — refactor-first. Status: **plan only, no code written yet.**
+Revision 2 — refactor-first. Status: **phase 2 shipped; phases 1 and 3–8 not started.**
 
 Goal: run each example app through the real Flower simulation engine, the real
 Rizemind mods and strategies, and a real Anvil chain — without downloading a
@@ -88,7 +88,7 @@ becomes redundant.
 
 ## 3. Prerequisite: stop writing secrets to disk
 
-Independent of everything else, small, ship first.
+Independent of everything else, and shipped ahead of the rest.
 
 `TomlConfig._load_toml` runs `replace_env_vars` over the parsed document, so
 `.data` contains resolved secrets. The three chain examples hand that whole
@@ -101,10 +101,20 @@ document to `LocalDiskMetricStorage.write_config`, which writes it to
 - Anyone following the README's `mnemonic = "$RIZENET_MNEMONIC"` pattern writes
   a **real seed phrase** to a plain file.
 
-Fix: mark secret fields on the config models (a pydantic `Field` annotation),
-have `to_config_record` and `write_config` redact them, and stop passing
-`toml_config.data` wholesale from the examples. Done when a test asserts no
-`mnemonic` or `passphrase` value appears anywhere in `config.json`.
+**Shipped.** Redaction lives at the boundary where configuration leaves the
+process, in `rizemind.configuration.secrets`: a key-name denylist covering both
+nested and flat dot-delimited layouts, applied by
+`LocalDiskMetricStorage.write_config` before anything is written. The three
+chain examples now hand it `{"web3": toml_config.get("tool.web3")}` rather than
+the whole document, so `[tool.eth.account]` is never passed in at all;
+redaction is the safety net behind that.
+
+`to_config_record` deliberately does **not** redact, contrary to an earlier
+draft of this plan. The client propagates the account into
+`context.state.config_records` precisely so `authentication_mod` and
+`model_notary_mod` can sign with it; redacting there would break
+authentication. Persisting and transmitting are different boundaries, and only
+the persisting one gets redacted.
 
 Seam 2.1 would *add* a second copy of this leak — `write_config(context.run_config)`
 is already called too — which is why **secrets never enter `run_config`**. The
@@ -477,10 +487,9 @@ mentions testing.
    CIFAR-10 and MNIST downloads, so it is not a CI job. It is the only thing
    that will tell you the refactor preserved behaviour.
    *Done when* five baseline artifact sets are recorded in the PR description.
-2. **Stop writing secrets to disk.** Redact secret fields in `write_config`;
-   stop handing it `toml_config.data`. Ship on its own.
-   *Done when* a test asserts no mnemonic or passphrase value appears in
-   `config.json`.
+2. **Stop writing secrets to disk.** `DONE` — `rizemind.configuration.secrets`
+   plus redaction in `write_config`, and the examples narrowed to the chain
+   config. 35 unit tests, three of which fail without the fix.
 3. **Extras table and a smaller base install.** Add
    `[project.optional-dependencies]`; move `flwr[simulation]` and `mlflow` out
    of base with lazy imports in `logging/mlflow/`; replace polars in

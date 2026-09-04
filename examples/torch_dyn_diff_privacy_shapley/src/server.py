@@ -90,7 +90,8 @@ def server_fn(context: Context) -> ServerAppComponents:
         "torch-dyn-diff-privacy-shapley",
     )
     metrics_storage.write_config(context.run_config)
-    metrics_storage.write_config(toml_config.data)
+    # Chain config only: `[tool.eth.account]` holds credentials.
+    metrics_storage.write_config({"web3": toml_config.get("tool.web3")})
     metrics_strategy = MetricStorageStrategy(authStrategy, metrics_storage)
     return ServerAppComponents(config=server_config, strategy=metrics_strategy)
 

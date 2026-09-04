@@ -8,6 +8,7 @@ import polars as pl
 from flwr.common import Parameters, Scalar, parameters_to_ndarrays
 from flwr.common.typing import UserConfigValue
 
+from rizemind.configuration.secrets import redact
 from rizemind.logging.base_metric_storage import BaseMetricStorage
 
 
@@ -70,11 +71,18 @@ class LocalDiskMetricStorage(BaseMetricStorage):
         If the config file already exists and contains data, the new
         configuration is merged with the existing content.
 
+        Values under keys that name a credential are replaced with
+        `rizemind.configuration.secrets.REDACTED` before anything is written, so
+        a mnemonic or keystore passphrase that reaches this method does not land
+        on disk. Redaction matches on key name, so it is a safety net rather
+        than a licence to pass secrets in: prefer handing this method only the
+        configuration worth recording.
+
         Args:
             config (dict[str, UserConfigValue]): A dictionary of configuration
                 settings to be saved.
         """
-        new_config_df = pl.from_dicts([config])
+        new_config_df = pl.from_dicts([redact(config)])
 
         file_exists_and_has_content = (
             os.path.exists(self.config_file) and os.path.getsize(self.config_file) > 0

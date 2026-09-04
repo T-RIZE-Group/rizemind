@@ -35,6 +35,12 @@ Typical usage example:
 """
 
 from rizemind.configuration.base_config import BaseConfig
+from rizemind.configuration.secrets import (
+    REDACTED,
+    SECRET_FIELD_NAMES,
+    is_secret_key,
+    redact,
+)
 from rizemind.configuration.toml_config import TomlConfig
 from rizemind.configuration.transform import (
     concat,
@@ -51,6 +57,10 @@ from rizemind.configuration.transform import (
 __all__ = [
     "BaseConfig",
     "TomlConfig",
+    "REDACTED",
+    "SECRET_FIELD_NAMES",
+    "is_secret_key",
+    "redact",
     "normalize",
     "to_config_record",
     "flatten",
