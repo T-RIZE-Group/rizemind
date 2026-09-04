@@ -1,180 +1,209 @@
 # End-to-end tests for the examples — implementation plan
 
-Status: **plan only, no test code yet.**
+Revision 2 — refactor-first. Status: **plan only, no code written yet.**
 
-Goal: run each of the five apps under `examples/` through the real Flower
-simulation engine, the real Rizemind mods and strategies, and a real Anvil
-chain — while the data layer returns pre-defined matrices instead of
-downloading CIFAR-10/MNIST and running a training loop.
+Goal: run each example app through the real Flower simulation engine, the real
+Rizemind mods and strategies, and a real Anvil chain — without downloading a
+dataset or taking a gradient step.
 
-## 1. Scope
+Revision 1 (in this branch's history) built the harness from the outside:
+copy each example to a temp dir, rename `task.py`, generate a shim, write a
+JSON sidecar, rewrite the `pyproject.toml`, set `PYTHONPATH`. Six steps of
+scaffolding. Two measurements showed the scaffolding was paying for two design
+problems in the examples, and that fixing those removes all six steps.
 
-The point is not to check that PyTorch can classify digits. It is to check
-that the wiring the library owns still works when an example is run the way
-its README says: `authentication_mod`, `model_notary_mod`,
-`EthAccountStrategy`, `DecentralShapleyValueStrategy`,
-`SwarmConfig.get_or_deploy`, `MetricStorageStrategy`.
+## 1. What changed since revision 1
 
-So the seam we cut is `task.py` (dataset + gradients) and nothing else.
-`client.py`, `server.py` and every `pyproject.toml` component reference stay
-byte-for-byte the code that ships.
+**The examples are near-duplicates.** `task.py` is byte-identical across
+`torch_basic`, `torch_shapley` and `rizenet_testnet`, and byte-identical across
+the two DP examples. `rizenet_testnet`'s `server.py` differs from
+`torch_shapley`'s by one comment line and its `client.py` only by import
+spelling. It is not a fifth example; it is the third one pointed at another
+chain.
 
-In scope:
+**Nested config tables flatten into overridable run-config keys.** A table at
+`[tool.flwr.app.config.web3.swarm.factory_v1]` arrives in `context.run_config`
+as the flat key `web3.swarm.factory_v1.name` — exactly the dotted dialect
+`rizemind.configuration.transform.unflatten` already speaks. And
+`--run-config '"web3.url"="..."'` overrides it.
 
-- All five examples, two rounds each, via `flower-simulation`.
-- Real Ray backend, real message passing, real EIP-712 signing, real contract
-  deployment and round transactions on Anvil.
-- Assertions on what the run produced: `metrics.csv`, `weights.npz`,
-  `config.json`, and on-chain round summaries and contributions.
+Together: two seams in the examples remove the whole harness, and both seams
+are worth having regardless of testing.
 
-Not in scope:
+## 2. The two seams
 
-- Model quality. Accuracy here is a deterministic function of the parameters.
-- Live RizeNet testnet connectivity — `rizenet_testnet` is re-pointed at
-  Anvil. A real-network test stays a separate, opt-in `-m network` case.
-- Foundry contract behaviour (`forge test` and `tests/integration` cover it).
+### 2.1 Config comes from the Context, not from `./pyproject.toml`
 
-## 2. Findings that shape the design
+`TomlConfig("./pyproject.toml")` appears in `server.py` and `client.py` in
+three examples. It forces the process's working directory to be the app
+directory, which forces a test to copy the app and rewrite its TOML just to
+change an RPC URL. It is also a real limitation outside testing: in deployment
+mode the ServerApp's cwd is not the app directory.
 
-Established by probing Flower 1.21's simulation engine with a throwaway
-three-file app.
+The fix needs no new dependency and almost no new code. Add `from_run_config()`
+beside the existing `from_context()` on `Web3Config`, `AccountConfig` and
+`SwarmConfig`:
+
+```python
+Web3Config(**unflatten(prefixed(context.run_config, "web3")))
+```
+
+Precedence must be documented or this gets confusing fast:
+**run_config → state records → environment → TOML fallback**, with one
+exception for secrets (section 3).
+
+### 2.2 A `Task` protocol, selected by config
+
+`task.py` fuses model, data loading and the training loop with no point at
+which one can be substituted. The seam is one config key, resolved the way
+flwr already resolves `serverapp` and `clientapp` — idiomatic rather than an
+invented service locator.
+
+```python
+# rizemind/tasks/protocol.py
+class Task(Protocol):
+    def initial_parameters(self) -> NDArrays: ...
+    def train(self, parameters: NDArrays, config: dict[str, Scalar]
+              ) -> tuple[NDArrays, int, dict[str, Scalar]]: ...
+    def evaluate(self, parameters: NDArrays, config: dict[str, Scalar]
+                 ) -> tuple[float, int, dict[str, Scalar]]: ...
+
+# rizemind/tasks/resolve.py
+def load_task(context: Context, key: str = "task") -> Task:
+    module, _, attr = str(context.run_config[key]).partition(":")
+    return getattr(importlib.import_module(module), attr).from_context(context)
+
+# rizemind/tasks/client.py
+class TaskClient(NumPyClient):
+    def __init__(self, task: Task) -> None: self.task = task
+    def fit(self, parameters, config):      return self.task.train(parameters, config)
+    def evaluate(self, parameters, config): return self.task.evaluate(parameters, config)
+```
+
+The task's `from_context` classmethod does the real work: the task pulls its
+own hyperparameters out of the Context, so the FL layer never mentions
+`batch-size`, `local-epochs` or `learning-rate` again. And because
+`Task.train` returns the full flwr tuple, each example's `FlowerClient` class
+becomes redundant.
+
+## 3. Prerequisite: stop writing secrets to disk
+
+Independent of everything else, small, ship first.
+
+`TomlConfig._load_toml` runs `replace_env_vars` over the parsed document, so
+`.data` contains resolved secrets. The three chain examples hand that whole
+document to `LocalDiskMetricStorage.write_config`, which writes it to
+`logs/<app>/<ts>/config.json`. Today:
+
+- `torch_shapley` and `torch_dyn_diff_privacy_shapley` write the public Anvil
+  test mnemonic — harmless in itself, but it is the pattern being taught.
+- `rizenet_testnet` writes its **keystore passphrase**.
+- Anyone following the README's `mnemonic = "$RIZENET_MNEMONIC"` pattern writes
+  a **real seed phrase** to a plain file.
+
+Fix: mark secret fields on the config models (a pydantic `Field` annotation),
+have `to_config_record` and `write_config` redact them, and stop passing
+`toml_config.data` wholesale from the examples. Done when a test asserts no
+`mnemonic` or `passphrase` value appears anywhere in `config.json`.
+
+Seam 2.1 would *add* a second copy of this leak — `write_config(context.run_config)`
+is already called too — which is why **secrets never enter `run_config`**. The
+mnemonic resolves from environment or keystore only; `run_config` carries
+`eth.account.default_account_index` and
+`eth.account.mnemonic_store.account_name`, nothing sensitive.
+
+## 4. Verified findings
+
+Established in-session by running flwr 1.21 against scratch apps and by
+measuring this repository.
 
 | Finding | Consequence | Status |
 | --- | --- | --- |
-| `flwr run . <federation> --run-config ... --stream` runs a copied app in place, from its own directory — the documented user path, and what upstream Flower's own CI uses on its examples. It builds a FAB that correctly includes a renamed module and a generated `task.py`. | This is the runner. `flower-simulation --app DIR` (also public, also verified working) stays the fallback. `flwr.simulation.run_simulation()` is unusable either way: it passes no run config, so every example would `KeyError` on `num-server-rounds`. | verified |
-| `flwr run` shells out to `flower-simulation` **by name** and exits 0 when it cannot find it — the run never starts, and the only trace is one line of stdout. | `PATH` must include the venv's `bin`. Second independent reason exit status cannot be the oracle. | verified (trap) |
-| Upstream's run oracle is `flwr ls --format=json` filtered on `.runs[0].status == "finished:completed"`. On the pinned flwr 1.21, `flwr ls` refuses to work without a SuperLink and returns `success: false` for a local simulation federation. | We cannot use the structured oracle yet, so the log scan carries the weight. Worth revisiting on a flwr upgrade — it would replace most of tier 1 with one `jq` expression. | verified |
-| Ray `ClientAppActor` workers inherit the **driver's** cwd, not `--app`. | `server.py` and `client.py` both call `TomlConfig("./pyproject.toml")`. The subprocess must be launched with `cwd` set to the copied app dir, or the chain examples silently read the library's root `pyproject.toml`. Confirmed: with `cwd` set, both the ServerApp thread and the Ray actors resolve `./pyproject.toml` to the copy. | verified |
-| **A ClientApp exception does not fail the run.** `FedAvg` defaults to `accept_failures=True`, so a raising client yields `received 0 results and 2 failures` and `flower-simulation` still exits `0`. | Exit code is necessary but nowhere near sufficient. Every test must also scan the log for `ClientAppException` and assert every `received N results and M failures` line has `M == 0`. Without this the suite is green theatre. | verified (trap) |
-| `--run-config` is space-separated TOML fragments, not comma-separated: `'num-server-rounds=2 metrics-storage-path="logs"'`. The comma form exits 1. | Overrides built by a helper that quotes strings and joins on spaces. (`examples/README.md` documents the comma form — worth fixing.) | verified |
-| Negative Shapley values are clamped by `normalize_contribution_scores` before `swarm.distribute`. | No revert risk — but a clamped score makes the "on-chain contribution equals φ" assertion hold for the wrong reason. Hence the strictly-additive, strictly-positive stub design below. | verified |
-| `get_weights()` in the DP examples runs on the Opacus `GradSampleModule`, whose `state_dict` keys may be prefixed. | The examples work today, so order and count must round-trip. Confirmed in Phase 3 with an explicit shape assertion; if it does not hold, the stub keys off the last tensor instead of the first. | to confirm |
+| Nested tables under `[tool.flwr.app.config]` flatten to dotted `run_config` keys (`web3.swarm.factory_v1.name`), and `--run-config '"web3.url"="..."'` overrides them. `rizemind`'s `flatten`/`unflatten` already use `.` as separator. | The whole chain config becomes overridable from the CLI with no file rewriting, and no new parsing code. | verified |
+| `flwr run <app-path> <federation>` works from any working directory; run config still comes from the app's own `pyproject.toml`. | Once seam 2.1 lands, tests invoke the real example directory in the repo with no copy at all — only `metrics-storage-path` is redirected to a temp dir. | verified |
+| **A ClientApp exception does not fail the run.** `FedAvg` defaults to `accept_failures=True`, so a raising client yields `received 0 results and 2 failures` and the process still exits 0. | Exit code cannot be the oracle. Every test must scan for `ClientAppException` and assert every `received N results and M failures` line has `M == 0`. | verified (trap) |
+| `flwr run` resolves `flower-simulation` by name and exits 0 when it is absent — the run never starts, and the only trace is one stdout line. | `PATH` must carry the venv's `bin`. Second independent reason exit status is worthless. | verified (trap) |
+| `[dependency-groups]` is not the same as extras. There is no `[project.optional-dependencies]` table, so `pip install rizemind[ml]` fails — PEP 735 groups are not published in wheel metadata. | Any extra needs that table added first. Hatch's `include = ["src/py/rizemind"]` already ships new subpackages, so no build change for code. | verified |
+| Base install is **1.1 GB**: `ray` 162 MB, `mlflow` 101 MB, `polars` 124 MB. The library imports `ray` nowhere, `mlflow` in two files, `polars` in one. | See section 5. Independent of testing, and worth more than a tasks extra. | verified |
+| `TomlConfig` expands `$ENV_VAR` before exposing `.data`, and the three chain examples call `metrics_storage.write_config(toml_config.data)`. | Secrets are written to `logs/<app>/<ts>/config.json` today. See section 3. | verified (live bug) |
+| Upstream's oracle `flwr ls --format=json` on `.runs[0].status == "finished:completed"` returns `success: false` on flwr 1.21 for a local simulation federation — it requires a SuperLink. | The log scan carries the weight. Revisit on a flwr upgrade; it would replace most of tier 1 with one `jq` expression. | verified |
+| `task.py` is byte-identical across `torch_basic` / `torch_shapley` / `rizenet_testnet`, and across the two DP examples. `rizenet_testnet`'s app code differs from `torch_shapley`'s by a comment and import spelling. | `rizenet_testnet` stops being a directory. Five examples become four. | verified |
 
-## 2b. Prior art: how Flower tests its own examples
+### Prior art: how Flower tests its own examples
 
-`flwrlabs/flower` (read at `35a02bb`) carries a `framework/e2e/` tree and a
-`Framework E2E` workflow that solve most of this problem already. Four of its
-decisions are worth copying, one is worth deliberately not copying.
+`flwrlabs/flower` (read at `35a02bb`) carries `framework/e2e/` and a
+`Framework E2E` workflow.
 
-**Copy: the runner and the CI shape.** Their `apps` job runs each example with
-`flwr run --run-config num-server-rounds=1 --stream` from the example's own
-directory, then checks the outcome. That is the documented user path — the
-same command `examples/README.md` gives a reader — so this plan uses it as
-the runner instead of `flower-simulation --app`. Their workflow also sets
-`FLWR_TELEMETRY_ENABLED: 0` at the top level, gates everything behind
-`dorny/paths-filter` so an unrelated PR pays nothing, and caches the Python
-install location per example directory. All three are worth adopting for a job
-this expensive.
+- **Copy: the runner and CI shape.** Their `apps` job runs each example with
+  `flwr run --run-config num-server-rounds=1 --stream` from the example's own
+  directory — the documented user path, and what this plan uses. They also set
+  `FLWR_TELEMETRY_ENABLED: 0` at workflow level, gate everything behind
+  `dorny/paths-filter`, and cache the Python install location per example.
+- **Copy: the closed-form client.** `framework/e2e/e2e-bare` holds
+  `model_params = np.array([1])` and an `objective = 5`; `fit` returns
+  `param * (objective / mean(param))`. No dataset, no gradient. Same idea as
+  section 6, but it only supports a loose `losses[0]/losses[-1] >= 0.98` band.
+- **Understand: why they assert inside the ServerApp.**
+  `e2e-pytorch/server_app.py` asserts on `context.history` in `app.main()`
+  because a *server* exception fails the run while a client one does not. We
+  cannot use that lever without editing the file under test.
+- **Don't copy: their answer to slow data.** `e2e-pytorch` downloads CIFAR-10
+  and takes `Subset(range(100))` with a shrunken CNN and a cached pre-download
+  step. That works when you own the cache; it does not meet the no-download
+  requirement and it makes every test depend on Hugging Face being up.
 
-**Copy: the closed-form client.** `framework/e2e/e2e-bare` is the data-free
-pattern, close to what this plan proposes. Its client holds
-`model_params = np.array([1])` and an `objective = 5`; `fit` returns
-`param * (objective / mean(param))` and `evaluate` returns
-`min(|1 - mean/objective|, 1)` as the loss. No dataset, no gradient, a
-deterministic result. The difference is what it buys: theirs converges so the
-server can assert `losses[0] / losses[-1] >= 0.98`, a loose sanity band. The
-additive game below yields the *exact* expected accuracy and the exact
-expected Shapley value per trainer, which is what makes the on-chain
-assertions worth writing.
+## 5. Packaging: the extras table
 
-**Understand: why they assert inside the ServerApp.**
-`e2e-pytorch/server_app.py` puts its assertions in `app.main()`, against
-`context.history`. That is not stylistic — a *server* exception fails the run
-while a client exception does not (the trap above). We cannot use that lever,
-because asserting inside `server.py` would mean editing the file under test.
-Hence the log scan plus artifact assertions: same goal, from outside.
+Adding `[project.optional-dependencies]` is a prerequisite for any extra.
+While it is open, the base install is worth fixing.
 
-**Don't copy: their answer to slow data.** Upstream doesn't stub the data
-layer at all. `e2e-pytorch` downloads CIFAR-10 from Hugging Face and takes
-`Subset(range(100))` for train and `range(10)` for test, with a shrunken CNN
-(`conv 3->4->8`, `fc 32/16`) and a dedicated CI step that pre-downloads and
-caches the dataset; `e2e-opacus` does the same with a 200-sample fixture. That
-works for them because they own the download and cache it in their own CI. It
-does not meet the no-download requirement here, and it makes each example's
-test depend on Hugging Face being up. Stubbing `task.py` costs a little more
-machinery and removes the dependency entirely — and, unlike a subset, it
-makes the expected numbers exact rather than approximate.
+| Dependency | Size | Imported by | Proposal |
+| --- | --- | --- | --- |
+| `ray` | 162 MB | nothing in the library; only flwr's simulation engine at runtime | base becomes `flwr`; add `rizemind[simulation]` |
+| `mlflow` | 101 MB | 2 files under `logging/mlflow/` | `rizemind[mlflow]`, subpackage importing lazily |
+| `polars` | 124 MB | 1 file — `local_disk_metric_storage.write_config` | replace with stdlib `json`; it is a schema-union dict merge |
+| `torch`, `torchvision`, `opacus`, `flwr-datasets` | ~2.5 GB | nothing in the library — examples only | `rizemind[torch]`, **deferred** |
 
-## 3. The harness
+Two naming notes. `[task]` names an internal module; extras should name a
+capability the way `flwr[simulation]` and `sqlalchemy[asyncio]` do —
+`rizemind[torch]` says what you get and leaves room for `[jax]`. And extras
+cannot carry an index, so `rizemind[torch]` pulls CUDA wheels by default;
+`--extra-index-url .../whl/cpu` is a pip/uv concern that does not travel in
+wheel metadata.
 
-1. **Copy** — `shutil.copytree("examples/<name>", tmp_path/"app")`.
-2. **Displace the data layer** — rename `<pkg>/task.py` to `<pkg>/_real_task.py`
-   and write a three-line `task.py`:
+**Why the reference tasks stay in the examples for now.** Shipping `CifarTask`
+in the library means taking ownership of ML training code as public API under
+semver, and a CIFAR CNN is not what differentiates Rizemind. Flower declines
+this deliberately: `flwr` ships no models or datasets, `flwr-datasets` is a
+separate distribution, models live in examples. With `rizenet_testnet` reduced
+to config, four examples share two task files — acceptable duplication for
+self-contained teaching material. Declare `[torch]` when a second consumer asks.
 
-   ```python
-   """Test stub: real model, pre-defined data and updates."""
+What *does* go in the library, both with zero new dependencies:
+`rizemind.tasks` (protocol, resolver, `TaskClient`) because the contract must
+be in base or nothing can depend on it; and `rizemind.testing` (the
+deterministic task and the pytest fixtures) because the fake is pure numpy,
+already a hard dependency.
 
-   from ._real_task import Net, get_weights, set_weights  # noqa: F401
-   from tests.e2e.stubs.fake_task import load_data, test, train  # noqa: F401
-   ```
+## 6. The deterministic task
 
-   The model and weight (de)serialisers stay the example's own, so parameter
-   shapes, ordering and `state_dict` keys are real. All stub logic lives in a
-   normal, lintable module in the test tree, reached by putting the repo root
-   on `PYTHONPATH` for the subprocess.
-3. **Rewrite config** — patch the copy's `pyproject.toml`: `[tool.web3].url`
-   to the session Anvil, `local_factory_deployment_path` to the absolute forge
-   broadcast artifact, drop GPU client resources. Write stub settings to
-   `e2e_stub.json` beside it; `fake_task` reads that file relative to `cwd`,
-   which step 2's cwd guarantee makes reliable (and avoids depending on
-   env-var propagation into Ray workers).
-4. **Run** —
-   `subprocess.run(["flwr","run",".","local-simulation","--run-config",...,"--stream"], cwd=app, timeout=...)`,
-   the command from the example's own README. Env: `PATH` prefixed with the
-   venv's `bin` (mandatory — `flwr run` looks up `flower-simulation` by name
-   and exits 0 if it is missing), `PYTHONPATH` with the repo root so the stub
-   module resolves inside the Ray worker, `FLWR_TELEMETRY_ENABLED=0`,
-   `HF_HUB_OFFLINE=1`, `HF_DATASETS_OFFLINE=1`, `HF_HOME`/`HOME` under
-   `tmp_path` (which also isolates the FAB cache `flwr run` writes to
-   `~/.flwr`), `CUDA_VISIBLE_DEVICES=""`. The offline flags enforce "no
-   downloads": if a stub is ever bypassed the test fails loudly instead of
-   pulling 170 MB. Verified end to end on a scratch app: the FAB build picks
-   up the renamed `_real_task.py` and the generated `task.py`, the `PYTHONPATH`
-   stub imports inside the actor, and `e2e_stub.json` reads from the app dir.
-5. **Judge** — `assert_clean_run()` checks exit status, absence of
-   `ClientAppException`/`ServerAppException`/`Traceback`,
-   `Run finished 2 round(s)`, and zero failures on every results/failures
-   line. Only then do the artifact assertions run.
+With a protocol in place the fake needs no PyTorch at all, and is far simpler
+than revision 1's version, which had to smuggle its signal through the real
+model's first tensor.
 
-**Exit status means nothing here, twice over.** `flwr run` returns 0 when
-every client raises (`FedAvg` tolerates failures) *and* when the simulation
-never starts at all (missing `flower-simulation` on `PATH`). Both were
-reproduced. Upstream sidesteps this with `flwr ls --format=json`, which flwr
-1.21 will not serve for a local simulation federation, and with server-side
-asserts, which would mean editing the file under test. So on this version the
-log scan in step 5 is not belt-and-braces — it is the only thing standing
-between a broken example and a green test.
-
-Subprocess rather than in-process because process isolation is doing real
-work: Ray driver state, Torch global state, the module-level `fds` cache,
-`Account.enable_unaudited_hdwallet_features()`, and above all the per-example
-cwd. The cost is that assertions come from artifacts, logs and chain state
-rather than a returned `Context` — the right trade, since those artifacts are
-what a user actually gets.
-
-## 4. Pre-defined matrices, chosen so the answer is computable
-
-A stub returning a constant makes every coalition identical and every Shapley
-value zero — the test would pass while the contribution logic did nothing.
-Encoding the trainer's identity in the matrix makes the expected result exact.
-
-`train` ignores the data and writes a one-hot signature into the model: all
-tensors zeroed, except element `i` of the first tensor's flat view set to
-`1.0`, where `i` is the partition id carried on the **dataset** object
-(`loader.dataset.partition_id` — an attribute that survives Opacus's
-`DPDataLoader` wrapping, unlike anything set on the loader itself).
-
-FedAvg then averages a coalition `S` into a vector whose element `i` is
-`1/|S|` for members and `0` otherwise, so `test` recovers exact membership and
-scores it as an additive game:
+`rizemind.testing.tasks.AdditiveTask` defines its own parameter vector: a
+single 1-D array of length *n*. `train` ignores everything and returns a
+one-hot at the trainer's partition index. FedAvg averages a coalition *S* into
+a vector holding `1/|S|` at each member index and zero elsewhere, so
+`evaluate` recovers exact membership and scores it additively:
 
 ```python
-members = [i for i, v in enumerate(w0.ravel()[:n_parts]) if v > 1e-9]
+members = [i for i, v in enumerate(parameters[0]) if v > 1e-9]
 score   = sum(WEIGHT[i] for i in members)     # WEIGHT = (0.12, 0.24, 0.36)
-return 1.0 - score, score                     # (loss, accuracy)
+return 1.0 - score, self.num_examples, {"accuracy": score}
 ```
 
-For an additive game the Shapley value of player `i` is exactly `WEIGHT[i]`:
+For an additive game the Shapley value of player *i* is exactly `WEIGHT[i]`:
 
 | Coalition | v(S) | Coalition | v(S) | Trainer | Expected φ |
 | --- | --- | --- | --- | --- | --- |
@@ -183,184 +212,336 @@ For an additive game the Shapley value of player `i` is exactly `WEIGHT[i]`:
 | {3} | 0.36 | {2,3} | 0.60 | trainer 3 | 0.36 |
 | — | — | {1,2,3} | 0.72 | Σ | 0.72 |
 
-Three things fall out for free: the winning coalition is uniquely `{1,2,3}`,
-so `weights.npz` must hold the all-members signature; every φ is strictly
-positive and strictly ordered, so a clamped or dropped contribution is
-detectable; and the accuracy in `metrics.csv` is a known constant.
+Three properties fall out: the winning coalition is uniquely `{1,2,3}`, so
+`weights.npz` must hold the all-members vector; every φ is strictly positive
+and strictly ordered, so a contribution clamped by
+`normalize_contribution_scores` is detectable rather than silently plausible;
+and the accuracy in `metrics.csv` is a known constant, not a range.
 
-`load_data` returns two `DataLoader`s over a tiny in-memory
-`FakePartitionDataset` — 64 deterministic random samples per partition, batch
-key and tensor shape read from `e2e_stub.json` (`img`/`3x32x32` for the CIFAR
-apps, `image`/`1x28x28` for the MNIST ones), equal sizes across partitions so
-the FedAvg weighting is the clean `1/|S|`. The dataset is real enough for
-Opacus's `make_private` to build its Poisson sampler; with `batch-size=8` the
-sample rate is 0.125 and the noise-multiplier search stays fast. No epoch is
-ever iterated, because `train` returns before looking at the loader.
+**Named coverage gap: the real Nets and Opacus stop being exercised.** In
+revision 1 the stub kept the example's real `Net`, so parameter shapes were
+real and Opacus's `make_private` ran on synthetic tensors. With a clean
+protocol all of that moves inside the example's task and the e2e run never
+touches it. Two cheap mitigations: a per-example unit test asserting
+`Task.initial_parameters()` round-trips through
+`ndarrays_to_parameters`/`parameters_to_ndarrays` with the expected shapes;
+and, for the DP examples, a focused test of the task's own `train` against a
+small synthetic tensor set. Do not solve this by giving the real task a
+"synthetic data" mode to satisfy a test — that is the scaffolding this
+revision removed, moved one layer down.
 
-**Extra signal for the dynamic-privacy example.** In
-`torch_dyn_diff_privacy_shapley` the stub `train` returns
-`optimizer.noise_multiplier` as its epsilon instead of a constant. Opacus
-derives that from `target_epsilon`, which `FlowerClient.fit` adapts using the
-previous round's on-chain contribution — so `average_epsilon` differing
-between rounds 1 and 2 is direct evidence the contribution-feedback loop
-closed. Round 1 has no prior summary and takes the `-1.0` branch, which is
-why every example runs two rounds, not one.
+## 7. What it does to an example
 
-## 5. The five examples
+`torch_shapley`: 118 lines of `task.py`, 79 of `client.py`, 99 of `server.py`.
 
-Rounds fixed at two; supernodes at three, giving seven coalitions per round in
-the Shapley apps.
+`src/task.py` — same code, reorganised, stays in the example:
 
-| Example | pkg | Batch key / shape | Chain | What only this test covers |
-| --- | --- | --- | --- | --- |
-| `torch_basic` | `torch_basic` | `img` 3x32x32 | none | Plain `FedAvg` under `MetricStorageStrategy`; the local-disk metric writer end to end. Phase 2 uses it to prove the harness. |
-| `torch_diff_privacy` | `src` | `image` 1x28x28 | none | Opacus `PrivacyEngine.make_private` runs for real inside `client.py`; `average_epsilon` via `fit_metrics_aggregation_fn`. |
-| `torch_shapley` | `src` | `img` 3x32x32 | anvil | `authentication_mod` + `model_notary_mod` round-trip, `EthAccountStrategy`, `DecentralShapleyValueStrategy`, swarm deploy via factory, `distribute` and `next_round`. |
-| `torch_dyn_diff_privacy_shapley` | `src` | `image` 1x28x28 | anvil | The above plus `DynamicPrivacyClient` reading `get_last_contributed_round_summary` and adapting `target_epsilon` — the only path in the repo that reads a contribution back out. |
-| `rizenet_testnet` | `src` | `img` 3x32x32 | anvil (re-pointed) | The `mnemonic_store` account path — the test seeds a keystore under a `tmp_path` `HOME`, since `RIZEMIND_HOME` is `Path.home()/".rzmnd"` and honours `$HOME`. Its `[tool.web3].url` and factory address are rewritten to the local chain, so this asserts the app wires up, not that RizeNet is reachable. |
+```python
+class Cifar10Task:
+    @classmethod
+    def from_context(cls, context: Context) -> "Cifar10Task":
+        return cls(
+            partition_id=int(context.node_config["partition-id"]),
+            num_partitions=int(context.node_config["num-partitions"]),
+            batch_size=int(context.run_config["batch-size"]),
+            local_epochs=int(context.run_config["local-epochs"]),
+            learning_rate=float(context.run_config["learning-rate"]),
+        )
 
-### Run configuration
+    def initial_parameters(self): return get_weights(Net())
 
-Common: `--num-supernodes 3`,
-`--backend-config '{"client_resources":{"num_cpus":1,"num_gpus":0}}'`, and
-overrides `num-server-rounds=2 fraction-fit=1.0 fraction-evaluate=1.0
-min-available-clients=3 batch-size=8`.
+    def train(self, parameters, config):
+        set_weights(self.net, parameters)
+        results = _train(self.net, self.trainloader, self.valloader, ...)   # unchanged
+        return get_weights(self.net), len(self.trainloader.dataset), results
 
-The three Shapley apps additionally need `num-supernodes=3` *in the run
-config*, because `server_fn` reads it from there to build the trainer roster
-while the engine reads the CLI flag. The harness derives the run-config value
-from the CLI value so they cannot drift.
-`torch_dyn_diff_privacy_shapley` also takes `epochs=1`.
+    def evaluate(self, parameters, config):
+        set_weights(self.net, parameters)
+        loss, accuracy = _test(self.net, self.valloader, self.device)
+        return loss, len(self.valloader.dataset), {"accuracy": accuracy}
+```
 
-## 6. What each test asserts
+`src/client.py` — 79 lines to about 22. The 40-line `FlowerClient` deletes
+entirely, and every torch import with it:
 
-**Tier 1 — the run was actually clean** (all examples)
+```python
+def client_fn(context: Context):
+    partition_id = int(context.node_config["partition-id"])
 
-- Exit status 0, within the timeout.
-- No `ClientAppException`, `ServerAppException` or `Traceback` in the output.
+    account = AccountConfig.from_run_config(context, default_account_index=partition_id + 1)
+    context.state.config_records[ACCOUNT_CONFIG_STATE_KEY] = account.to_config_record()
+    web3 = Web3Config.from_run_config(context)
+    context.state.config_records[WEB3_CONFIG_STATE_KEY] = web3.to_config_record()
+
+    return DecentralShapleyValueClient(TaskClient(load_task(context))).to_client()
+
+
+Account.enable_unaudited_hdwallet_features()
+app = ClientApp(client_fn, mods=[authentication_mod, model_notary_mod])
+```
+
+Gone: `import torch`, `TomlConfig("./pyproject.toml")`, three hyperparameter
+reads, `load_data`. What remains is exactly the Rizemind story — identity,
+chain, the Shapley wrapper, the mods.
+
+`src/server.py` — 99 to about 88, and no ML dependency:
+
+```python
+def server_fn(context: Context):
+    task = load_task(context)
+    strategy = FedAvg(..., initial_parameters=ndarrays_to_parameters(task.initial_parameters()))
+
+    account = AccountConfig.from_run_config(context)
+    w3 = Web3Config.from_run_config(context).get_web3()
+    aggregator = account.get_account(0)
+    trainers = [account.get_account(i).address
+                for i in range(1, int(context.run_config["num-supernodes"]) + 1)]
+    swarm = SwarmConfig.from_run_config(context).get_or_deploy(
+        deployer=aggregator, trainers=trainers, w3=w3)
+    ...
+```
+
+`from .task import Net, get_weights` and both `TomlConfig` lines go. An
+alternative that decouples the server from the ML layer completely is
+`initial_parameters=None`, letting flwr request them from a client — costs a
+round trip and changes the logs, so the explicit version is the default.
+
+`pyproject.toml` — the config tables move inside:
+
+```diff
+ [tool.flwr.app.config]
++task = "src.task:Cifar10Task"
+ num-server-rounds = 3
+ ...
+
+-[tool.web3.swarm.factory_v1]
++[tool.flwr.app.config.web3]
++url = "http://127.0.0.1:8545"
++
++[tool.flwr.app.config.web3.swarm.factory_v1]
+ name = "test_model"
+ local_factory_deployment_path = "../../forge/broadcast/.../run-latest.json"
+-
+-[tool.eth.account]
+-mnemonic = "test test ... junk"
+-
+-[tool.web3]
+-url = "http://127.0.0.1:8545"
+```
+
+They have to sit under `[tool.flwr.app.config]` — the only table flwr fuses
+into `run_config`. The mnemonic does not move there (section 3).
+
+**Relative paths in config resolve against the cwd, not the app.**
+`local_factory_deployment_path = "../../forge/broadcast/..."` is handed
+straight to `load_forge_artifact(Path(...))`, so it resolves against the
+process's working directory. That works today only because you must `cd` into
+the example. Once `flwr run examples/torch_shapley` works from the repo root —
+verified — that path silently breaks. The config layer should resolve declared
+paths against the app directory, or the field should be documented as
+cwd-relative and the examples should stop using `../..`. The e2e tests are
+unaffected because they override it with an absolute path, which is exactly
+why this would go unnoticed.
+
+## 8. The four examples
+
+Two rounds each, three supernodes — seven coalitions per round in the Shapley
+apps.
+
+| Example | Chain | Task class | What only this test covers |
+| --- | --- | --- | --- |
+| `torch_basic` | none | `Cifar10Task` | Plain `FedAvg` under `MetricStorageStrategy`; the local-disk metric writer end to end. The phase that proves the harness. |
+| `torch_diff_privacy` | none | `MnistDPTask` | `fit_metrics_aggregation_fn` and the `average_epsilon` path. Opacus itself now sits behind the task — see the coverage gap in section 6. |
+| `torch_shapley` | anvil | `Cifar10Task` | `authentication_mod` + `model_notary_mod` round-trip, `EthAccountStrategy`, `DecentralShapleyValueStrategy`, swarm deploy via factory, `distribute` and `next_round`. |
+| `torch_dyn_diff_privacy_shapley` | anvil | `MnistDynDPTask` | The above plus `DynamicPrivacyClient` reading `get_last_contributed_round_summary` and adapting `target_epsilon` — the only path in the repo that reads a contribution back out, and the reason every run does two rounds. |
+| `rizenet_testnet` | — | — | **Deleted as a directory.** Becomes a README section: `flwr run ../torch_shapley --run-config '"web3.url"="https://testnet.rizenet.io" ...'`. A live-network test stays a separate opt-in `-m network` case. |
+
+`--num-supernodes 3` on the CLI and `num-supernodes=3` in the run config are
+independent values that must agree — `server_fn` reads the latter to build the
+trainer roster while the engine reads the former. The harness derives one from
+the other so they cannot drift.
+
+## 9. What a test looks like now
+
+```python
+result = run_example("torch_shapley", overrides={
+    "task": '"rizemind.testing.tasks:AdditiveTask"',
+    "num-server-rounds": 2, "num-supernodes": 3,
+    '"web3.url"': f'"{anvil.url}"',
+    '"web3.swarm.factory_v1.local_factory_deployment_path"': f'"{artifact}"',
+    "metrics-storage-path": f'"{tmp_path}"',
+})
+assert_clean_run(result)
+```
+
+No copy, no rename, no shim, no sidecar, no `PYTHONPATH`, no TOML rewriting.
+
+**The e2e suite no longer needs the `ml` group.** When `task` points at
+`AdditiveTask`, the resolver never imports the example's `src/task.py`, and
+after the refactor neither `client.py` nor `server.py` imports torch.
+`flwr run` does not install an app's declared dependencies in simulation mode —
+only what is actually imported must be present. So the whole suite runs on the
+base install: no 2 GB PyTorch download in CI, and no GPU-resource juggling in
+the backend config.
+
+### Tier 1 — the run was actually clean
+
+- Exit status 0 within the timeout; no `ClientAppException` /
+  `ServerAppException` / `Traceback` in the output.
 - `Run finished 2 round(s)` present.
 - Every `received N results and M failures` line has `M == 0` and `N > 0`.
 
-**Tier 2 — the artifacts a user gets** (all examples)
+### Tier 2 — the artifacts a user gets
 
-- `logs/<app-name>/<timestamp>/` exists with exactly one timestamp directory.
-- `metrics.csv` parses, covers rounds 1 and 2, and carries the expected keys:
-  `accuracy` everywhere, `average_epsilon` for the two DP apps,
-  `median_coalition_accuracy` for the three Shapley apps.
-- The recorded `accuracy` equals the additive game's prediction to `1e-6`.
-- `config.json` round-trips the run config (and, for the chain apps, the TOML
-  config `server.py` writes as a second frame).
-- `weights.npz` loads (`allow_pickle=True` — saved as a ragged object array)
-  and its first tensor's signature is the full trainer set.
+- One timestamp directory under the redirected `metrics-storage-path`.
+- `metrics.csv` parses, covers both rounds, and carries the expected keys:
+  `accuracy` everywhere, `average_epsilon` for the DP apps,
+  `median_coalition_accuracy` for the Shapley apps.
+- Recorded `accuracy` equals the additive game's prediction to `1e-6`.
+- `config.json` round-trips the run config **and contains no secret values**.
+- `weights.npz` loads (`allow_pickle=True` — ragged object array) and holds
+  the all-members vector.
 
-**Tier 3 — the chain** (the three chain examples)
+### Tier 3 — the chain
 
 - The swarm address is recovered after the run by scanning the known factory
-  contract for its `ContractCreated` event, since the proxy address is chosen
-  inside the ServerApp with a random salt and never printed.
-- `swarm.current_round()` advanced to the expected round.
-- `get_last_contributed_round_summary` present for each trainer account, with
+  for its `ContractCreated` event — the proxy address is chosen inside the
+  ServerApp with a random salt and never printed.
+- `swarm.current_round()` advanced to the expected round;
+  `get_last_contributed_round_summary` present for each trainer with
   `n_trainers == 3`.
-- Per-trainer `get_latest_contribution` strictly ordered
-  `trainer1 < trainer2 < trainer3`, none zero. *Open question:* confirm the
-  scaling `distribute` applies to a float score before asserting exact
-  equality with φ; until then assert ordering and ratios.
+- Per-trainer `get_latest_contribution` strictly ordered and none zero.
+  *Open question:* confirm the scaling `distribute` applies to a float score
+  before asserting exact equality with φ; ordering and ratios are the fallback
+  and already catch a broken pipeline.
 
-## 7. Files
+## 10. Files
 
-New:
+New — library:
 
-- `tests/e2e/conftest.py` — loads `forge_fixtures`; session fixtures for the
-  deployed factory artifact and the sandboxed `HOME`.
-- `tests/e2e/examples.py` — `ExampleSpec` and the list of five; the single
-  place a new example gets registered.
-- `tests/e2e/harness.py` — `prepare_app()`, `run_app()`, `RunResult`,
-  `assert_clean_run()`.
-- `tests/e2e/stubs/fake_task.py` — `FakePartitionDataset`, `load_data`,
-  `train`, `test`, the `WEIGHT` table and the expected-score helpers the
-  assertions share.
-- `tests/e2e/artifacts.py` — readers and assertions for `metrics.csv`,
-  `weights.npz`, `config.json`, and the `ContractCreated` swarm lookup.
-- `tests/e2e/test_examples.py` — parametrised over the five specs, plus the
-  example-specific extra assertions.
-- `tests/e2e/README.md` — how to run it, what it covers, how to add an
+- `src/py/rizemind/tasks/{protocol,resolve,client}.py` — `Task`, `load_task`,
+  `TaskClient`. No new dependencies.
+- `src/py/rizemind/testing/tasks.py` — `AdditiveTask` and the expected-score
+  helpers the assertions share. Pure numpy.
+- `src/py/rizemind/testing/pytest_plugin.py` — the `anvil`,
+  factory-deployment and `run_example` fixtures, and the artifact readers.
+  Shipping these makes the harness a product feature rather than test
+  scaffolding: a downstream swarm can e2e-test itself the same way.
+
+New — tests:
+
+- `tests/e2e/test_examples.py` — parametrised over the four examples, plus the
+  example-specific extras.
+- `tests/e2e/README.md` — how to run it, what it covers, how to register an
   example.
+- `tests/unit/py/rizemind/tasks/` — resolver, `TaskClient`, `AdditiveTask`,
+  and the `from_run_config` dotted-key round-trip.
 
 Modified:
 
+- `src/py/rizemind/{web3,authentication,swarm}/config.py` — add
+  `from_run_config()` and a `prefixed()` helper; document precedence; keep
+  secrets out.
+- `src/py/rizemind/logging/local_disk_metric_storage.py` — redact secret
+  fields in `write_config`; drop polars for stdlib `json`.
+- `pyproject.toml` — add `[project.optional-dependencies]`; move
+  `flwr[simulation]` and `mlflow` out of base; register the `e2e` marker.
+- `examples/{torch_basic,torch_diff_privacy,torch_shapley,torch_dyn_diff_privacy_shapley}/`
+  — task classes, thinned `client.py`/`server.py`, config tables moved under
+  `[tool.flwr.app.config]`.
 - `tests/integration/forge_fixtures.py` — extract the three-script deployment
-  currently inlined in `test_swarm_v1_factory.py`'s `factory_config`
-  (`SelectorFactory` -> `AlwaysSampled` -> `SwarmV1Factory`) into a session
-  fixture both suites use; the integration test switches to it, same
-  deployment, no behaviour change.
-- `.github/workflows/pytest.yml` — an `e2e-test` job mirroring
-  `integration-test` (Foundry + `forge soldeer install`) but with
-  `uv sync --group ml`, running `uv run pytest tests/e2e`. Borrowing from
-  upstream's Framework E2E workflow: a `dorny/paths-filter` gate so a PR
-  touching neither `examples/` nor `src/py/` skips the job, and
-  `FLWR_TELEMETRY_ENABLED: 0` at workflow level.
-- `pyproject.toml` — register the `e2e` marker so `pytest -m "not e2e"` works
-  locally; `testpaths` already covers `tests/`.
+  inlined in `test_swarm_v1_factory.py` into the shared fixture, then
+  re-export from `rizemind.testing`.
+- `.github/workflows/pytest.yml` — an `e2e-test` job (no `ml` group needed)
+  behind a `dorny/paths-filter` gate, with `FLWR_TELEMETRY_ENABLED: 0` at
+  workflow level.
+- `examples/README.md` — fold `rizenet_testnet` into a config section; fix the
+  comma-separated `--run-config` example (the parser wants spaces); correct the
+  compatibility table, which lists five examples that do not exist and omits
+  both DP ones.
 
-Chain-dependent tests skip rather than error when `anvil` or `forge` is
-absent, so `pytest tests/e2e` still runs the two chainless examples without
-Foundry. Timeouts come from `subprocess.run(timeout=...)` — no new dependency.
+Deleted:
 
-## 8. Sequence
+- `examples/rizenet_testnet/src/` — byte-identical to `torch_shapley`'s.
+  Survives as a README section and a `--run-config` line.
 
-1. **Extract the factory fixture.** Done when `pytest tests/integration` is
-   unchanged and green.
-2. **Harness + `torch_basic`.** Build `prepare_app`, `run_app`,
-   `assert_clean_run`, the stub module and the tier-1/2 assertions against the
-   simplest example. Done when one example passes *and* a deliberately broken
-   client fails the test rather than exiting 0.
-3. **`torch_diff_privacy`.** Confirms the MNIST key/shape parameterisation and
-   settles the Opacus `state_dict` question. Done when `make_private` runs on
-   synthetic data and `average_epsilon` lands in `metrics.csv`.
-4. **`torch_shapley` and the chain path.** Anvil-backed config rewriting, two
-   on-chain rounds, tier-3 assertions including the `ContractCreated` lookup
-   and the φ ordering. Resolve contribution scaling here. Done when
-   contributions read back off-chain match the game's ordering and ratios.
-5. **`torch_dyn_diff_privacy_shapley`.** Adds the
-   `noise_multiplier`-as-epsilon assertion. Done when `average_epsilon`
-   differs between rounds 1 and 2.
-6. **`rizenet_testnet`.** Keystore seeding under a sandboxed `HOME`, config
-   rewrite from testnet to local chain. Done when the `mnemonic_store` path is
-   exercised without a network.
-7. **CI and docs.** The `e2e-test` job with the `paths-filter` gate, marker
-   registration, `tests/e2e/README.md`, and a wall-clock measurement on a
-   GitHub runner to decide whether the job runs on every PR or on merge to
-   `main`. Also the one-line fix to the comma-separated `--run-config` example
-   in `examples/README.md`.
+## 11. Sequence
 
-## 9. Risks and open questions
+Ordered so the refactor is never done blind and every phase ends with
+something running. Phases 2–5 are independently shippable and none of them
+mentions testing.
 
-- **CI cost.** `uv sync --group ml` pulls Torch and Torchvision — roughly 2 GB
-  and a few minutes uncached; add `enable-cache: true` to `setup-uv`, and use
-  the CPU-only index as upstream does
-  (`--extra-index-url https://download.pytorch.org/whl/cpu`) to cut most of
-  that weight. Five subprocesses each pay a Ray startup and a Torch import;
-  expect three to six minutes after install. The `paths-filter` gate means
-  unrelated PRs pay nothing; if it is still too much, follow the existing
-  integration job and restrict to `pull_request`.
-- **Coupling to `task.py`'s shape.** The stub assumes each example keeps a
-  `task.py` exporting `Net`, `get_weights`, `set_weights`, `load_data`,
-  `train`, `test`. All five do, and it is the convention Flower quickstarts
-  use. A divergence fails as an `ImportError` at the top of the run — loud,
-  not silent.
+1. **Capture a golden baseline.** Before touching anything, run each of the
+   five examples for one round *with its real dataset* and keep the resulting
+   `metrics.csv` and `config.json`. Manual, local, one-time — it needs the
+   CIFAR-10 and MNIST downloads, so it is not a CI job. It is the only thing
+   that will tell you the refactor preserved behaviour.
+   *Done when* five baseline artifact sets are recorded in the PR description.
+2. **Stop writing secrets to disk.** Redact secret fields in `write_config`;
+   stop handing it `toml_config.data`. Ship on its own.
+   *Done when* a test asserts no mnemonic or passphrase value appears in
+   `config.json`.
+3. **Extras table and a smaller base install.** Add
+   `[project.optional-dependencies]`; move `flwr[simulation]` and `mlflow` out
+   of base with lazy imports in `logging/mlflow/`; replace polars in
+   `write_config`. Keep the `ml` dependency group for local development.
+   *Done when* the base venv is well under 1 GB and
+   `pip install rizemind[simulation]` resolves.
+4. **`from_run_config` on the config models.** Library-only, with unit tests,
+   no example changes yet. Write down the precedence order and the secrets
+   exception. Fix path resolution so declared relative paths resolve against
+   the app directory.
+   *Done when* unit tests cover the dotted-key round-trip and the precedence
+   chain.
+5. **`rizemind.tasks` and `rizemind.testing`.** The protocol, resolver,
+   `TaskClient`, `AdditiveTask`, and the pytest fixtures. Share the Anvil and
+   factory-deployment fixtures with `tests/integration` rather than
+   duplicating them.
+   *Done when* the new modules have unit tests and `tests/integration` still
+   passes on the shared fixtures.
+6. **Refactor the examples.** One example per commit: task class, thinned
+   client and server, config tables moved. The acceptance bar is a real run
+   against the real dataset matching the phase-1 baseline — not a run with the
+   fake task.
+   *Done when* each example's real run reproduces its baseline metrics, and
+   `rizenet_testnet/src/` is gone.
+7. **The e2e suite.** Four `run_example` calls and the three assertion tiers.
+   Prove the failure detector by temporarily making a task raise and
+   confirming the test goes red rather than exiting 0.
+   *Done when* all four pass on the base install and a deliberately broken
+   client fails the suite.
+8. **CI and docs.** The gated `e2e-test` job, marker registration,
+   `tests/e2e/README.md`, the `examples/README.md` corrections, and a
+   wall-clock measurement on a runner.
+   *Done when* the job is green on a PR and its runtime is recorded.
+
+## 12. Risks and open questions
+
+- **Refactoring the examples is now the bulk of the work.** Revision 1 touched
+  no shipped code; this one rewrites four examples and adds four public library
+  names. That is a real increase in scope and blast radius, and the reason
+  phase 1 captures a baseline and phase 6 goes one example per commit. If the
+  appetite is not there, revision 1's copy-and-shim harness still works and is
+  in this branch's history — it is just more machinery for a worse result.
+- **Indirection in teaching code.** A reader of `client.py` can no longer see
+  the training loop; they follow `task=` in the pyproject to `src/task.py`. A
+  genuine cost for material whose job is to teach. Mitigating: the target is
+  named explicitly, sits in the same directory, and what is left in
+  `client.py` is now exactly the Rizemind-specific story a reader came for.
+- **Four new public names, and two config paths.** `Task`, `TaskClient`,
+  `load_task`, `from_run_config` all land under semver. And `from_run_config`
+  sits beside the existing `from_context`, so the precedence order has to be
+  documented and tested or the two will diverge.
 - **Contribution units on chain.** `swarm.distribute` takes
   `list[tuple[address, float]]` and the contract stores something integral.
   The scaling decides whether tier 3 asserts equality with φ or only ordering
-  and ratios. Resolved in Phase 4; ordering is the fallback and already
-  catches a broken contribution pipeline.
+  and ratios. Resolved in phase 7; ordering is the fallback.
 - **Fixed port 8545.** `start_anvil` defaults to 8545, so a developer with a
-  local Anvil running will collide. Worth adding a port parameter to the
-  session fixture as a small follow-up; not a blocker for CI.
-- **Two incidental bugs found while reading.**
-  `examples/rizenet_testnet/src/server.py` passes `"torch-shapley"` as its
-  metric-storage app name, so its logs land in the same directory as the
-  `torch_shapley` example's — worth a one-word fix. Separately, the
-  compatibility table at the bottom of `examples/README.md` lists five
-  examples that do not exist in the tree (Basic Signature, Centralized Shapley
-  Value, Decentralized TabPFN, RizeNet Deployment, RizeNet Shapley) and omits
-  the two DP examples. Both are outside this plan's scope.
+  local Anvil running will collide. Add a port parameter when the fixture
+  moves into `rizemind.testing`.
+- **CI cost, now much lower.** Dropping the `ml` group removes the ~2 GB
+  PyTorch install that dominated revision 1's estimate. What remains is four
+  `flwr run` subprocesses, each paying a Ray startup, plus Anvil and three
+  `forge script` deployments for two of them. The `paths-filter` gate means
+  unrelated PRs pay nothing. Measure in phase 8 before deciding between every
+  PR and merges to `main`.
