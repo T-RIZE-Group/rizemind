@@ -39,6 +39,19 @@ timeout = 30
 # that do not set their own. A spike means the mutation engine and the code have
 # drifted apart, not that the tests improved.
 max_invalid_rate = 50.0
+# Every production Solidity file must either belong to a target below or appear
+# here. Keep exemptions exact so a newly added implementation cannot inherit an
+# overly broad interface/types glob and escape mutation testing.
+excluded_paths = [
+  "src/compensation/types.sol",
+  "src/contribution/types.sol",
+  "src/randomness/IRNG.sol",
+  "src/randomness/ISeedProvider.sol",
+  "src/sampling/ISelector.sol",
+  "src/swarm/ISwarmV1.sol",
+  "src/swarm/registry/ICertificateRegistry.sol",
+  "src/training/ITraining.sol",
+]
 
 # --- Authorization ------------------------------------------------------------
 # Role assignment and whitelisting. A survivor here is a candidate privilege

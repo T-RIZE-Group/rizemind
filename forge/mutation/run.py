@@ -67,11 +67,14 @@ class Defaults:
         timeout: Per-mutant wall clock in seconds.
         max_invalid_rate: Ceiling on the share of mutants that fail to compile,
           for targets that do not set their own.
+        excluded_paths: Production Solidity files intentionally omitted from
+          mutation testing because they contain no executable behaviour.
     """
 
     jobs: int = 4
     timeout: int = 30
     max_invalid_rate: float = 50.0
+    excluded_paths: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -150,16 +153,68 @@ def load_config(path: Path) -> tuple[Defaults, dict[str, Target]]:
     return defaults, targets
 
 
-def validate_paths(targets: dict[str, Target]) -> None:
-    """A silently missing path would shrink the campaign without failing it."""
-    missing = [
-        f"{target.name}: {p}"
-        for target in targets.values()
-        for p in target.paths
-        if not (FORGE_ROOT / p).is_file()
-    ]
+def validate_policy(defaults: Defaults, targets: dict[str, Target]) -> None:
+    """Ensures every production Solidity file has an explicit policy outcome.
+
+    Exact file coverage matters here: target selection may operate at subsystem
+    granularity for tests, but Forge only mutates the paths passed on its command
+    line. Without this check, adding a contract beside an existing target would
+    select that target while leaving the new contract completely unmutated.
+
+    Args:
+        defaults: Global policy settings, including explicit source exclusions.
+        targets: Every configured mutation target.
+
+    Raises:
+        SystemExit: If paths are missing, duplicated, overlap an exclusion, or a
+          production Solidity file is neither targeted nor explicitly excluded.
+    """
+    owners: dict[str, list[str]] = {}
+    for target in targets.values():
+        for path in target.paths:
+            owners.setdefault(path, []).append(target.name)
+
+    excluded = set(defaults.excluded_paths)
+    source_files = {
+        path.relative_to(FORGE_ROOT).as_posix()
+        for path in (FORGE_ROOT / "src").rglob("*.sol")
+        if path.is_file()
+    }
+    configured = set(owners)
+
+    problems: list[str] = []
+    missing = sorted((configured | excluded) - source_files)
     if missing:
-        sys.exit("configured mutation paths do not exist:\n  " + "\n  ".join(missing))
+        problems.append(
+            "configured mutation paths do not exist under src/:\n  "
+            + "\n  ".join(missing)
+        )
+
+    duplicate_owners = {path: names for path, names in owners.items() if len(names) > 1}
+    if duplicate_owners:
+        details = [
+            f"{path}: {', '.join(sorted(names))}"
+            for path, names in sorted(duplicate_owners.items())
+        ]
+        problems.append(
+            "mutation paths belong to more than one target:\n  " + "\n  ".join(details)
+        )
+
+    overlap = sorted(configured & excluded)
+    if overlap:
+        problems.append(
+            "mutation paths cannot also be excluded:\n  " + "\n  ".join(overlap)
+        )
+
+    uncovered = sorted(source_files - configured - excluded)
+    if uncovered:
+        problems.append(
+            "production Solidity files are not assigned to a mutation target or "
+            "explicitly excluded:\n  " + "\n  ".join(uncovered)
+        )
+
+    if problems:
+        sys.exit("\n\n".join(problems))
 
 
 def changed_sources(base_ref: str) -> list[str]:
@@ -543,7 +598,7 @@ def main() -> int:
         defaults.jobs = args.jobs
     if args.timeout is not None:
         defaults.timeout = args.timeout
-    validate_paths(targets)
+    validate_policy(defaults, targets)
     selected = select_targets(args, targets)
 
     if not selected:

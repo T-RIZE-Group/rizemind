@@ -33,6 +33,11 @@ python3 mutation/run.py --changed-since origin/main   # what the PR gate will ru
 `--report <path>` writes the aggregated JSON report; `--jobs` and `--timeout`
 override the values in `targets.toml` for a one-off run.
 
+Before selecting a campaign, the runner verifies that every `src/**/*.sol` file
+is either assigned to exactly one target or listed explicitly in
+`defaults.excluded_paths`. This makes adding a new production contract without a
+mutation policy a hard failure rather than a silently untested change.
+
 A full campaign takes noticeably longer than `forge test`: every mutant
 recompiles the contract and replays the suite.
 
@@ -135,8 +140,9 @@ max_invalid_rate = 40.0    # optional: overrides the global ceiling
 
 Only production code is listed. Interfaces (`I*.sol`) and the event-only
 `types.sol` files are deliberately absent — they hold no behaviour, so every
-mutant they generate is noise. Scripts, tests and the vendored `dependencies/`
-tree are never mutated.
+mutant they generate is noise. Each omission must be named exactly in
+`defaults.excluded_paths`; broad globs are intentionally unsupported. Scripts,
+tests and the vendored `dependencies/` tree are never mutated.
 
 The whole test suite runs against each mutant. Do **not** narrow it with
 `--match-contract`: a mutation in `SwarmV1` should be catchable by the swarm
