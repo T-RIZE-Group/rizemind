@@ -187,7 +187,9 @@ source rewrite. Each one has to end up as exactly one of:
 
 Never resolve a survivor by disabling the operator that produced it. In
 particular `require`, arithmetic and `delegatecall` operators stay on: those are
-the mutants that map to real vulnerabilities.
+the mutants that map to real vulnerabilities. `foundry.toml` names every
+operator supported by the pinned Foundry version explicitly; an empty
+`include_operators` list means Forge's default subset, not all operators.
 
 ## Determinism
 
