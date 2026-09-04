@@ -41,12 +41,59 @@ three-file app.
 
 | Finding | Consequence | Status |
 | --- | --- | --- |
-| `flower-simulation --app DIR` is a public console script that reads `[tool.flwr.app.config]` from that directory's `pyproject.toml` and fuses `--run-config` over it. | We can run a modified *copy* of an example without touching the repo and without the private `_run_simulation` API. `flwr.simulation.run_simulation()` is unusable: it passes no run config, so every example would `KeyError` on `num-server-rounds`. | verified |
+| `flwr run . <federation> --run-config ... --stream` runs a copied app in place, from its own directory — the documented user path, and what upstream Flower's own CI uses on its examples. It builds a FAB that correctly includes a renamed module and a generated `task.py`. | This is the runner. `flower-simulation --app DIR` (also public, also verified working) stays the fallback. `flwr.simulation.run_simulation()` is unusable either way: it passes no run config, so every example would `KeyError` on `num-server-rounds`. | verified |
+| `flwr run` shells out to `flower-simulation` **by name** and exits 0 when it cannot find it — the run never starts, and the only trace is one line of stdout. | `PATH` must include the venv's `bin`. Second independent reason exit status cannot be the oracle. | verified (trap) |
+| Upstream's run oracle is `flwr ls --format=json` filtered on `.runs[0].status == "finished:completed"`. On the pinned flwr 1.21, `flwr ls` refuses to work without a SuperLink and returns `success: false` for a local simulation federation. | We cannot use the structured oracle yet, so the log scan carries the weight. Worth revisiting on a flwr upgrade — it would replace most of tier 1 with one `jq` expression. | verified |
 | Ray `ClientAppActor` workers inherit the **driver's** cwd, not `--app`. | `server.py` and `client.py` both call `TomlConfig("./pyproject.toml")`. The subprocess must be launched with `cwd` set to the copied app dir, or the chain examples silently read the library's root `pyproject.toml`. Confirmed: with `cwd` set, both the ServerApp thread and the Ray actors resolve `./pyproject.toml` to the copy. | verified |
 | **A ClientApp exception does not fail the run.** `FedAvg` defaults to `accept_failures=True`, so a raising client yields `received 0 results and 2 failures` and `flower-simulation` still exits `0`. | Exit code is necessary but nowhere near sufficient. Every test must also scan the log for `ClientAppException` and assert every `received N results and M failures` line has `M == 0`. Without this the suite is green theatre. | verified (trap) |
 | `--run-config` is space-separated TOML fragments, not comma-separated: `'num-server-rounds=2 metrics-storage-path="logs"'`. The comma form exits 1. | Overrides built by a helper that quotes strings and joins on spaces. (`examples/README.md` documents the comma form — worth fixing.) | verified |
 | Negative Shapley values are clamped by `normalize_contribution_scores` before `swarm.distribute`. | No revert risk — but a clamped score makes the "on-chain contribution equals φ" assertion hold for the wrong reason. Hence the strictly-additive, strictly-positive stub design below. | verified |
 | `get_weights()` in the DP examples runs on the Opacus `GradSampleModule`, whose `state_dict` keys may be prefixed. | The examples work today, so order and count must round-trip. Confirmed in Phase 3 with an explicit shape assertion; if it does not hold, the stub keys off the last tensor instead of the first. | to confirm |
+
+## 2b. Prior art: how Flower tests its own examples
+
+`flwrlabs/flower` (read at `35a02bb`) carries a `framework/e2e/` tree and a
+`Framework E2E` workflow that solve most of this problem already. Four of its
+decisions are worth copying, one is worth deliberately not copying.
+
+**Copy: the runner and the CI shape.** Their `apps` job runs each example with
+`flwr run --run-config num-server-rounds=1 --stream` from the example's own
+directory, then checks the outcome. That is the documented user path — the
+same command `examples/README.md` gives a reader — so this plan uses it as
+the runner instead of `flower-simulation --app`. Their workflow also sets
+`FLWR_TELEMETRY_ENABLED: 0` at the top level, gates everything behind
+`dorny/paths-filter` so an unrelated PR pays nothing, and caches the Python
+install location per example directory. All three are worth adopting for a job
+this expensive.
+
+**Copy: the closed-form client.** `framework/e2e/e2e-bare` is the data-free
+pattern, close to what this plan proposes. Its client holds
+`model_params = np.array([1])` and an `objective = 5`; `fit` returns
+`param * (objective / mean(param))` and `evaluate` returns
+`min(|1 - mean/objective|, 1)` as the loss. No dataset, no gradient, a
+deterministic result. The difference is what it buys: theirs converges so the
+server can assert `losses[0] / losses[-1] >= 0.98`, a loose sanity band. The
+additive game below yields the *exact* expected accuracy and the exact
+expected Shapley value per trainer, which is what makes the on-chain
+assertions worth writing.
+
+**Understand: why they assert inside the ServerApp.**
+`e2e-pytorch/server_app.py` puts its assertions in `app.main()`, against
+`context.history`. That is not stylistic — a *server* exception fails the run
+while a client exception does not (the trap above). We cannot use that lever,
+because asserting inside `server.py` would mean editing the file under test.
+Hence the log scan plus artifact assertions: same goal, from outside.
+
+**Don't copy: their answer to slow data.** Upstream doesn't stub the data
+layer at all. `e2e-pytorch` downloads CIFAR-10 from Hugging Face and takes
+`Subset(range(100))` for train and `range(10)` for test, with a shrunken CNN
+(`conv 3->4->8`, `fc 32/16`) and a dedicated CI step that pre-downloads and
+caches the dataset; `e2e-opacus` does the same with a 200-sample fixture. That
+works for them because they own the download and cache it in their own CI. It
+does not meet the no-download requirement here, and it makes each example's
+test depend on Hugging Face being up. Stubbing `task.py` costs a little more
+machinery and removes the dependency entirely — and, unlike a subset, it
+makes the expected numbers exact rather than approximate.
 
 ## 3. The harness
 
@@ -71,15 +118,32 @@ three-file app.
    `e2e_stub.json` beside it; `fake_task` reads that file relative to `cwd`,
    which step 2's cwd guarantee makes reliable (and avoids depending on
    env-var propagation into Ray workers).
-4. **Run** — `subprocess.run` on the venv's `flower-simulation`, `cwd=app`,
-   hard timeout, env: `FLWR_TELEMETRY_ENABLED=0`, `HF_HUB_OFFLINE=1`,
-   `HF_DATASETS_OFFLINE=1`, `HF_HOME`/`HOME` under `tmp_path`,
-   `CUDA_VISIBLE_DEVICES=""`. The offline flags enforce "no downloads": if a
-   stub is ever bypassed the test fails loudly instead of pulling 170 MB.
+4. **Run** —
+   `subprocess.run(["flwr","run",".","local-simulation","--run-config",...,"--stream"], cwd=app, timeout=...)`,
+   the command from the example's own README. Env: `PATH` prefixed with the
+   venv's `bin` (mandatory — `flwr run` looks up `flower-simulation` by name
+   and exits 0 if it is missing), `PYTHONPATH` with the repo root so the stub
+   module resolves inside the Ray worker, `FLWR_TELEMETRY_ENABLED=0`,
+   `HF_HUB_OFFLINE=1`, `HF_DATASETS_OFFLINE=1`, `HF_HOME`/`HOME` under
+   `tmp_path` (which also isolates the FAB cache `flwr run` writes to
+   `~/.flwr`), `CUDA_VISIBLE_DEVICES=""`. The offline flags enforce "no
+   downloads": if a stub is ever bypassed the test fails loudly instead of
+   pulling 170 MB. Verified end to end on a scratch app: the FAB build picks
+   up the renamed `_real_task.py` and the generated `task.py`, the `PYTHONPATH`
+   stub imports inside the actor, and `e2e_stub.json` reads from the app dir.
 5. **Judge** — `assert_clean_run()` checks exit status, absence of
    `ClientAppException`/`ServerAppException`/`Traceback`,
    `Run finished 2 round(s)`, and zero failures on every results/failures
    line. Only then do the artifact assertions run.
+
+**Exit status means nothing here, twice over.** `flwr run` returns 0 when
+every client raises (`FedAvg` tolerates failures) *and* when the simulation
+never starts at all (missing `flower-simulation` on `PATH`). Both were
+reproduced. Upstream sidesteps this with `flwr ls --format=json`, which flwr
+1.21 will not serve for a local simulation federation, and with server-side
+asserts, which would mean editing the file under test. So on this version the
+log scan in step 5 is not belt-and-braces — it is the only thing standing
+between a broken example and a green test.
 
 Subprocess rather than in-process because process isolation is doing real
 work: Ray driver state, Torch global state, the module-level `fds` cache,
@@ -231,7 +295,10 @@ Modified:
   deployment, no behaviour change.
 - `.github/workflows/pytest.yml` — an `e2e-test` job mirroring
   `integration-test` (Foundry + `forge soldeer install`) but with
-  `uv sync --group ml`, running `uv run pytest tests/e2e`.
+  `uv sync --group ml`, running `uv run pytest tests/e2e`. Borrowing from
+  upstream's Framework E2E workflow: a `dorny/paths-filter` gate so a PR
+  touching neither `examples/` nor `src/py/` skips the job, and
+  `FLWR_TELEMETRY_ENABLED: 0` at workflow level.
 - `pyproject.toml` — register the `e2e` marker so `pytest -m "not e2e"` works
   locally; `testpaths` already covers `tests/`.
 
@@ -260,17 +327,22 @@ Foundry. Timeouts come from `subprocess.run(timeout=...)` — no new dependency.
 6. **`rizenet_testnet`.** Keystore seeding under a sandboxed `HOME`, config
    rewrite from testnet to local chain. Done when the `mnemonic_store` path is
    exercised without a network.
-7. **CI and docs.** The `e2e-test` job, marker registration,
-   `tests/e2e/README.md`, and a wall-clock measurement on a GitHub runner to
-   decide whether the job runs on every PR or on merge to `main`.
+7. **CI and docs.** The `e2e-test` job with the `paths-filter` gate, marker
+   registration, `tests/e2e/README.md`, and a wall-clock measurement on a
+   GitHub runner to decide whether the job runs on every PR or on merge to
+   `main`. Also the one-line fix to the comma-separated `--run-config` example
+   in `examples/README.md`.
 
 ## 9. Risks and open questions
 
 - **CI cost.** `uv sync --group ml` pulls Torch and Torchvision — roughly 2 GB
-  and a few minutes uncached; add `enable-cache: true` to `setup-uv`. Five
-  subprocesses each pay a Ray startup and a Torch import; expect three to six
-  minutes after install. If that is too much for every push, gate the job to
-  `pull_request` like the existing integration job, or to merges on `main`.
+  and a few minutes uncached; add `enable-cache: true` to `setup-uv`, and use
+  the CPU-only index as upstream does
+  (`--extra-index-url https://download.pytorch.org/whl/cpu`) to cut most of
+  that weight. Five subprocesses each pay a Ray startup and a Torch import;
+  expect three to six minutes after install. The `paths-filter` gate means
+  unrelated PRs pay nothing; if it is still too much, follow the existing
+  integration job and restrict to `pull_request`.
 - **Coupling to `task.py`'s shape.** The stub assumes each example keeps a
   `task.py` exporting `Net`, `get_weights`, `set_weights`, `load_data`,
   `train`, `test`. All five do, and it is the convention Flower quickstarts
