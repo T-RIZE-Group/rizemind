@@ -1,0 +1,127 @@
+# Mutation testing policy for the Rizemind Solidity contracts.
+#
+# Consumed by `forge/mutation/run.py`. Everything here is data: adding a
+# contract to a target, or ratcheting a score, is a one-line change.
+#
+# Rules of thumb (see forge/mutation/README.md for the full rationale):
+#   * Only production code under `src/` is listed. Interfaces (`I*.sol`) and the
+#     event-only `types.sol` files carry no behaviour and are deliberately
+#     absent. Scripts, tests and vendored dependencies are never mutated.
+#   * Targets are gated individually. A single repository-wide average would let
+#     the strong score on `randomness` hide the survivors in `access`.
+#   * `min_score` is a floor taken from a recorded range, never an aspiration.
+#     Raise it only after repeated campaigns actually clear the new value.
+#
+# Baselines: Foundry v1.8.1, profile `ci`, 4 jobs, 8 full campaigns on
+# 2026-09-03. Each target records the observed RANGE, not a single run.
+#
+# Forge's mutation testing is a preview and is not reproducible across
+# environments. Within one machine state it is exact — five consecutive
+# campaigns were bit-identical — but across states, mutants migrate between
+# `survived`, `skipped` and `invalid`, moving the score by up to 8.5 points on
+# `access` and `swarm` (the targets with the most churn) and ~2 points
+# elsewhere. Pinning `jobs` narrows this but does not remove it.
+#
+# So `min_score` is the observed MINIMUM less a margin covering that target's
+# measured spread — not the last number someone saw. A floor set just under a
+# single run will flake CI without any code changing.
+
+[defaults]
+# Sized to a 4-vCPU GitHub-hosted runner. Pinned rather than left to default
+# (= core count) because `skipped` and `invalid` counts drift with concurrency,
+# which would make baselines runner-dependent.
+jobs = 4
+# Per-mutant wall clock in seconds. A mutant that exceeds it is recorded as
+# `timed_out` and dropped from the score, so `run.py` fails the run instead of
+# letting it pass as a kill. The nightly campaign raises this to 60.
+timeout = 30
+# Fallback ceiling on the share of mutants that fail to compile, for targets
+# that do not set their own. A spike means the mutation engine and the code have
+# drifted apart, not that the tests improved.
+max_invalid_rate = 50.0
+# Every production Solidity file must either belong to a target below or appear
+# here. Keep exemptions exact so a newly added implementation cannot inherit an
+# overly broad interface/types glob and escape mutation testing.
+excluded_paths = [
+  "src/compensation/types.sol",
+  "src/contribution/types.sol",
+  "src/randomness/IRNG.sol",
+  "src/randomness/ISeedProvider.sol",
+  "src/sampling/ISelector.sol",
+  "src/swarm/ISwarmV1.sol",
+  "src/swarm/registry/ICertificateRegistry.sol",
+  "src/training/ITraining.sol",
+]
+
+# --- Authorization ------------------------------------------------------------
+# Role assignment and whitelisting. A survivor here is a candidate privilege
+# escalation, so this target runs on every PR whether or not it was touched.
+[targets.access]
+paths = [
+  "src/access/FLAccessControl.sol",
+  "src/access/FLDemocraticWhitelist.sol",
+]
+critical = true
+# Observed 42.86-51.35% over 8 campaigns (spread 8.49); invalid 27.9-30.1%.
+# Floor = 42.86 - 10.5 margin.
+min_score = 32.0
+max_invalid_rate = 40.0
+
+# --- Accounting ---------------------------------------------------------------
+# Mints tokens against reported contributions. Survivors here are value bugs, so
+# this target is also unconditional on PRs.
+[targets.compensation]
+paths = ["src/compensation/SimpleMintCompensation.sol"]
+critical = true
+# Observed 91.67-92.68% over 8 campaigns (spread 1.01); invalid 8.9%.
+# Floor = 91.67 - 5 margin.
+min_score = 86.0
+max_invalid_rate = 20.0
+
+# --- Swarm core ---------------------------------------------------------------
+# Swarm lifecycle, factory deployment and the certificate registry.
+[targets.swarm]
+paths = [
+  "src/swarm/SwarmV1.sol",
+  "src/swarm/SwarmV1Factory.sol",
+  "src/swarm/registry/CertificateRegistry.sol",
+  "src/swarm/registry/SwarmCore.sol",
+]
+# Observed 45.83-53.85% over 8 campaigns (spread 8.02); invalid 27.2-31.6%.
+# Floor = 45.83 - 10 margin.
+min_score = 35.0
+max_invalid_rate = 45.0
+
+# --- Trainer sampling ---------------------------------------------------------
+[targets.sampling]
+paths = [
+  "src/sampling/AlwaysSampled.sol",
+  "src/sampling/RandomSampling.sol",
+  "src/sampling/SelectorFactory.sol",
+]
+# Observed 53.85-56.76% over 8 campaigns (spread 2.91); invalid 21.5-26.2%.
+# Floor = 53.85 - 6 margin.
+min_score = 48.0
+max_invalid_rate = 40.0
+
+# --- Randomness ---------------------------------------------------------------
+[targets.randomness]
+paths = [
+  "src/randomness/RNG.sol",
+  "src/randomness/RNGPermutations.sol",
+]
+# Observed 86.67-87.88% over 8 campaigns (spread 1.21); invalid 7.8-8.6%.
+# Floor = 86.67 - 5 margin.
+# By far the slowest target (~2 min): every mutant replays the permutation
+# tests, which are the most expensive in the suite.
+min_score = 81.0
+max_invalid_rate = 20.0
+
+# --- Round training -----------------------------------------------------------
+[targets.training]
+paths = ["src/training/RoundTraining.sol"]
+# Observed 71.43-76.47% over 8 campaigns (spread 5.04); invalid 32.4-40.5% —
+# the highest invalid rate in the repository, a consequence of how little code
+# there is to mutate. Floor = 71.43 - 7 margin.
+min_score = 64.0
+max_invalid_rate = 55.0
