@@ -1,0 +1,623 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>rizemind.mnemonic.store &#8212; RIZEMIND  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/rizemind/mnemonic/store';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">RIZEMIND  documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Sections</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../quickstarts/index.html">Quickstart</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../quickstarts/examples.html">Examples</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../how-tos/index.html">How-To</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../how-tos/web3-auth/index.html">How To Add Web3-Based Signature Authentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../how-tos/generate-store-mnemonic.html">Generating and Storing a Mnemonic</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../references/index.html">References</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../references/authentication/index.html">Authentication Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../references/authentication/authenticated_client_manager.html">Authenticated Client Manager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../references/authentication/authenticated_client_properties.html">Authenticated Client Properties</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../references/authentication/can_train_criterion.html">Can Train Criterion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../references/authentication/config.html">Config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../references/authentication/eth_account_strategy.html">Eth Account Strategy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../references/authentication/mod.html">mod</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../references/authentication/train_auth.html">Training Authentication</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../references/authentication/notary/index.html">Notary</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../references/authentication/notary/model/index.html">Model</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../references/authentication/signatures/index.html">Signatures</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../references/authentication/signatures/auth.html">Auth</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../references/authentication/signatures/eip712.html">EIP712</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../references/authentication/signatures/signature.html">Signature</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../references/configuration/index.html">Configuration Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../references/configuration/base_config.html">Base Config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../references/configuration/toml_config.html">Toml Config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../references/configuration/transform.html">Transform utilities</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../references/configuration/validators/index.html">Validators</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../references/configuration/validators/eth_address.html">Ethereum Address</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../references/exception/index.html">Exception Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../references/exception/base_exception.html">Base Exception</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../references/exception/parse_exception.html">Parse Exception</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../references/logging/index.html">Logging Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../references/logging/base_metric_storage.html">Base Metric Storage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../references/logging/inspector_mod.html">Inspector Mod</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../references/logging/local_disk_metric_storage.html">Local Disk Metric Storage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../references/logging/metric_storage_strategy.html">Metric Storage Strategy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../references/logging/train_metric_history.html">Train Metric History</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../references/logging/mlflow/index.html">MLflow</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../references/logging/mlflow/config.html">MLFlow Config</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../references/logging/mlflow/metric_storage.html">MLFlow Metric Storage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../references/logging/mlflow/mod.html">MLFlow Mod</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../references/mnemonic/index.html">Mnemonic Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../references/mnemonic/store.html">Mnemonic Store</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../references/strategies/index.html">Strategies Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../references/strategies/compensation/index.html">Compensation Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../references/strategies/compensation/simple_compensation_strategy.html">Simple Compensation Strategy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../references/strategies/compensation/typings.html">Typings</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../references/strategies/contribution/index.html">Contribution Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../references/strategies/contribution/calculators/index.html">Calculators Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../references/strategies/contribution/sampling/index.html">Sampling Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../references/strategies/contribution/shapley/index.html">Shapley Module</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../references/web3/index.html">Web3 Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../references/web3/config.html">Web3 Config</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developers/index.html">Contribute to Rizemind</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for rizemind.mnemonic.store</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">base64</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">unicodedata</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">InvalidTag</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.ciphers.aead</span><span class="w"> </span><span class="kn">import</span> <span class="n">AESGCM</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.kdf.scrypt</span><span class="w"> </span><span class="kn">import</span> <span class="n">Scrypt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">eth_account.hdaccount</span><span class="w"> </span><span class="kn">import</span> <span class="n">generate_mnemonic</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">rizemind.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">RIZEMIND_HOME</span>
+
+
+<div class="viewcode-block" id="MnemonicStore">
+<a class="viewcode-back" href="../../../references/mnemonic/store.html#rizemind.mnemonic.store.MnemonicStore">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MnemonicStore</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Manages the secure storage of BIP39 mnemonic phrases.&quot;&quot;&quot;</span>
+
+    <span class="n">_keystore_dir</span><span class="p">:</span> <span class="n">Path</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keystore_dir</span><span class="o">=</span><span class="n">RIZEMIND_HOME</span> <span class="o">/</span> <span class="s2">&quot;keystore&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the MnemonicStore.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            keystore_dir: The directory to store mnemonic keystore files.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_keystore_dir</span> <span class="o">=</span> <span class="n">keystore_dir</span>
+        <span class="n">keystore_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MnemonicStore.generate">
+<a class="viewcode-back" href="../../../references/mnemonic/store.html#rizemind.mnemonic.store.MnemonicStore.generate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">words</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates a new BIP39 mnemonic phrase.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            words: The number of words in the mnemonic (e.g., 12, 15, 18, 21, 24).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A new mnemonic phrase.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">generate_mnemonic</span><span class="p">(</span><span class="n">lang</span><span class="o">=</span><span class="s2">&quot;english&quot;</span><span class="p">,</span> <span class="n">num_words</span><span class="o">=</span><span class="n">words</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MnemonicStore.save">
+<a class="viewcode-back" href="../../../references/mnemonic/store.html#rizemind.mnemonic.store.MnemonicStore.save">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">passphrase</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mnemonic</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Encrypts and saves a mnemonic to a keystore file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            account_name: The name of the account to save.</span>
+<span class="sd">            passphrase: The passphrase to encrypt the mnemonic.</span>
+<span class="sd">            mnemonic: The mnemonic phrase to save.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The path to the newly created keystore file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">encrypted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_encrypt_mnemonic</span><span class="p">(</span><span class="n">mnemonic</span><span class="p">,</span> <span class="n">passphrase</span><span class="p">)</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_keystore_file</span><span class="p">(</span><span class="n">account_name</span><span class="p">)</span>
+        <span class="n">file_path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">encrypted</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">file_path</span></div>
+
+
+<div class="viewcode-block" id="MnemonicStore.get_keystore_dir">
+<a class="viewcode-back" href="../../../references/mnemonic/store.html#rizemind.mnemonic.store.MnemonicStore.get_keystore_dir">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_keystore_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the keystore directory path.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keystore_dir</span></div>
+
+
+<div class="viewcode-block" id="MnemonicStore.get_keystore_file">
+<a class="viewcode-back" href="../../../references/mnemonic/store.html#rizemind.mnemonic.store.MnemonicStore.get_keystore_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_keystore_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the path to an account&#39;s keystore file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            account_name: The name of the account.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The keystore file path for the given account.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">keystore_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_keystore_dir</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">keystore_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">account_name</span><span class="si">}</span><span class="s2">.json&quot;</span></div>
+
+
+<div class="viewcode-block" id="MnemonicStore.exists">
+<a class="viewcode-back" href="../../../references/mnemonic/store.html#rizemind.mnemonic.store.MnemonicStore.exists">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Checks if a keystore for an account name exists.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            account_name: The name of the account.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            True if the keystore file exists, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">keystore</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_keystore_file</span><span class="p">(</span><span class="n">account_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">keystore</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="MnemonicStore.load">
+<a class="viewcode-back" href="../../../references/mnemonic/store.html#rizemind.mnemonic.store.MnemonicStore.load">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">passphrase</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads and decrypts a mnemonic from a keystore file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            account_name: The name of the account to load.</span>
+<span class="sd">            passphrase: The passphrase to decrypt the mnemonic.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The decrypted mnemonic phrase.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FileNotFoundError: If the keystore for the account does not exist.</span>
+<span class="sd">            ValueError: If decryption fails due to an incorrect passphrase or</span>
+<span class="sd">                corrupted data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">account_name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">account_name</span><span class="si">}</span><span class="s2">&#39; does not exist&quot;</span><span class="p">)</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_keystore_file</span><span class="p">(</span><span class="n">account_name</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decrypt_mnemonic</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">passphrase</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MnemonicStore.list_accounts">
+<a class="viewcode-back" href="../../../references/mnemonic/store.html#rizemind.mnemonic.store.MnemonicStore.list_accounts">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">list_accounts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Lists all available account names from the keystore directory.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A sorted list of account names.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">keystore_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_keystore_dir</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">stem</span>  <span class="c1"># file name minus “.json”</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">keystore_dir</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.json&quot;</span><span class="p">)</span>  <span class="c1"># only keystore files</span>
+            <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span>
+        <span class="p">)</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_derive_key</span><span class="p">(</span><span class="n">passphrase</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">salt</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Derives a key from a passphrase using Scrypt.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            passphrase: The passphrase to derive the key from.</span>
+<span class="sd">            salt: The salt to use for key derivation.</span>
+<span class="sd">            length: The desired length of the derived key in bytes.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The derived key.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">kdf</span> <span class="o">=</span> <span class="n">Scrypt</span><span class="p">(</span><span class="n">salt</span><span class="o">=</span><span class="n">salt</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="n">length</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">15</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">kdf</span><span class="o">.</span><span class="n">derive</span><span class="p">(</span><span class="n">passphrase</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_encrypt_mnemonic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mnemonic</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">passphrase</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Encrypts a mnemonic using AES-GCM.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            mnemonic: The mnemonic phrase to encrypt.</span>
+<span class="sd">            passphrase: The passphrase to use for encryption.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A dictionary containing the encrypted data and parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">salt</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">urandom</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>
+        <span class="n">nonce</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">urandom</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_derive_key</span><span class="p">(</span><span class="n">normalize</span><span class="p">(</span><span class="s2">&quot;NFKC&quot;</span><span class="p">,</span> <span class="n">passphrase</span><span class="p">),</span> <span class="n">salt</span><span class="p">)</span>
+
+        <span class="n">aesgcm</span> <span class="o">=</span> <span class="n">AESGCM</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="n">cipher</span> <span class="o">=</span> <span class="n">aesgcm</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="n">nonce</span><span class="p">,</span> <span class="n">mnemonic</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">),</span> <span class="sa">b</span><span class="s2">&quot;mnemonic&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;kdf&quot;</span><span class="p">:</span> <span class="s2">&quot;scrypt&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;n&quot;</span><span class="p">:</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">15</span><span class="p">,</span>
+            <span class="s2">&quot;r&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+            <span class="s2">&quot;p&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;salt&quot;</span><span class="p">:</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">salt</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span>
+            <span class="s2">&quot;nonce&quot;</span><span class="p">:</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">nonce</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span>
+            <span class="s2">&quot;cipher&quot;</span><span class="p">:</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">cipher</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span>
+            <span class="s2">&quot;cipher_algo&quot;</span><span class="p">:</span> <span class="s2">&quot;AES-256-GCM&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;aad&quot;</span><span class="p">:</span> <span class="s2">&quot;mnemonic&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_decrypt_mnemonic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blob</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">passphrase</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Decrypts a mnemonic from an encrypted blob.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            blob: The dictionary containing the encrypted data.</span>
+<span class="sd">            passphrase: The passphrase to use for decryption.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The decrypted mnemonic phrase.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If decryption fails due to an incorrect passphrase or</span>
+<span class="sd">                corrupted data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">salt</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64decode</span><span class="p">(</span><span class="n">blob</span><span class="p">[</span><span class="s2">&quot;salt&quot;</span><span class="p">])</span>
+            <span class="n">nonce</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64decode</span><span class="p">(</span><span class="n">blob</span><span class="p">[</span><span class="s2">&quot;nonce&quot;</span><span class="p">])</span>
+            <span class="n">cipher</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64decode</span><span class="p">(</span><span class="n">blob</span><span class="p">[</span><span class="s2">&quot;cipher&quot;</span><span class="p">])</span>
+
+            <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_derive_key</span><span class="p">(</span><span class="n">normalize</span><span class="p">(</span><span class="s2">&quot;NFKC&quot;</span><span class="p">,</span> <span class="n">passphrase</span><span class="p">),</span> <span class="n">salt</span><span class="p">)</span>
+
+            <span class="n">aesgcm</span> <span class="o">=</span> <span class="n">AESGCM</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">plaintext</span> <span class="o">=</span> <span class="n">aesgcm</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">nonce</span><span class="p">,</span> <span class="n">cipher</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;mnemonic&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">plaintext</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="n">InvalidTag</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Decryption failed: incorrect pass-phrase or corrupted data&quot;</span>
+            <span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By T-RIZE
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2025, T-RIZE.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,508 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>rizemind.authentication.notary.model.model_signature &#8212; RIZEMIND  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/rizemind/authentication/notary/model/model_signature';</script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">RIZEMIND  documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Sections</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../../../install.html">Installation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../../../quickstarts/index.html">Quickstart</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../../quickstarts/examples.html">Examples</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../../../how-tos/index.html">How-To</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../../how-tos/web3-auth/index.html">How To Add Web3-Based Signature Authentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../../how-tos/generate-store-mnemonic.html">Generating and Storing a Mnemonic</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../../../references/index.html">References</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../../../references/authentication/index.html">Authentication Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../references/authentication/authenticated_client_manager.html">Authenticated Client Manager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../references/authentication/authenticated_client_properties.html">Authenticated Client Properties</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../references/authentication/can_train_criterion.html">Can Train Criterion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../references/authentication/config.html">Config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../references/authentication/eth_account_strategy.html">Eth Account Strategy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../references/authentication/mod.html">mod</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../references/authentication/train_auth.html">Training Authentication</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../../references/authentication/notary/index.html">Notary</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../references/authentication/notary/model/index.html">Model</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../../references/authentication/signatures/index.html">Signatures</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../references/authentication/signatures/auth.html">Auth</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../references/authentication/signatures/eip712.html">EIP712</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../references/authentication/signatures/signature.html">Signature</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../../../references/configuration/index.html">Configuration Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../references/configuration/base_config.html">Base Config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../references/configuration/toml_config.html">Toml Config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../references/configuration/transform.html">Transform utilities</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../../references/configuration/validators/index.html">Validators</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../references/configuration/validators/eth_address.html">Ethereum Address</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../../../references/exception/index.html">Exception Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../references/exception/base_exception.html">Base Exception</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../references/exception/parse_exception.html">Parse Exception</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../../../references/logging/index.html">Logging Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../references/logging/base_metric_storage.html">Base Metric Storage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../references/logging/inspector_mod.html">Inspector Mod</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../references/logging/local_disk_metric_storage.html">Local Disk Metric Storage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../references/logging/metric_storage_strategy.html">Metric Storage Strategy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../references/logging/train_metric_history.html">Train Metric History</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../../references/logging/mlflow/index.html">MLflow</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../references/logging/mlflow/config.html">MLFlow Config</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../references/logging/mlflow/metric_storage.html">MLFlow Metric Storage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../references/logging/mlflow/mod.html">MLFlow Mod</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../../../references/mnemonic/index.html">Mnemonic Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../references/mnemonic/store.html">Mnemonic Store</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../../../references/strategies/index.html">Strategies Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../../references/strategies/compensation/index.html">Compensation Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../references/strategies/compensation/simple_compensation_strategy.html">Simple Compensation Strategy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../references/strategies/compensation/typings.html">Typings</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../../references/strategies/contribution/index.html">Contribution Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../references/strategies/contribution/calculators/index.html">Calculators Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../references/strategies/contribution/sampling/index.html">Sampling Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../references/strategies/contribution/shapley/index.html">Shapley Module</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../../../references/web3/index.html">Web3 Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../references/web3/config.html">Web3 Config</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../developers/index.html">Contribute to Rizemind</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for rizemind.authentication.notary.model.model_signature</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">eth_account</span><span class="w"> </span><span class="kn">import</span> <span class="n">Account</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">eth_account.signers.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseAccount</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">eth_typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChecksumAddress</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flwr.common.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Parameters</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">web3</span><span class="w"> </span><span class="kn">import</span> <span class="n">Web3</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">rizemind.authentication.signatures.eip712</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">EIP712DomainRequiredFields</span><span class="p">,</span>
+    <span class="n">prepare_eip712_message</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rizemind.authentication.signatures.signature</span><span class="w"> </span><span class="kn">import</span> <span class="n">Signature</span>
+
+<span class="n">ModelTypeName</span> <span class="o">=</span> <span class="s2">&quot;Model&quot;</span>
+<span class="n">ModelTypeAbi</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;round&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;uint256&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;hash&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;bytes32&quot;</span><span class="p">},</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="hash_parameters">
+<a class="viewcode-back" href="../../../../../references/authentication/notary/model/model_signature.html#rizemind.authentication.notary.model.model_signature.hash_parameters">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">hash_parameters</span><span class="p">(</span><span class="n">parameters</span><span class="p">:</span> <span class="n">Parameters</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Hashes the Parameters dataclass using keccak256.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        parameters: The model parameters to hash.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The keccak256 hash of the concatenated tensors and tensor type.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Concatenate tensors and tensor type for hashing</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parameters</span><span class="o">.</span><span class="n">tensors</span><span class="p">)</span> <span class="o">+</span> <span class="n">parameters</span><span class="o">.</span><span class="n">tensor_type</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">Web3</span><span class="o">.</span><span class="n">keccak</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="sign_parameters_model">
+<a class="viewcode-back" href="../../../../../references/authentication/notary/model/model_signature.html#rizemind.authentication.notary.model.model_signature.sign_parameters_model">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sign_parameters_model</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">parameters</span><span class="p">:</span> <span class="n">Parameters</span><span class="p">,</span>
+    <span class="nb">round</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">domain</span><span class="p">:</span> <span class="n">EIP712DomainRequiredFields</span><span class="p">,</span>
+    <span class="n">account</span><span class="p">:</span> <span class="n">BaseAccount</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Signature</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Signs a model&#39;s parameters using the EIP-712 standard.</span>
+
+<span class="sd">    @TODO -&gt; requires double checking with domain</span>
+<span class="sd">    Args:</span>
+<span class="sd">        account: An Ethereum account object from which the message will be signed.</span>
+<span class="sd">        parameters: The model parameters to sign.</span>
+<span class="sd">        domain: The EIP712 required fields.</span>
+<span class="sd">        round: The current round number of the federated learning.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The `SignedMessage` from eth_account</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parameters_hash</span> <span class="o">=</span> <span class="n">hash_parameters</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+    <span class="n">eip712_message</span> <span class="o">=</span> <span class="n">prepare_eip712_message</span><span class="p">(</span>
+        <span class="n">domain</span><span class="p">,</span>
+        <span class="n">ModelTypeName</span><span class="p">,</span>
+        <span class="p">{</span><span class="s2">&quot;round&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">,</span> <span class="s2">&quot;hash&quot;</span><span class="p">:</span> <span class="n">parameters_hash</span><span class="p">},</span>
+        <span class="p">{</span><span class="n">ModelTypeName</span><span class="p">:</span> <span class="n">ModelTypeAbi</span><span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">signature</span> <span class="o">=</span> <span class="n">account</span><span class="o">.</span><span class="n">sign_message</span><span class="p">(</span><span class="n">eip712_message</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Signature</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">signature</span><span class="o">.</span><span class="n">signature</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="recover_model_signer">
+<a class="viewcode-back" href="../../../../../references/authentication/notary/model/model_signature.html#rizemind.authentication.notary.model.model_signature.recover_model_signer">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">recover_model_signer</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">Parameters</span><span class="p">,</span>
+    <span class="nb">round</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">domain</span><span class="p">:</span> <span class="n">EIP712DomainRequiredFields</span><span class="p">,</span>
+    <span class="n">signature</span><span class="p">:</span> <span class="n">Signature</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ChecksumAddress</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Recover the address of the signed model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: The model&#39;s parameters.</span>
+<span class="sd">        round: The current round number of the federated learning.</span>
+<span class="sd">        domain: The EIP712 required fields.</span>
+<span class="sd">        signature: The signature of the trainer/aggregator that sent the parameters.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The hex address of the signer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">model_hash</span> <span class="o">=</span> <span class="n">hash_parameters</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="n">eip712_message</span> <span class="o">=</span> <span class="n">prepare_eip712_message</span><span class="p">(</span>
+        <span class="n">domain</span><span class="p">,</span>
+        <span class="n">ModelTypeName</span><span class="p">,</span>
+        <span class="p">{</span><span class="s2">&quot;round&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">,</span> <span class="s2">&quot;hash&quot;</span><span class="p">:</span> <span class="n">model_hash</span><span class="p">},</span>
+        <span class="p">{</span><span class="n">ModelTypeName</span><span class="p">:</span> <span class="n">ModelTypeAbi</span><span class="p">},</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">Web3</span><span class="o">.</span><span class="n">to_checksum_address</span><span class="p">(</span>
+        <span class="n">Account</span><span class="o">.</span><span class="n">recover_message</span><span class="p">(</span><span class="n">eip712_message</span><span class="p">,</span> <span class="n">signature</span><span class="o">=</span><span class="n">signature</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+    <span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By T-RIZE
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2025, T-RIZE.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
