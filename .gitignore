@@ -24,3 +24,5 @@ poetry.lock
 **/*.csv
 enclave.eif
 results/nitro_build_output.txt
+
+combined_logs/

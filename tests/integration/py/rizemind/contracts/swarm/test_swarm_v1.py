@@ -74,11 +74,11 @@ def test_can_train(swarm_deployment: SwarmFixture):
 
 def test_distribute(swarm_deployment: SwarmFixture, anvil: AnvilContext):
     swarm, aggregator, trainers = swarm_deployment
-    trainer_scores = [
-        (trainer.address, 0.9 + i * 0.01) for i, trainer in enumerate(trainers)
-    ]
+    round_id = 1
+    trainer_addresses = [trainer.address for trainer in trainers]
+    trainer_scores = [900_000 + (i * 10_000) for i, _ in enumerate(trainers)]
     swarm.connect(aggregator)
-    tx_hash = swarm.distribute(trainer_scores)
+    tx_hash = swarm.distribute(round_id, trainer_addresses, trainer_scores)
     w3 = anvil.w3conf.get_web3()
-    receipt = w3.eth.get_transaction_receipt(tx_hash)
+    receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
     assert receipt["status"] == 1

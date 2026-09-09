@@ -1,0 +1,52 @@
+{
+  "trainer_counts": [
+    13
+  ],
+  "exact_trainer_counts": [
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+  ],
+  "methods": [
+    "monte_carlo",
+    "deterministic",
+    "antithetic",
+    "ssk",
+    "stratified_antithetic"
+  ],
+  "sample_budget": 837,
+  "method_sample_budgets": {
+    "ssk": 1677
+  },
+  "utility_source": "precomputed",
+  "precomputed_coalitions_dir": null,
+  "deterministic_address": "0x0000000000000000000000000000000000000001",
+  "round_id": 0,
+  "ssk_max_missing_trainers": 5,
+  "num_rounds": 1,
+  "local_epochs": 1,
+  "batch_size": 32,
+  "learning_rate": 0.001,
+  "dataset": "mnist",
+  "data_dir": "data",
+  "output_dir": "/Users/haseebsaeed/codes/rizemind/examples/torch_trainer_scaling/logs/runall/trainers-13",
+  "max_train_samples_per_trainer": null,
+  "max_test_samples": null,
+  "seed": 42,
+  "device": "auto",
+  "client_num_cpus": 1.0,
+  "client_num_gpus": 0.0,
+  "train_loader_workers": 0,
+  "test_loader_workers": 0,
+  "persistent_workers": false,
+  "evaluation_workers": 1,
+  "torch_threads_per_worker": 1,
+  "evaluation_device": null,
+  "combined_logs_dir": "/Users/haseebsaeed/codes/rizemind/examples/torch_trainer_scaling/combined_logs/AVG"
+}

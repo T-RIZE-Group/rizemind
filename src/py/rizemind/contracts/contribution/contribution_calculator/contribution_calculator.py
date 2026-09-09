@@ -21,7 +21,7 @@ from rizemind.contracts.has_account import HasAccount
 
 class ContributionCalculatorConfig(CalculatorConfig):
     name: str = "contribution-calculator"
-    version: str = "1.0.0"
+    version: str = "2.0.0"
 
     initial_admin: EthereumAddress | None = None
     initial_num_samples: int

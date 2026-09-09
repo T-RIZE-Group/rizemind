@@ -1,0 +1,45 @@
+{
+  "trainer_counts": [
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+  ],
+  "exact_trainer_counts": [
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+  ],
+  "methods": [
+    "exact",
+    "monte_carlo",
+    "deterministic"
+  ],
+  "sample_budget": 873,
+  "deterministic_address": "0x0000000000000000000000000000000000000001",
+  "round_id": 0,
+  "num_rounds": 1,
+  "local_epochs": 1,
+  "batch_size": 32,
+  "learning_rate": 0.001,
+  "dataset": "mnist",
+  "data_dir": "data",
+  "output_dir": "logs",
+  "max_train_samples_per_trainer": null,
+  "max_test_samples": null,
+  "seed": 42,
+  "device": "auto",
+  "client_num_cpus": 1.0,
+  "client_num_gpus": 0.0,
+  "train_loader_workers": 0,
+  "test_loader_workers": 0,
+  "persistent_workers": false,
+  "evaluation_workers": 1,
+  "torch_threads_per_worker": 1,
+  "evaluation_device": null
+}

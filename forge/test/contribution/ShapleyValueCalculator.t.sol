@@ -5,16 +5,11 @@ import {Test} from "forge-std/Test.sol";
 import {ShapleyValueCalculator} from "../../src/contribution/ShapleyValueCalculator.sol";
 import {ERC1967Proxy} from "@openzeppelin-contracts-5.2.0/proxy/ERC1967/ERC1967Proxy.sol";
 
-/**
- * @title MockShapleyValueCalculator
- * @dev Mock contract that exposes internal functions for testing
- */
 contract MockShapleyValueCalculator is ShapleyValueCalculator {
     function initialize() external initializer {
         __EvaluationStorage_init();
     }
 
-    // Expose internal functions for testing
     function exposed_getTotalEvaluations(uint256 roundId, uint8 numberOfPlayers) external view returns (uint256) {
         return _getTotalEvaluations(roundId, numberOfPlayers);
     }
@@ -34,11 +29,11 @@ contract MockShapleyValueCalculator is ShapleyValueCalculator {
         _registerResult(roundId, sampleId, setId, modelHash, result, numberOfPlayers);
     }
 
-    function exposed_calcShapley(
-        uint256 roundId,
-        uint256 trainerIndex,
-        uint8 numberOfPlayers
-    ) external view returns (int256) {
+    function exposed_calcShapley(uint256 roundId, uint256 trainerIndex, uint8 numberOfPlayers)
+        external
+        view
+        returns (int256)
+    {
         return _calcShapley(roundId, trainerIndex, numberOfPlayers);
     }
 
@@ -54,16 +49,31 @@ contract MockShapleyValueCalculator is ShapleyValueCalculator {
         _setNumSamples(roundId, numSamples);
     }
 
-    /**
-     * @dev Override the _getMask function to return deterministic values for tests instead of using randomness
-     */
-    function _getMask(
-        uint256 /* roundId */,
-        uint256 i,
-        uint8 numberOfPlayers
-    ) internal view override returns (uint256) {
-        // For testing, return deterministic values based on sample index
-        // This ensures we can predict the coalition sets
+    function exposed_getMaskMonteCarlo(uint256 roundId, uint256 i, uint8 numberOfPlayers)
+        external
+        view
+        returns (uint256)
+    {
+        return _get_mask_monte_carlo(roundId, i, numberOfPlayers);
+    }
+
+    function exposed_getMaskStratified(uint256 roundId, uint256 i, uint8 numberOfPlayers)
+        external
+        view
+        returns (uint256)
+    {
+        return _get_mask_stratified(roundId, i, numberOfPlayers);
+    }
+
+    function exposed_getMaskStratifiedMonteCarlo(uint256 roundId, uint256 i, uint8 numberOfPlayers)
+        external
+        view
+        returns (uint256)
+    {
+        return _get_mask_stratified_monte_carlo(roundId, i, numberOfPlayers);
+    }
+
+    function _getMask(uint256, uint256 i, uint8 numberOfPlayers) internal view override returns (uint256) {
         return i % (1 << numberOfPlayers);
     }
 }
@@ -77,27 +87,16 @@ contract ShapleyValueCalculatorTest is Test {
     function setUp() public {
         admin = makeAddr("admin");
         user = makeAddr("user");
-        
-        // Deploy implementation
+
         implementation = new MockShapleyValueCalculator();
-        
-        // Deploy proxy
-        bytes memory initData = abi.encodeWithSelector(
-            MockShapleyValueCalculator.initialize.selector
-        );
-        
-        ERC1967Proxy proxy = new ERC1967Proxy(
-            address(implementation),
-            initData
-        );
-        
+
+        bytes memory initData = abi.encodeWithSelector(MockShapleyValueCalculator.initialize.selector);
+
+        ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), initData);
         calculator = MockShapleyValueCalculator(address(proxy));
     }
 
     function test_initialize() public view {
-        // Test that the contract initializes properly
-        // Since ShapleyValueCalculator doesn't have access control,
-        // we just verify it's deployed and initialized
         assertTrue(address(calculator) != address(0));
     }
 
@@ -105,40 +104,29 @@ contract ShapleyValueCalculatorTest is Test {
         uint256 roundId = 1;
         uint8 numberOfPlayers = 2;
         uint256 numSamples = 4;
-        
-        // Set number of samples for the round
+
         calculator.exposed_setNumSamples(roundId, numSamples);
-        
-        // Verify numSamples was set
+
         assertEq(calculator.exposed_getEvaluationsRequired(roundId, numberOfPlayers), numSamples);
-        
-        // Verify total evaluations calculation
+
         uint256 totalEvaluations = calculator.exposed_getTotalEvaluations(roundId, numberOfPlayers);
-        assertEq(totalEvaluations, 1 << numberOfPlayers); // Should be 2^2 = 4
-        
-        // Register some evaluation results
+        assertEq(totalEvaluations, 1 << numberOfPlayers);
+
         bytes32 modelHash = keccak256("test_model");
-        
-        // Get the target set IDs for each sample
+
         uint256 targetSetId0 = calculator.getMask(roundId, 0, numberOfPlayers);
         uint256 targetSetId1 = calculator.getMask(roundId, 1, numberOfPlayers);
         uint256 targetSetId2 = calculator.getMask(roundId, 2, numberOfPlayers);
         uint256 targetSetId3 = calculator.getMask(roundId, 3, numberOfPlayers);
-        
-        // Register results for different coalitions using the target set IDs
+
         calculator.exposed_registerResult(roundId, 0, targetSetId0, modelHash, 0, numberOfPlayers);
         calculator.exposed_registerResult(roundId, 1, targetSetId1, modelHash, 300, numberOfPlayers);
         calculator.exposed_registerResult(roundId, 2, targetSetId2, modelHash, 600, numberOfPlayers);
         calculator.exposed_registerResult(roundId, 3, targetSetId3, modelHash, 1500, numberOfPlayers);
-        
-        // Calculate Shapley values for both players
+
         int256 shapleyValue0 = calculator.exposed_calcShapley(roundId, 0, numberOfPlayers);
         int256 shapleyValue1 = calculator.exposed_calcShapley(roundId, 1, numberOfPlayers);
-        
-        // Verify the Shapley values are calculated correctly
-        // Based on the deterministic mask function, we expect:
-        // Player 0: 600 (from the logs)
-        // Player 1: 900 (from the logs)
+
         assertEq(shapleyValue0, 600);
         assertEq(shapleyValue1, 900);
     }
@@ -147,18 +135,14 @@ contract ShapleyValueCalculatorTest is Test {
         uint256 roundId = 1;
         uint8 numberOfPlayers = 2;
         bytes32 modelHash = keccak256("test_model");
-        
-        // Set up a target set ID
+
         uint256 targetSetId = calculator.getMask(roundId, 0, numberOfPlayers);
-        
-        // Register result with exact target set ID (distance = 0)
+
         calculator.exposed_registerResult(roundId, 0, targetSetId, modelHash, 100, numberOfPlayers);
-        
-        // Register result with hamming distance = 1
-        uint256 nearbySetId = targetSetId ^ 1; // Flip one bit
+
+        uint256 nearbySetId = targetSetId ^ 1;
         calculator.exposed_registerResult(roundId, 0, nearbySetId, modelHash, 150, numberOfPlayers);
-        
-        // Verify results were stored
+
         assertEq(calculator.getResult(roundId, targetSetId), 100);
         assertEq(calculator.getResult(roundId, nearbySetId), 150);
     }
@@ -167,22 +151,125 @@ contract ShapleyValueCalculatorTest is Test {
         uint256 roundId = 1;
         uint8 numberOfPlayers = 5;
         bytes32 modelHash = keccak256("test_model");
-        
-        // Set up a target set ID
+
         uint256 targetSetId = calculator.getMask(roundId, 0, numberOfPlayers);
-        
-        // Try to register result with hamming distance > 1 (should revert)
-        uint256 farSetId = targetSetId ^ 3; // Flip two bits 3 -> 0b11 (distance = 2)
-        
+        uint256 farSetId = targetSetId ^ 3;
+
         vm.expectRevert(
-            abi.encodeWithSelector(
-                ShapleyValueCalculator.setIdTooFar.selector,
-                roundId,
-                farSetId,
-                targetSetId
-            )
+            abi.encodeWithSelector(ShapleyValueCalculator.setIdTooFar.selector, roundId, farSetId, targetSetId)
         );
-        
+
         calculator.exposed_registerResult(roundId, 0, farSetId, modelHash, 200, numberOfPlayers);
+    }
+
+    function test_getMaskMonteCarlo_returnsValuesInRange() public view {
+        uint256 roundId = 7;
+        uint8 numberOfPlayers = 5;
+        uint256 totalMasks = 1 << numberOfPlayers;
+
+        for (uint256 i = 0; i < 64; ++i) {
+            uint256 mask = calculator.exposed_getMaskMonteCarlo(roundId, i, numberOfPlayers);
+            assertLt(mask, totalMasks);
+        }
+    }
+
+    function test_getMaskMonteCarlo_allowsRepeatedDrawsBeyondDomainSize() public view {
+        uint256 roundId = 8;
+        uint8 numberOfPlayers = 2;
+        uint256 totalMasks = 1 << numberOfPlayers;
+        uint256[] memory counts = new uint256[](totalMasks);
+        bool foundDuplicate = false;
+
+        for (uint256 i = 0; i < 8; ++i) {
+            uint256 mask = calculator.exposed_getMaskMonteCarlo(roundId, i, numberOfPlayers);
+            counts[mask] += 1;
+            if (counts[mask] > 1) {
+                foundDuplicate = true;
+            }
+        }
+
+        assertTrue(foundDuplicate);
+    }
+
+    function test_getMaskStratified_returnsUniqueNonFullCoalitions() public {
+        uint256 roundId = 9;
+        uint8 numberOfPlayers = 5;
+        uint256 emittedBudget = 20;
+        uint256 totalMasks = 1 << numberOfPlayers;
+        bool[] memory seen = new bool[](totalMasks);
+
+        calculator.exposed_setNumSamples(roundId, emittedBudget);
+
+        for (uint256 i = 0; i < emittedBudget; ++i) {
+            uint256 mask = calculator.exposed_getMaskStratified(roundId, i, numberOfPlayers);
+            assertLt(mask, totalMasks);
+            assertLt(calculator.exposed_popcount(mask), numberOfPlayers);
+            assertFalse(seen[mask]);
+            seen[mask] = true;
+        }
+    }
+
+    function test_getMaskStratified_coversAllNonFullCoalitions_whenBudgetSaturates() public {
+        uint256 roundId = 10;
+        uint8 numberOfPlayers = 3;
+        uint256 totalMasks = 1 << numberOfPlayers;
+        bool[] memory seen = new bool[](totalMasks);
+
+        calculator.exposed_setNumSamples(roundId, 100);
+
+        for (uint256 i = 0; i < totalMasks - 1; ++i) {
+            uint256 mask = calculator.exposed_getMaskStratified(roundId, i, numberOfPlayers);
+            assertFalse(seen[mask]);
+            seen[mask] = true;
+        }
+
+        for (uint256 mask = 0; mask < totalMasks - 1; ++mask) {
+            assertTrue(seen[mask]);
+        }
+        assertFalse(seen[totalMasks - 1]);
+    }
+
+    function test_getMaskStratified_revertsBeyondEmittedBudget() public {
+        uint256 roundId = 11;
+        uint8 numberOfPlayers = 3;
+
+        calculator.exposed_setNumSamples(roundId, 100);
+
+        vm.expectRevert(bytes("stratified sampleId out of range"));
+        calculator.exposed_getMaskStratified(roundId, 7, numberOfPlayers);
+    }
+
+    function test_getMaskStratifiedMonteCarlo_returnsValuesInRange() public {
+        uint256 roundId = 12;
+        uint8 numberOfPlayers = 5;
+        uint256 totalMasks = 1 << numberOfPlayers;
+
+        calculator.exposed_setNumSamples(roundId, 64);
+
+        for (uint256 i = 0; i < 64; ++i) {
+            uint256 mask = calculator.exposed_getMaskStratifiedMonteCarlo(roundId, i, numberOfPlayers);
+            assertLt(mask, totalMasks);
+            assertLt(calculator.exposed_popcount(mask), numberOfPlayers);
+        }
+    }
+
+    function test_getMaskStratifiedMonteCarlo_allowsDuplicates() public {
+        uint256 roundId = 13;
+        uint8 numberOfPlayers = 2;
+        uint256 totalMasks = 1 << numberOfPlayers;
+        uint256[] memory counts = new uint256[](totalMasks);
+        bool foundDuplicate = false;
+
+        calculator.exposed_setNumSamples(roundId, 8);
+
+        for (uint256 i = 0; i < 8; ++i) {
+            uint256 mask = calculator.exposed_getMaskStratifiedMonteCarlo(roundId, i, numberOfPlayers);
+            counts[mask] += 1;
+            if (counts[mask] > 1) {
+                foundDuplicate = true;
+            }
+        }
+
+        assertTrue(foundDuplicate);
     }
 }

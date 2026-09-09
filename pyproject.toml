@@ -25,6 +25,7 @@ dependencies = [
     "pyee>=13.0.0",
     "mlflow>=3.3.2",
     "polars>=1.33.1",
+    "tabulate>=0.10.0",
 ]
 
 [project.scripts]
@@ -44,7 +45,6 @@ ml = [
     "flwr[simulation]>=1.17.0",
     "flwr-datasets[vision]>=0.5.0",
     "ray>=2.0.0",
-    "opacus>=1.5.3",
     "torch>=2.6.0",
     "torchvision>=0.21.0"
 ]
@@ -131,5 +131,6 @@ members = [
     "examples/torch_diff_privacy",
     "examples/torch_dyn_diff_privacy_shapley",
     "examples/torch_shapley",
+    "examples/torch_trainer_scaling",
     "examples/workflow"
 ]

@@ -45,7 +45,7 @@ def test_get_id(deploy_calculator_factory: Deployment):
     """Test ID generation for calculator versions."""
     factory, owner_address = deploy_calculator_factory
 
-    version = "contribution-calculator-v1.0.0"
+    version = "contribution-calculator-v2.0.0"
     calculator_id = factory.get_id(version)
 
     # ID should be a 32-byte hash
@@ -56,7 +56,7 @@ def test_get_id(deploy_calculator_factory: Deployment):
     assert calculator_id == calculator_id_2
 
     # Different version should produce different ID
-    different_version = "contribution-calculator-v2.0.0"
+    different_version = "contribution-calculator-v3.0.0"
     different_id = factory.get_id(different_version)
     assert calculator_id != different_id
 
@@ -73,7 +73,7 @@ def test_calculator_registration_and_creation(deploy_calculator_factory: Deploym
     )
 
     # Check if calculator is registered
-    version = "contribution-calculator-v1.0.0"
+    version = "contribution-calculator-v2.0.0"
     calculator_id = factory.get_id(version)
 
     # Note: This test might fail if the actual implementation doesn't match

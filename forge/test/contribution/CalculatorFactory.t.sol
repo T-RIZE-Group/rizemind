@@ -14,11 +14,11 @@ contract CalculatorFactoryTest is Test {
     function setUp() public {
         owner = makeAddr("owner");
         user = makeAddr("user");
-        
+
         // Deploy factory
         vm.prank(owner);
         factory = new CalculatorFactory(owner);
-        
+
         // Deploy implementation
         implementation = new ContributionCalculator();
     }
@@ -29,51 +29,47 @@ contract CalculatorFactoryTest is Test {
 
     function test_registerCalculatorImplementation() public {
         vm.startPrank(owner);
-        
+
         factory.registerCalculatorImplementation(address(implementation));
-        
+
         bytes32 id = factory.getID("contribution-calculator-v1.0.0");
         assertTrue(factory.isCalculatorRegistered(id));
         assertEq(factory.getCalculatorImplementation(id), address(implementation));
-        
+
         vm.stopPrank();
     }
 
     function test_registerCalculatorImplementation_unauthorized() public {
         vm.startPrank(user);
-        
+
         vm.expectRevert();
         factory.registerCalculatorImplementation(address(implementation));
-        
+
         vm.stopPrank();
     }
 
     function test_createCalculator() public {
         vm.startPrank(owner);
-        
+
         // First register the implementation
         factory.registerCalculatorImplementation(address(implementation));
-        
+
         bytes32 id = factory.getID("contribution-calculator-v1.0.0");
         bytes32 salt = keccak256("test-salt");
         address initialAdmin = makeAddr("initialAdmin");
-        
+
         // Encode initialization data
-        bytes memory initData = abi.encodeWithSelector(
-            ContributionCalculator.initialize.selector,
-            initialAdmin,
-            3
-        );
-        
+        bytes memory initData = abi.encodeWithSelector(ContributionCalculator.initialize.selector, initialAdmin, 3);
+
         // Create calculator instance
         address instance = factory.createCalculator(id, salt, initData);
-        
+
         assertTrue(instance != address(0));
-        
+
         // Verify the instance is a proxy pointing to the implementation
         ContributionCalculator calculator = ContributionCalculator(instance);
         assertTrue(calculator.hasRole(calculator.DEFAULT_ADMIN_ROLE(), initialAdmin));
-        
+
         vm.stopPrank();
     }
 
@@ -81,32 +77,29 @@ contract CalculatorFactoryTest is Test {
         bytes32 id = factory.getID("non-existent-version");
         bytes32 salt = keccak256("test-salt");
         address initialAdmin = makeAddr("initialAdmin");
-        
+
         // Encode initialization data
-        bytes memory initData = abi.encodeWithSelector(
-            ContributionCalculator.initialize.selector,
-            initialAdmin
-        );
-        
+        bytes memory initData = abi.encodeWithSelector(ContributionCalculator.initialize.selector, initialAdmin);
+
         vm.expectRevert(CalculatorFactory.CalculatorImplementationNotFound.selector);
         factory.createCalculator(id, salt, initData);
     }
 
     function test_removeCalculatorImplementation() public {
         vm.startPrank(owner);
-        
+
         // First register the implementation
         factory.registerCalculatorImplementation(address(implementation));
-        
+
         bytes32 id = factory.getID("contribution-calculator-v1.0.0");
         assertTrue(factory.isCalculatorRegistered(id));
-        
+
         // Remove the implementation
         factory.removeCalculatorImplementation(id);
-        
+
         assertFalse(factory.isCalculatorRegistered(id));
         assertEq(factory.getCalculatorImplementation(id), address(0));
-        
+
         vm.stopPrank();
     }
 

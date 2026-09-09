@@ -1,3 +1,6 @@
+import sys
+from pathlib import Path
+
 import pytest
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes
@@ -13,6 +16,15 @@ from web3 import Web3
 
 from tests.integration.forge_fixtures import AnvilContext
 from tests.integration.forge_helper import run_script
+
+REPO_ROOT = Path(__file__).resolve().parents[6]
+EXAMPLE_ROOT = REPO_ROOT / "examples" / "torch_trainer_scaling"
+if str(EXAMPLE_ROOT) not in sys.path:
+    sys.path.insert(0, str(EXAMPLE_ROOT))
+
+from torch_trainer_scaling.mask_generators_extended import (  # noqa: E402
+    StratifiedAntitheticMaskGenerator,
+)
 
 type Deployment = tuple[ContributionCalculator, ChecksumAddress, ChecksumAddress, Web3]
 
@@ -64,7 +76,7 @@ def test_calculator_initialization(deploy_contribution_calculator: Deployment):
     evaluations_required = calculator.get_evaluations_required(
         round_id=0, number_of_players=3
     )
-    assert evaluations_required == 10  # Should match initial_num_samples
+    assert evaluations_required == 8  # Capped to the full 2^3 coalition space
 
     # Test that we can get total evaluations
     total_evaluations = calculator.get_total_evaluations(
@@ -81,6 +93,11 @@ def test_register_result(deploy_contribution_calculator: Deployment):
     round_id = 1
     sample_id = 0
     number_of_players = 3
+    tx_hash = calculator.set_evaluations_required(
+        round_id=round_id, evaluations_required=6
+    )
+    w3.eth.wait_for_transaction_receipt(tx_hash)
+
     set_id = calculator.get_mask(
         round_id=round_id, i=sample_id, number_of_players=number_of_players
     )
@@ -193,6 +210,10 @@ def test_get_mask(deploy_contribution_calculator: Deployment):
 
     round_id = 3
     number_of_players = 3
+    tx_hash = calculator.set_evaluations_required(
+        round_id=round_id, evaluations_required=6
+    )
+    w3.eth.wait_for_transaction_receipt(tx_hash)
 
     # Get masks for different sample indices
     mask_0 = calculator.get_mask(
@@ -253,7 +274,7 @@ def test_set_evaluations_required(deploy_contribution_calculator: Deployment):
 
     # Verify the change
     evaluations_required = calculator.get_evaluations_required(
-        round_id=round_id, number_of_players=3
+        round_id=round_id, number_of_players=5
     )
     assert evaluations_required == new_evaluations_required
 
@@ -276,7 +297,7 @@ def test_eip712_domain(deploy_contribution_calculator: Deployment):
 
     # Verify the contract name and version
     assert domain.name == "ContributionCalculator"
-    assert domain.version == "contribution-calculator-v1.0.0"
+    assert domain.version == "contribution-calculator-v2.0.0"
     assert domain.verifyingContract == calculator.contract.address
 
 
@@ -287,6 +308,11 @@ def test_get_result_or_throw(deploy_contribution_calculator: Deployment):
     round_id = 5
     sample_id = 0
     number_of_players = 3
+    tx_hash = calculator.set_evaluations_required(
+        round_id=round_id, evaluations_required=6
+    )
+    w3.eth.wait_for_transaction_receipt(tx_hash)
+
     set_id = calculator.get_mask(
         round_id=round_id, i=sample_id, number_of_players=number_of_players
     )
@@ -311,3 +337,35 @@ def test_get_result_or_throw(deploy_contribution_calculator: Deployment):
     # Should throw for non-existing result
     with pytest.raises(Exception):  # The contract should revert
         calculator.get_result_or_throw(round_id=round_id, set_id=999)
+
+
+def test_stratified_antithetic_generator_matches_contract(
+    deploy_contribution_calculator: Deployment,
+):
+    calculator, admin_address, swarm_address, w3 = deploy_contribution_calculator
+
+    round_id = 7
+    number_of_players = 4
+    tx_hash = calculator.set_evaluations_required(
+        round_id=round_id, evaluations_required=12
+    )
+    w3.eth.wait_for_transaction_receipt(tx_hash)
+    emitted_samples = calculator.get_evaluations_required(round_id, number_of_players)
+
+    generator = StratifiedAntitheticMaskGenerator(
+        sample_budget=emitted_samples,
+        address_seed=calculator.contract.address,
+        round_id=round_id,
+    )
+
+    generated_masks = generator.generate(number_of_players)
+    expected_masks = [
+        calculator.get_mask(
+            round_id=round_id,
+            i=index,
+            number_of_players=number_of_players,
+        )
+        for index in range(emitted_samples)
+    ]
+
+    assert generated_masks[:emitted_samples] == expected_masks

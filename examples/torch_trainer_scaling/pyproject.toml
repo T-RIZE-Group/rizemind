@@ -1,0 +1,40 @@
+[project]
+name = "torch-trainer-scaling"
+version = "0.1.0"
+description = "Trainer-count scaling, coalition utility, and DP-Shapley benchmark experiments"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "flwr[simulation]>=1.18.0",
+    "matplotlib>=3.10.6",
+    "numpy>=1.26.4",
+    "scipy>=1.12.0",
+    "torch>=2.7.0",
+    "torchvision>=0.22.0",
+    "web3>=7.10.0",
+]
+
+[project.scripts]
+trainer-scaling = "torch_trainer_scaling.experiment:main"
+coalition-experiment = "torch_trainer_scaling.coalition_experiment:main"
+coalition-experiment-dp = "torch_trainer_scaling.coalition_experiment_dp:main"
+coalition-dp-subset = "torch_trainer_scaling.coalition_dp_subset_interpolation:main"
+dp-privacy-calibration = "torch_trainer_scaling.dp_privacy_calibration:main"
+dp-sampler-study = "torch_trainer_scaling.dp_sampler_study:main"
+shapley-benchmark = "torch_trainer_scaling.shapley_benchmark:main"
+ablation-study = "torch_trainer_scaling.ablation_runner:main"
+combined-logs-nrmse = "torch_trainer_scaling.combined_logs_nrmse:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.flwr.federations]
+default = "local-simulation-gpu"
+
+[tool.flwr.federations.local-simulation]
+options.num-supernodes = 5
+
+[tool.flwr.federations.local-simulation-gpu]
+options.num-supernodes = 3
+options.backend.client-resources.num-cpus = 5 # each ClientApp assumes to use 2CPUs
+options.backend.client-resources.num-gpus = 0 # at most 5 ClientApp will run in a given GPU
