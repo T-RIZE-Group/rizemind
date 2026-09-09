@@ -90,12 +90,24 @@ contract RNGTest is Test {
     }
 
     // Fuzz test for statistical properties - check average is close to max/2
+    //
+    // The tolerance below has to be derived from the sample count, not picked.
+    // Samples are uniform over [0, max), so their variance is (max^2 - 1) / 12
+    // and the sample mean has standard error max / sqrt(12 * numSamples).
+    // numSamples = 300 makes that max / 60, so the 10% tolerance is exactly six
+    // standard errors and a false failure is a ~2e-9 event.
+    //
+    // At the 100 samples this test used previously the same 10% tolerance was
+    // only 3.46 standard errors: it failed for roughly one `max` in 1900, which
+    // over 256 fuzz runs meant a ~13% chance of a red suite per run. It failed
+    // for max = 102, among others. Do not lower numSamples without widening the
+    // tolerance to match.
     function test_randFuzzStatistical(uint256 max) public view {
         vm.assume(max > 10);
         vm.assume(max < 1000000);
-        
+
         uint8 DECIMALS = 18;
-        uint256 numSamples = 500;
+        uint256 numSamples = 300;
 
         uint256 sum = 0;
         // Generate multiple samples
@@ -104,16 +116,16 @@ contract RNGTest is Test {
             sum += result;
         }
 
-        
-        uint256 average = sum * 10 **DECIMALS / numSamples;
-        
+        uint256 average = sum * 10 ** DECIMALS / numSamples;
+
         // For uniform distribution, average should be close to max/2
-        // Allow some tolerance due to finite sample size
-        uint256 expectedAverage = max * 10 **DECIMALS / 2;
-        uint256 tolerance = max * 10 **DECIMALS / 10; // 10% tolerance
-        
-        assertTrue(
-            average >= expectedAverage - tolerance && average <= expectedAverage + tolerance,
+        uint256 expectedAverage = max * 10 ** DECIMALS / 2;
+        uint256 tolerance = max * 10 ** DECIMALS / 10; // six standard errors
+
+        assertApproxEqAbs(
+            average,
+            expectedAverage,
+            tolerance,
             "Average should be close to max/2 for uniform distribution"
         );
     }
