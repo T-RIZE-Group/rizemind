@@ -13,7 +13,7 @@ from rizemind.contracts.deployment import DeployedContract
 from rizemind.contracts.local_deployment import load_forge_artifact
 from rizemind.contracts.sampling.always_sampled import AlwaysSamplesSelectorConfig
 from rizemind.contracts.sampling.random_sampling import RandomSamplingSelectorConfig
-from rizemind.web3.chains import RIZENET_TESTNET_CHAINID
+from rizemind.web3.chains import ARC_MAINNET_CHAINID, RIZENET_TESTNET_CHAINID
 from web3 import Web3
 
 available_selectors = [
@@ -36,7 +36,12 @@ class SwarmV1FactoryConfig(BaseModel):
             address=Web3.to_checksum_address(
                 "0xd66c7c89fb97ea5c06b0b7caf2086df1e82b9e88"
             )
-        )
+        ),
+        ARC_MAINNET_CHAINID: DeployedContract(
+            address=Web3.to_checksum_address(
+                "0x721a4ebA8747eF5db299E8Eec67A2FbAe7866353"
+            )
+        ),
     }
 
     trainer_selector: AvailableSelector = Field(

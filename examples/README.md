@@ -13,7 +13,7 @@ uv run -- flwr run .
 
 > **Note:** Some examples may require additional prerequisites. Always check the specific README file inside each example directory for detailed instructions.
 
-There are two types of examples, some of them use a local blockchain, and some use the rizenet testnet. To learn how to setup each example properly, read below.
+There are three types of examples: some use a local blockchain, some use the Rizenet testnet, and one runs against Arc mainnet. To learn how to setup each example properly, read below.
 
 ---
 
@@ -146,6 +146,20 @@ uv run -- flwr run . --run-config num-server-rounds=5,learning-rate=0.05
 
 > ![NOTE]: Make sure to always use the command `uv run --` before calling the actual command. This way `uv` will make sure you have the proper dependencies installed.
 
+---
+
+### Using Arc
+
+`examples/arc_mainnet` runs against **Arc**, Circle's USDC-gas L1. Deployment there
+is permissionless, so there is no whitelisting step — but gas is **real USDC**, so
+the example ships with a `preflight.py` that verifies the chain ID, the factory
+deployment, the aggregator balance and a dry-run `createSwarm` before anything is
+spent.
+
+Read `examples/arc_mainnet/README.md` before running it.
+
+---
+
 ## How to create a new example
 
 To create a new example, make a new sub-directory in the `examples`, open it in your terminal, and run the following command:
@@ -187,13 +201,14 @@ This will install all the packages for your examples. Now if you have configured
 
 ## Examples Compatibility Overview
 
-The table below clarifies which examples require a local blockchain and which ones are designed for Rizenet:
+The table below clarifies which chain each example is designed for:
 
-| Example                     | Local Blockchain | Rizenet |
-| --------------------------- | ---------------- | ------- |
-| Basic Signature             | ✅               | ❌      |
-| Centralized Shapley Value   | ✅               | ❌      |
-| Decentralized Shapley Value | ✅               | ❌      |
-| Decentralized TabPFN        | ✅               | ❌      |
-| RizeNet Deployment          | ❌               | ✅      |
-| RizeNet Shapley             | ❌               | ✅      |
+| Example                     | Local Blockchain | Rizenet | Arc mainnet |
+| --------------------------- | ---------------- | ------- | ----------- |
+| Basic Signature             | ✅               | ❌      | ❌          |
+| Centralized Shapley Value   | ✅               | ❌      | ❌          |
+| Decentralized Shapley Value | ✅               | ❌      | ❌          |
+| Decentralized TabPFN        | ✅               | ❌      | ❌          |
+| RizeNet Deployment          | ❌               | ✅      | ❌          |
+| RizeNet Shapley             | ❌               | ✅      | ❌          |
+| Arc Mainnet                 | ❌               | ❌      | ✅          |
