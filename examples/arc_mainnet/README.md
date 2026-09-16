@@ -213,6 +213,57 @@ Arc testnet has no factory registered in the library, so deploy one with
 address = "0xYourTestnetFactoryAddress"
 ```
 
+## Rehearsing on a local chain
+
+Before spending anything, run the exact same code against Anvil. This exercises
+the whole path — `createSwarm`, the selectors, per-round `distribute` and
+`nextRound` — on a throwaway chain, so the only thing left untested on Arc is Arc
+itself.
+
+Deploy the contracts to a local node, following the same order Part 1 uses on a
+real chain (`forge/deploy.sh` runs all four scripts and is fine here, because
+Anvil's keys are public):
+
+```shell
+cd forge
+forge soldeer install
+forge build
+anvil &                  # chain id 31337, pre-funded accounts
+./deploy.sh              # SelectorFactory, both selectors, then SwarmV1Factory
+```
+
+Then point this example at it. Replace the `[tool.eth.account.mnemonic_store]`,
+`[tool.web3]` and `[tool.web3.swarm.factory_v1]` blocks in `pyproject.toml` with:
+
+```toml
+[tool.eth.account]
+# Anvil's default mnemonic. Account 0 is pre-funded and is also deploy.sh's
+# deployer. Public knowledge — never use it on a chain that holds value.
+mnemonic = "test test test test test test test test test test test junk"
+
+[tool.web3]
+url = "http://127.0.0.1:8545"
+
+[tool.web3.swarm.factory_v1]
+name = "arc_smoke_test"
+ticker = "ARCTEST"
+local_factory_deployment_path = "../../forge/broadcast/SwarmV1Factory.s.sol/31337/run-latest.json"
+```
+
+and set the guard to Anvil's chain:
+
+```toml
+[tool.flwr.app.config]
+expected-chain-id = 31337
+```
+
+`local_factory_deployment_path` takes precedence over the chain-ID map, so the
+factory address comes straight out of what you just deployed. `preflight.py` and
+`flwr run .` work unchanged from there.
+
+Revert those four blocks before running against Arc. `expected-chain-id` is the
+backstop: with it left at `31337`, the server refuses to touch mainnet.
+
 ## Troubleshooting
 
 **`Chain ID#5042 is unsupported, provide a local_deployment_path`**
