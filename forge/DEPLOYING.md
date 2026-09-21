@@ -115,7 +115,12 @@ forge script script/deployments/SwarmV1Factory.s.sol \
 ```
 
 Record `Swarm Implementation deployed at:` and `Factory deployed at:`. The
-factory address is the one the Python library needs.
+factory address is the one the Python library needs, and the verification step
+below reads it from the environment:
+
+```shell
+export SWARM_FACTORY=0x...   # "Factory deployed at:" from the log above
+```
 
 ## Record the addresses
 

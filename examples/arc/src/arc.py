@@ -21,19 +21,27 @@ ANVIL_CHAINID = 31337
 
 @dataclass(frozen=True)
 class ArcNetwork:
-    """An Arc network and the facts that depend on which one it is."""
+    """An Arc network and the facts that depend on which one it is.
+
+    Attributes:
+        name: The value `arc-network` is set to, such as ``"mainnet"``.
+        chain_id: The chain ID the run is checked against before it spends.
+        default_rpc_url: The endpoint used unless `$ARC_RPC_URL` overrides it.
+        explorer_url: Base URL of the chain's explorer, empty when it has none,
+            as Anvil does not.
+        gas_source: Where the gas comes from — worth printing, since one of
+            these networks costs real money.
+    """
 
     name: str
     chain_id: int
     default_rpc_url: str
     explorer_url: str
-    """Empty when the chain has no explorer, as Anvil does not."""
-
     gas_source: str
-    """Where the gas comes from — worth printing, since one costs real money."""
 
     @property
     def is_mainnet(self) -> bool:
+        """Whether this network is Arc Mainnet."""
         return self.chain_id == ARC_MAINNET_CHAINID
 
     @property
@@ -43,11 +51,24 @@ class ArcNetwork:
         A private or rate-limited endpoint is a deployment detail, not a
         property of the network, so it belongs in the environment rather than
         in `pyproject.toml`.
+
+        Returns:
+            `$ARC_RPC_URL` when set and non-empty, otherwise this network's
+            default endpoint.
         """
         return os.environ.get(RPC_URL_ENV) or self.default_rpc_url
 
     def explorer_address_url(self, address: str) -> str:
-        """A link to `address`, or an empty string when the chain has no explorer."""
+        """Build an explorer link for a contract or account.
+
+        Args:
+            address: The address to link to.
+
+        Returns:
+            The explorer URL, or an empty string when the network has no
+            explorer. Callers should skip the link rather than print an empty
+            one.
+        """
         if not self.explorer_url:
             return ""
         return f"{self.explorer_url}/address/{address}"
@@ -84,7 +105,11 @@ def get_network(name: str) -> ArcNetwork:
     """Look up a network by name.
 
     Args:
-        name: ``"mainnet"``, ``"testnet"`` or ``"local"``.
+        name: ``"mainnet"``, ``"testnet"`` or ``"local"``. Case and surrounding
+            whitespace are ignored.
+
+    Returns:
+        The matching network record.
 
     Raises:
         ValueError: If the name is not a known network. Failing here beats

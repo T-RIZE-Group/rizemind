@@ -4,6 +4,17 @@ A minimal end-to-end run against [Arc](https://www.arc.io), Circle's USDC-gas L1
 three trainers, one round, decentralized Shapley value, CPU-only simulation.
 Runs against either Arc network.
 
+> [!NOTE]
+> Every command on this page runs from this directory. From a fresh checkout:
+>
+> ```shell
+> uv sync
+> cd examples/arc
+> ```
+>
+> `preflight.py` and `addresses.py` read `./pyproject.toml`, so they need it as
+> the working directory.
+
 ## Choosing the network
 
 One setting picks the chain — `arc-network` in `[tool.flwr.app.config]`:
@@ -126,7 +137,6 @@ The trainer addresses need nothing.
 
 ```shell
 export RZMND_PASSPHRASE='…'
-cd examples/arc
 uv run -- python preflight.py
 ```
 

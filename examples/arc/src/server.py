@@ -67,6 +67,10 @@ def check_chain(w3: Web3, network: ArcNetwork) -> None:
 
     On mainnet every transaction costs real USDC, so a typo'd or redirected RPC
     URL should stop the run before `createSwarm`, not after.
+
+    Raises:
+        RuntimeError: If the RPC reports a chain ID other than the one
+            `arc-network` selected.
     """
     chain_id = w3.eth.chain_id
     if chain_id != network.chain_id:
@@ -127,7 +131,9 @@ def server_fn(context: Context):
         DecentralShapleyValueStrategy(
             strategy,
             swarm,
-            coalition_to_score_fn=lambda coalition: coalition.metrics["accuracy"],
+            coalition_to_score_fn=lambda coalition: coalition.get_metric(
+                "accuracy", default=0, aggregator=max
+            ),
             aggregate_coalition_metrics_fn=aggregate_coalitions,
         ),
         swarm,

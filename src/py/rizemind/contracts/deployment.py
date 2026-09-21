@@ -12,6 +12,9 @@ class DeployedContract(BaseModel):
     override in an example's `pyproject.toml`, say, where `TomlConfig` leaves an
     unset `$VAR` as a literal — so an unchecked string would only fail much
     later, inside `address_as_bytes`.
+
+    Attributes:
+        address: The contract's address, validated and normalized to EIP-55.
     """
 
     address: EthereumAddress
