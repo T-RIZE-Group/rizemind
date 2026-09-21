@@ -42,12 +42,17 @@ Two Arc properties matter here:
 
 ## What is already deployed
 
-The `SwarmV1Factory` is deployed once per chain. Arc mainnet's is registered in
-the library, so this example needs no address of its own:
+The `SwarmV1Factory` is deployed once per chain. Both Arc networks are
+registered in the library, so this example needs no address of its own:
 
-| Contract                | Arc mainnet address                          |
-| ----------------------- | -------------------------------------------- |
-| `SwarmV1Factory`        | `0x721a4ebA8747eF5db299E8Eec67A2FbAe7866353` |
+| Contract         | Network     | Address                                      |
+| ---------------- | ----------- | -------------------------------------------- |
+| `SwarmV1Factory` | Arc mainnet | `0x721a4ebA8747eF5db299E8Eec67A2FbAe7866353` |
+| `SwarmV1Factory` | Arc testnet | `0x721a4ebA8747eF5db299E8Eec67A2FbAe7866353` |
+
+The two are the same address. `CREATE` derives it from deployer and nonce alone,
+so the same deployer running the same scripts from a fresh account on both chains
+lands on the same one — it is not a copy-paste slip.
 
 See `src/py/rizemind/contracts/swarm/swarm_v1/swarm_v1_factory.py`. If you deploy
 your own factory instead (`forge/script/deployments/`), override it from this
@@ -194,16 +199,8 @@ poaChains = [RIZENET_TESTNET_CHAINID, ARC_MAINNET_CHAINID]
 
 ## Running on Arc testnet instead
 
-Arc testnet has no factory registered in the library yet, so deploy one first —
-`forge/DEPLOYING.md` walks through the four scripts — and point this example at
-it until the address is registered:
-
-```toml
-[tool.web3.swarm.factory_v1.factory_deployments.5042002]
-address = "0xYourTestnetFactoryAddress"
-```
-
-From then on, switching networks is two overrides and no file edit:
+Arc testnet is registered in the library too, so switching networks is two
+overrides and no file edit:
 
 ```shell
 export ARC_RPC_URL=https://rpc.testnet.arc.io
@@ -213,9 +210,22 @@ uv run -- flwr run . --run-config expected-chain-id=5042002
 ```
 
 Both refuse to run if the RPC does not report 5042002, so the pair keeps mainnet
-and testnet from being confused for one another. Drop the `factory_deployments`
-block once the testnet factory is in the library — setting it replaces the whole
-default map, mainnet included.
+and testnet from being confused for one another.
+
+Test USDC comes from <https://faucet.circle.com>. The aggregator is a different
+account per network only if you make it one — the same mnemonic derives the same
+addresses everywhere, so a funded testnet aggregator is the same address on
+mainnet.
+
+To point at a factory you deployed yourself instead, override it:
+
+```toml
+[tool.web3.swarm.factory_v1.factory_deployments.5042002]
+address = "0xYourTestnetFactoryAddress"
+```
+
+That **replaces** the default map rather than extending it, so mainnet
+disappears from that config.
 
 ## Rehearsing on a local chain
 

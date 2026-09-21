@@ -170,30 +170,34 @@ explorer's own docs if the call 404s.
 Register the chain so every example and the `rzmnd swarm new` CLI find the
 factory without a per-project override.
 
-`src/py/rizemind/web3/chains.py` already defines the Arc chain IDs. Add the
-deployment in `src/py/rizemind/contracts/swarm/swarm_v1/swarm_v1_factory.py`:
+Both Arc networks and Rizenet testnet are already registered in
+`SwarmV1FactoryConfig.factory_deployments`
+(`src/py/rizemind/contracts/swarm/swarm_v1/swarm_v1_factory.py`). For a new chain,
+add its ID to `src/py/rizemind/web3/chains.py` and an entry to that map:
 
 ```python
 factory_deployments: dict[int, DeployedContract] = {
-    RIZENET_TESTNET_CHAINID: DeployedContract(address=...),
-    ARC_MAINNET_CHAINID: DeployedContract(
-        address=Web3.to_checksum_address("0x721a4ebA8747eF5db299E8Eec67A2FbAe7866353")
-    ),
-    ARC_TESTNET_CHAINID: DeployedContract(
-        address=Web3.to_checksum_address("0xYourTestnetFactoryAddress")
+    ...,
+    MY_CHAIN_ID: DeployedContract(
+        address=Web3.to_checksum_address("0xYourFactoryAddress")
     ),
 }
 ```
 
-Until then, a project can point at it from its own `pyproject.toml`:
+A project can also point at its own deployment without a library change:
 
 ```toml
 [tool.web3.swarm.factory_v1.factory_deployments.5042002]
-address = "0xYourTestnetFactoryAddress"
+address = "0xYourFactoryAddress"
 ```
 
 Note that this **replaces** the default map rather than extending it, so the
 other chains disappear from that config.
+
+Addresses repeating across chains is normal, not a mistake: `CREATE` derives the
+address from deployer and nonce alone, so the same deployer running these scripts
+from a fresh account on two chains produces the same addresses on both. Verify
+against the chain before "correcting" one.
 
 Also check whether the chain needs web3's PoA middleware — see "Does Arc need the
 PoA middleware?" in `examples/arc_mainnet/README.md`.

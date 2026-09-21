@@ -13,7 +13,11 @@ from rizemind.contracts.deployment import DeployedContract
 from rizemind.contracts.local_deployment import load_forge_artifact
 from rizemind.contracts.sampling.always_sampled import AlwaysSamplesSelectorConfig
 from rizemind.contracts.sampling.random_sampling import RandomSamplingSelectorConfig
-from rizemind.web3.chains import ARC_MAINNET_CHAINID, RIZENET_TESTNET_CHAINID
+from rizemind.web3.chains import (
+    ARC_MAINNET_CHAINID,
+    ARC_TESTNET_CHAINID,
+    RIZENET_TESTNET_CHAINID,
+)
 from web3 import Web3
 
 available_selectors = [
@@ -37,7 +41,17 @@ class SwarmV1FactoryConfig(BaseModel):
                 "0xd66c7c89fb97ea5c06b0b7caf2086df1e82b9e88"
             )
         ),
+        # Arc mainnet and testnet share an address, and that is not a copy-paste
+        # slip: CREATE derives the address from deployer and nonce alone, so the
+        # same deployer running the same script sequence from a fresh account on
+        # both chains lands on the same one. Verify against the chain before
+        # "fixing" this — `examples/arc_mainnet/preflight.py --chain-id <id>`.
         ARC_MAINNET_CHAINID: DeployedContract(
+            address=Web3.to_checksum_address(
+                "0x721a4ebA8747eF5db299E8Eec67A2FbAe7866353"
+            )
+        ),
+        ARC_TESTNET_CHAINID: DeployedContract(
             address=Web3.to_checksum_address(
                 "0x721a4ebA8747eF5db299E8Eec67A2FbAe7866353"
             )

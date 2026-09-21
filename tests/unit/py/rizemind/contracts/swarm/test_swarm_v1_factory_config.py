@@ -9,6 +9,9 @@ from rizemind.web3.chains import (
 from web3 import Web3
 
 ARC_MAINNET_FACTORY = "0x721a4ebA8747eF5db299E8Eec67A2FbAe7866353"
+# Deterministic CREATE puts the Arc testnet factory at the same address; see the
+# comment on `SwarmV1FactoryConfig.factory_deployments`.
+ARC_TESTNET_FACTORY = "0x721a4ebA8747eF5db299E8Eec67A2FbAe7866353"
 RIZENET_TESTNET_FACTORY = "0xd66C7C89Fb97eA5c06b0b7CaF2086dF1E82b9E88"
 
 
@@ -16,6 +19,7 @@ RIZENET_TESTNET_FACTORY = "0xd66C7C89Fb97eA5c06b0b7CaF2086dF1E82b9E88"
     "chain_id, expected",
     [
         (ARC_MAINNET_CHAINID, ARC_MAINNET_FACTORY),
+        (ARC_TESTNET_CHAINID, ARC_TESTNET_FACTORY),
         (RIZENET_TESTNET_CHAINID, RIZENET_TESTNET_FACTORY),
     ],
 )
@@ -53,27 +57,23 @@ def test_toml_style_override_replaces_the_default_map():
         config.get_factory_deployment(RIZENET_TESTNET_CHAINID)
 
 
-def test_arc_testnet_needs_an_override():
-    """No factory is deployed for Arc testnet yet; the error says what to do."""
+def test_both_arc_chains_are_registered():
+    """Each Arc network resolves without a per-project override."""
     config = SwarmV1FactoryConfig(name="test_model")
 
-    with pytest.raises(
-        Exception, match=f"Chain ID#{ARC_TESTNET_CHAINID} is unsupported"
-    ):
-        config.get_factory_deployment(ARC_TESTNET_CHAINID)
+    for chain_id in (ARC_MAINNET_CHAINID, ARC_TESTNET_CHAINID):
+        assert config.get_factory_deployment(chain_id) is not None
 
 
-def test_arc_testnet_override_resolves():
+def test_arc_testnet_override_beats_the_registered_address():
+    """A project can still point at its own testnet deployment."""
+    other = "0xd66C7C89Fb97eA5c06b0b7CaF2086dF1E82b9E88"
     config = SwarmV1FactoryConfig(
         name="test_model",
-        factory_deployments={
-            str(ARC_TESTNET_CHAINID): {"address": ARC_MAINNET_FACTORY}
-        },
+        factory_deployments={str(ARC_TESTNET_CHAINID): {"address": other}},
     )
 
-    deployment = config.get_factory_deployment(ARC_TESTNET_CHAINID)
-
-    assert deployment.address == ARC_MAINNET_FACTORY
+    assert config.get_factory_deployment(ARC_TESTNET_CHAINID).address == other
 
 
 @pytest.mark.parametrize(
