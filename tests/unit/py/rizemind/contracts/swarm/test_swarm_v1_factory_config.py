@@ -1,6 +1,11 @@
 import pytest
+from pydantic import ValidationError
 from rizemind.contracts.swarm.swarm_v1.swarm_v1_factory import SwarmV1FactoryConfig
-from rizemind.web3.chains import ARC_MAINNET_CHAINID, RIZENET_TESTNET_CHAINID
+from rizemind.web3.chains import (
+    ARC_MAINNET_CHAINID,
+    ARC_TESTNET_CHAINID,
+    RIZENET_TESTNET_CHAINID,
+)
 from web3 import Web3
 
 ARC_MAINNET_FACTORY = "0x721a4ebA8747eF5db299E8Eec67A2FbAe7866353"
@@ -46,3 +51,56 @@ def test_toml_style_override_replaces_the_default_map():
     )
     with pytest.raises(Exception, match="unsupported"):
         config.get_factory_deployment(RIZENET_TESTNET_CHAINID)
+
+
+def test_arc_testnet_needs_an_override():
+    """No factory is deployed for Arc testnet yet; the error says what to do."""
+    config = SwarmV1FactoryConfig(name="test_model")
+
+    with pytest.raises(
+        Exception, match=f"Chain ID#{ARC_TESTNET_CHAINID} is unsupported"
+    ):
+        config.get_factory_deployment(ARC_TESTNET_CHAINID)
+
+
+def test_arc_testnet_override_resolves():
+    config = SwarmV1FactoryConfig(
+        name="test_model",
+        factory_deployments={
+            str(ARC_TESTNET_CHAINID): {"address": ARC_MAINNET_FACTORY}
+        },
+    )
+
+    deployment = config.get_factory_deployment(ARC_TESTNET_CHAINID)
+
+    assert deployment.address == ARC_MAINNET_FACTORY
+
+
+@pytest.mark.parametrize(
+    "bad_address",
+    [
+        "$ARC_TESTNET_FACTORY",  # TomlConfig leaves an unset $VAR as a literal
+        "0x1234",
+        "",
+    ],
+)
+def test_override_rejects_a_bad_address(bad_address):
+    """Caught at config time, not deep inside `address_as_bytes`."""
+    with pytest.raises(ValidationError):
+        SwarmV1FactoryConfig(
+            name="test_model",
+            factory_deployments={str(ARC_TESTNET_CHAINID): {"address": bad_address}},
+        )
+
+
+def test_override_normalizes_a_lowercase_address():
+    config = SwarmV1FactoryConfig(
+        name="test_model",
+        factory_deployments={
+            str(ARC_TESTNET_CHAINID): {"address": ARC_MAINNET_FACTORY.lower()}
+        },
+    )
+
+    assert config.get_factory_deployment(ARC_TESTNET_CHAINID).address == (
+        ARC_MAINNET_FACTORY
+    )

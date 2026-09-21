@@ -194,24 +194,28 @@ poaChains = [RIZENET_TESTNET_CHAINID, ARC_MAINNET_CHAINID]
 
 ## Running on Arc testnet instead
 
-Point the RPC at testnet and change the expected chain ID:
-
-```shell
-export ARC_RPC_URL=https://rpc.testnet.arc.io
-```
-
-```toml
-[tool.flwr.app.config]
-expected-chain-id = 5042002
-```
-
-Arc testnet has no factory registered in the library, so deploy one with
-`forge/script/deployments/` and point the example at it:
+Arc testnet has no factory registered in the library yet, so deploy one first —
+`forge/DEPLOYING.md` walks through the four scripts — and point this example at
+it until the address is registered:
 
 ```toml
 [tool.web3.swarm.factory_v1.factory_deployments.5042002]
 address = "0xYourTestnetFactoryAddress"
 ```
+
+From then on, switching networks is two overrides and no file edit:
+
+```shell
+export ARC_RPC_URL=https://rpc.testnet.arc.io
+
+uv run -- python preflight.py --chain-id 5042002
+uv run -- flwr run . --run-config expected-chain-id=5042002
+```
+
+Both refuse to run if the RPC does not report 5042002, so the pair keeps mainnet
+and testnet from being confused for one another. Drop the `factory_deployments`
+block once the testnet factory is in the library — setting it replaces the whole
+default map, mainnet included.
 
 ## Rehearsing on a local chain
 

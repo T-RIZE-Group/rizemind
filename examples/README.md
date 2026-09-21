@@ -156,7 +156,9 @@ the example ships with a `preflight.py` that verifies the chain ID, the factory
 deployment, the aggregator balance and a dry-run `createSwarm` before anything is
 spent.
 
-Read `examples/arc_mainnet/README.md` before running it.
+Read `examples/arc_mainnet/README.md` before running it. To bring up the
+contracts on a chain that does not have them yet — Arc testnet, say — see
+`forge/DEPLOYING.md`.
 
 ---
 

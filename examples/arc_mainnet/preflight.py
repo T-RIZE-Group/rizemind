@@ -9,9 +9,14 @@ sending a transaction — that the RPC is the chain you think it is, that the
 ``SwarmV1Factory`` is deployed where the library expects it, that the aggregator
 can pay, and that ``createSwarm`` would actually succeed.
 
+``--chain-id`` overrides ``expected-chain-id`` for one invocation, mirroring
+``flwr run . --run-config expected-chain-id=…``, so pointing at another Arc
+network is an argument rather than an edit.
+
 Nothing here prints a mnemonic, a private key, or the keystore passphrase.
 """
 
+import argparse
 import os
 import sys
 from typing import Any
@@ -66,18 +71,31 @@ def usdc(wei: int) -> str:
     return f"{Web3.from_wei(wei, 'ether'):.6f} USDC"
 
 
-def main() -> int:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--chain-id",
+        type=int,
+        default=None,
+        help="override `expected-chain-id` from pyproject.toml for this run",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
     Account.enable_unaudited_hdwallet_features()
 
     section("Config")
     config = TomlConfig("./pyproject.toml")
     run_config = config.get("tool.flwr.app.config")
-    expected_chain_id = int(run_config["expected-chain-id"])
+    expected_chain_id = args.chain_id or int(run_config["expected-chain-id"])
     url = config.get("tool.web3.url")
     if isinstance(url, str) and url.startswith("$"):
         fail(f"{url} is not set in the environment; export it and re-run")
         return report()
-    ok(f"expected chain id: {expected_chain_id}")
+    source = "--chain-id" if args.chain_id else "pyproject.toml"
+    ok(f"expected chain id: {expected_chain_id} (from {source})")
 
     try:
         web3_config = Web3Config(**config.get("tool.web3"))
