@@ -24,7 +24,7 @@ Deployment record
    * - Network
      - Arc Mainnet, chain ID ``5042``
    * - ``SwarmV1Factory``
-     - `0x721a4ebA8747eF5db299E8Eec67A2FbAe7866353 <https://explorer.arc.io/address/0x721a4ebA8747eF5db299E8Eec67A2FbAe7866353>`_
+     - ``0x721a4ebA8747eF5db299E8Eec67A2FbAe7866353``
 
 **Deployed components.** Deployed once per chain, by
 ``forge/script/deployments/``:
@@ -193,8 +193,9 @@ Step 7 — Verify on-chain
 
    cast call $SWARM "currentRound()(uint256)" --rpc-url $ARC_RPC
 
-Then open ``https://explorer.arc.io/address/<swarm>`` and confirm the
-``TrainerContributed`` events, one per trainer per round.
+Then look the swarm up in the Arc explorer and confirm the
+``TrainerContributed`` events, one per trainer per round. ``preflight.py``
+prints the explorer link for the network it checked.
 
 Reusing a swarm
 ---------------

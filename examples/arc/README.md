@@ -167,8 +167,9 @@ export SWARM=0x...                          # the proxy address from the run
 cast call $SWARM "currentRound()(uint256)" --rpc-url $ARC_RPC
 ```
 
-Then open `https://explorer.arc.io/address/<swarm>` and confirm the
-`TrainerContributed` events, one per trainer per round.
+Then look the swarm up in the Arc explorer and confirm the
+`TrainerContributed` events, one per trainer per round. `preflight.py` prints
+the explorer link for the network it checked.
 
 ## Reusing the swarm
 
