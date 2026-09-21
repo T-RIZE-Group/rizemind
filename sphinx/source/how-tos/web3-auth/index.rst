@@ -4,6 +4,12 @@ How To Add Web3-Based Signature Authentication
 
 This guide will walk you through implementing **Web3-based signature authentication** using `rizemind` with **Flower**, ensuring secure, blockchain-validated authentication for federated learning.
 
+.. note::
+
+   This example uses the Rizenet testnet for development and testing. For Arc
+   Mainnet deployment and configuration, see
+   :doc:`Rizemind on Arc Mainnet </quickstarts/arc-mainnet>`.
+
 **Requirements**
 
 - Follow the :doc:`Generating and Storing a Mnemonic <../generate-store-mnemonic>` tutorial, as you will need a mnemonic.

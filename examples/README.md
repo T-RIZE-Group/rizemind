@@ -13,7 +13,7 @@ uv run -- flwr run .
 
 > **Note:** Some examples may require additional prerequisites. Always check the specific README file inside each example directory for detailed instructions.
 
-There are two types of examples, some of them use a local blockchain, and some use the rizenet testnet. To learn how to setup each example properly, read below.
+There are three types of examples: some use a local blockchain, some use the Rizenet testnet, and one runs against Arc. The local and Rizenet examples are intended for development and testing, and are **not** Arc Mainnet deployment instructions. For Arc Mainnet deployment and configuration, see **Rizemind on Arc Mainnet** in the Quickstarts (`sphinx/source/quickstarts/arc-mainnet.rst`). To learn how to set up each example properly, read below.
 
 ---
 
@@ -111,7 +111,7 @@ RIZENET_MNEMONIC="picture fine relief success curious avocado define divert caus
 Rizenet is a **permissioned network** for **smart contract deployment**.
 Before deploying contracts, you must **whitelist your aggregator address**.
 
-- Go to `Rizenet Deployer <https://rizenet.io/deployer>`\_.
+- Go to [Rizenet Deployer](https://rizenet.io/deployer).
 - Enter your **aggregator address** (generated earlier).
 - Click "Enable" and wait for confirmation.
 
@@ -122,7 +122,7 @@ Once approved, your aggregator will have permission to deploy smart contracts.
 Blockchain transactions require **gas** to process computations.
 On the **Rizenet Testnet**, gas is **free**, but you need to request testnet tokens. To get gas:
 
-- Visit `Rizenet Faucet <https://rizenet.io/faucets>`\_.
+- Visit [Rizenet Faucet](https://rizenet.io/faucets).
 - Enter your **aggregator address**.
 - Click drip and wait for confirmation.
 
@@ -145,6 +145,29 @@ uv run -- flwr run . --run-config num-server-rounds=5,learning-rate=0.05
 ```
 
 > ![NOTE]: Make sure to always use the command `uv run --` before calling the actual command. This way `uv` will make sure you have the proper dependencies installed.
+
+---
+
+### Using Arc
+
+`examples/arc` runs against **Arc**, Circle's USDC-gas L1. Deployment there is
+permissionless, so there is no whitelisting step — but on mainnet gas is **real
+USDC**, so the example ships with a `preflight.py` that verifies the chain, the
+factory deployment, the aggregator balance and a dry-run `createSwarm` before
+anything is spent.
+
+One setting picks the chain — `arc-network` in `[tool.flwr.app.config]`, one of
+`mainnet`, `testnet` or `local` (Anvil) — and it selects the chain ID and the RPC
+endpoint together. Switch per run without editing anything:
+
+```bash
+uv run -- flwr run . --run-config arc-network=testnet
+```
+
+Read `examples/arc/README.md` before running it. To bring up the contracts on a
+chain that does not have them yet, see `forge/DEPLOYING.md`.
+
+---
 
 ## How to create a new example
 
@@ -187,13 +210,14 @@ This will install all the packages for your examples. Now if you have configured
 
 ## Examples Compatibility Overview
 
-The table below clarifies which examples require a local blockchain and which ones are designed for Rizenet:
+The table below clarifies which chain each example is designed for:
 
-| Example                     | Local Blockchain | Rizenet |
-| --------------------------- | ---------------- | ------- |
-| Basic Signature             | ✅               | ❌      |
-| Centralized Shapley Value   | ✅               | ❌      |
-| Decentralized Shapley Value | ✅               | ❌      |
-| Decentralized TabPFN        | ✅               | ❌      |
-| RizeNet Deployment          | ❌               | ✅      |
-| RizeNet Shapley             | ❌               | ✅      |
+| Example                     | Local Blockchain | Rizenet | Arc         |
+| --------------------------- | ---------------- | ------- | ----------- |
+| Basic Signature             | ✅               | ❌      | ❌          |
+| Centralized Shapley Value   | ✅               | ❌      | ❌          |
+| Decentralized Shapley Value | ✅               | ❌      | ❌          |
+| Decentralized TabPFN        | ✅               | ❌      | ❌          |
+| RizeNet Deployment          | ❌               | ✅      | ❌          |
+| RizeNet Shapley             | ❌               | ✅      | ❌          |
+| Arc                         | ✅               | ❌      | ✅          |

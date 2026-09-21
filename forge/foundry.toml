@@ -46,6 +46,8 @@ exclude_operators = []
 [rpc_endpoints]
 local = "http://127.0.0.1:8545"
 rizenet-testnet = "https://testnet.rizenet.io"
+arc-mainnet = "https://rpc.mainnet.arc.io"
+arc-testnet = "https://rpc.testnet.arc.io"
 
 [dependencies]
 forge-std = "1.9.6"

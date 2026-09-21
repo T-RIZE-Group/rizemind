@@ -1,0 +1,57 @@
+[project]
+name = "arc"
+version = "0.1.0"
+description = "Rizemind smoke test on Arc"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "flwr-datasets[vision]>=0.5.0",
+    "flwr[simulation]>=1.18.0",
+    "torch>=2.7.0",
+    "torchvision>=0.22.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.flwr.app]
+publisher = "trizelabs"
+
+[tool.flwr.app.components]
+serverapp = "src.server:app"
+clientapp = "src.client:app"
+
+[tool.flwr.app.config]
+# Deliberately small: every round costs real USDC, and the decentralized
+# Shapley strategy evaluates 2^n - 1 coalitions per round (3 trainers -> 7).
+num-server-rounds = 1
+min-available-clients = 3
+num-supernodes = 3
+local-epochs = 1
+batch-size = 32
+learning-rate = 0.005
+fraction-fit = 1.0
+fraction-evaluate = 1.0
+verbose = false
+metrics-storage-path = 'logs'
+# Which Arc network to run against: "mainnet" or "testnet". This picks the chain
+# ID and the default RPC endpoint together, so they cannot drift apart. Override
+# per run without editing this file:
+#     flwr run . --run-config arc-network=testnet
+# `$ARC_RPC_URL` overrides just the endpoint, for a private or rate-limited node.
+arc-network = "mainnet"
+
+[tool.flwr.federations]
+default = "local-simulation"
+
+[tool.flwr.federations.local-simulation]
+options.num-supernodes = 3
+
+[tool.eth.account.mnemonic_store]
+account_name = "arc-aggregator"
+passphrase = "$RZMND_PASSPHRASE"
+
+# The RPC endpoint comes from `arc-network` above, so there is no `url` here.
+[tool.web3.swarm.factory_v1]
+name = "arc_smoke_test"
+ticker = "ARCTEST"
