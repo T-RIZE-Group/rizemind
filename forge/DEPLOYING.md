@@ -200,7 +200,7 @@ from a fresh account on two chains produces the same addresses on both. Verify
 against the chain before "correcting" one.
 
 Also check whether the chain needs web3's PoA middleware — see "Does Arc need the
-PoA middleware?" in `examples/arc_mainnet/README.md`.
+PoA middleware?" in `examples/arc/README.md`.
 
 ## Cost
 

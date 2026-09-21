@@ -4,7 +4,7 @@ requires-python = ">=3.12"
 
 [manifest]
 members = [
-    "arc-mainnet",
+    "arc",
     "rizemind",
     "rizenet-testnet",
     "torch-basic",
@@ -145,9 +145,9 @@ wheels = [
 ]
 
 [[package]]
-name = "arc-mainnet"
+name = "arc"
 version = "0.1.0"
-source = { virtual = "examples/arc_mainnet" }
+source = { virtual = "examples/arc" }
 dependencies = [
     { name = "flwr", extra = ["simulation"] },
     { name = "flwr-datasets", extra = ["vision"] },

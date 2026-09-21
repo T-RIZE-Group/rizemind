@@ -1,21 +1,41 @@
-# Rizemind on Arc mainnet
+# Rizemind on Arc
 
 A minimal end-to-end run against [Arc](https://www.arc.io), Circle's USDC-gas L1:
 three trainers, one round, decentralized Shapley value, CPU-only simulation.
+Runs against either Arc network.
+
+## Choosing the network
+
+One setting picks the chain — `arc-network` in `[tool.flwr.app.config]`:
+
+```toml
+arc-network = "mainnet"   # or "testnet"
+```
+
+It selects the chain ID and the default RPC endpoint **together**, so a
+half-applied switch cannot aim a mainnet chain guard at a testnet endpoint. To
+switch for one run without editing the file:
+
+```shell
+uv run -- python preflight.py --network testnet
+uv run -- flwr run . --run-config arc-network=testnet
+```
+
+`$ARC_RPC_URL` overrides just the endpoint, for a private or rate-limited node;
+the chain guard still holds it to the network's chain ID.
 
 > [!CAUTION]
-> Every transaction this example sends spends **real USDC**. Rehearse on Arc
-> testnet first — the steps are identical, only the RPC URL and the chain ID
-> change.
+> On **mainnet** every transaction spends **real USDC**. Rehearse on testnet
+> first — same code, one word different.
 
-## Network facts
+|          | `arc-network = "mainnet"`     | `arc-network = "testnet"`                 |
+| -------- | ----------------------------- | ----------------------------------------- |
+| Chain ID | `5042`                        | `5042002`                                 |
+| RPC      | `https://rpc.mainnet.arc.io`  | `https://rpc.testnet.arc.io`              |
+| Explorer | `https://explorer.arc.io`     | `https://explorer.testnet.arc.io`         |
+| Gas      | USDC — real money             | test USDC (<https://faucet.circle.com>)   |
 
-|          | Arc mainnet                 | Arc testnet                                              |
-| -------- | --------------------------- | -------------------------------------------------------- |
-| Chain ID | `5042`                      | `5042002`                                                 |
-| RPC      | `https://rpc.mainnet.arc.io` | `https://rpc.testnet.arc.io`                             |
-| Explorer | `https://explorer.arc.io`   | `https://explorer.testnet.arc.io`                         |
-| Gas      | USDC                        | test USDC (<https://faucet.circle.com>)                   |
+Those facts live in `src/arc.py`, one record per network.
 
 Two Arc properties matter here:
 
@@ -35,10 +55,9 @@ Two Arc properties matter here:
 > cast chain-id --rpc-url https://rpc.mainnet.arc.io   # expect 5042
 > ```
 >
-> Do not take an RPC URL from a search result or a chain-list aggregator. The
-> value this example is configured with is `expected-chain-id` in
-> `pyproject.toml`; both `preflight.py` and the server abort if the live RPC
-> disagrees with it.
+> Do not take an RPC URL from a search result or a chain-list aggregator. Both
+> `preflight.py` and the server abort if the live RPC does not report the chain
+> ID `arc-network` selected.
 
 ## What is already deployed
 
@@ -59,6 +78,7 @@ your own factory instead (`forge/script/deployments/`), override it from this
 example's `pyproject.toml` without touching the library:
 
 ```toml
+# The table key is the chain ID: 5042 for mainnet, 5042002 for testnet.
 [tool.web3.swarm.factory_v1.factory_deployments.5042]
 address = "0xYourSwarmV1FactoryAddress"
 ```
@@ -105,16 +125,15 @@ The trainer addresses need nothing.
 ### 3. Run the pre-flight checks
 
 ```shell
-export ARC_RPC_URL=https://rpc.mainnet.arc.io
 export RZMND_PASSPHRASE='…'
-cd examples/arc_mainnet
+cd examples/arc
 uv run -- python preflight.py
 ```
 
 It reads the same `pyproject.toml` the run does and verifies, **without sending a
 transaction**, that:
 
-- the RPC is reachable and reports `expected-chain-id`;
+- the RPC is reachable and reports the chain ID `arc-network` selected;
 - web3's PoA middleware is configured the way this chain needs (see below);
 - the `SwarmV1Factory` has code at the registered address;
 - the aggregator can pay, at the current gas price;
@@ -142,9 +161,10 @@ What you should see, in order:
 ### 5. Verify on-chain
 
 ```shell
-export SWARM=0x...   # the proxy address from the run
+export ARC_RPC=https://rpc.mainnet.arc.io   # or rpc.testnet.arc.io
+export SWARM=0x...                          # the proxy address from the run
 
-cast call $SWARM "currentRound()(uint256)" --rpc-url https://rpc.mainnet.arc.io
+cast call $SWARM "currentRound()(uint256)" --rpc-url $ARC_RPC
 ```
 
 Then open `https://explorer.arc.io/address/<swarm>` and confirm the
@@ -197,35 +217,19 @@ from rizemind.web3.chains import ARC_MAINNET_CHAINID, RIZENET_TESTNET_CHAINID
 poaChains = [RIZENET_TESTNET_CHAINID, ARC_MAINNET_CHAINID]
 ```
 
-## Running on Arc testnet instead
+## Running on Arc testnet
 
-Arc testnet is registered in the library too, so switching networks is two
-overrides and no file edit:
+Both Arc networks are registered in the library, so testnet is one word:
 
 ```shell
-export ARC_RPC_URL=https://rpc.testnet.arc.io
-
-uv run -- python preflight.py --chain-id 5042002
-uv run -- flwr run . --run-config expected-chain-id=5042002
+uv run -- python preflight.py --network testnet
+uv run -- flwr run . --run-config arc-network=testnet
 ```
 
-Both refuse to run if the RPC does not report 5042002, so the pair keeps mainnet
-and testnet from being confused for one another.
-
-Test USDC comes from <https://faucet.circle.com>. The aggregator is a different
-account per network only if you make it one — the same mnemonic derives the same
-addresses everywhere, so a funded testnet aggregator is the same address on
-mainnet.
-
-To point at a factory you deployed yourself instead, override it:
-
-```toml
-[tool.web3.swarm.factory_v1.factory_deployments.5042002]
-address = "0xYourTestnetFactoryAddress"
-```
-
-That **replaces** the default map rather than extending it, so mainnet
-disappears from that config.
+Test USDC comes from <https://faucet.circle.com>. Note that the aggregator is
+the **same address** on both networks — the same mnemonic derives the same
+accounts everywhere — so funding it on testnet does nothing on mainnet, and the
+address you see is not evidence of which chain you are on. The chain guard is.
 
 ## Rehearsing on a local chain
 
@@ -246,8 +250,17 @@ anvil &                  # chain id 31337, pre-funded accounts
 ./deploy.sh              # SelectorFactory, both selectors, then SwarmV1Factory
 ```
 
-Then point this example at it. Replace the `[tool.eth.account.mnemonic_store]`,
-`[tool.web3]` and `[tool.web3.swarm.factory_v1]` blocks in `pyproject.toml` with:
+`arc-network = "local"` points at Anvil (chain 31337, `http://127.0.0.1:8545`),
+so the network switch works here too:
+
+```shell
+uv run -- python preflight.py --network local
+uv run -- flwr run . --run-config arc-network=local
+```
+
+Two things still need editing in `pyproject.toml`, because they are not
+properties of the network. Replace `[tool.eth.account.mnemonic_store]` with
+Anvil's pre-funded account, and tell the factory config where you deployed:
 
 ```toml
 [tool.eth.account]
@@ -255,39 +268,33 @@ Then point this example at it. Replace the `[tool.eth.account.mnemonic_store]`,
 # deployer. Public knowledge — never use it on a chain that holds value.
 mnemonic = "test test test test test test test test test test test junk"
 
-[tool.web3]
-url = "http://127.0.0.1:8545"
-
 [tool.web3.swarm.factory_v1]
 name = "arc_smoke_test"
 ticker = "ARCTEST"
 local_factory_deployment_path = "../../forge/broadcast/SwarmV1Factory.s.sol/31337/run-latest.json"
 ```
 
-and set the guard to Anvil's chain:
-
-```toml
-[tool.flwr.app.config]
-expected-chain-id = 31337
-```
-
 `local_factory_deployment_path` takes precedence over the chain-ID map, so the
-factory address comes straight out of what you just deployed. `preflight.py` and
-`flwr run .` work unchanged from there.
+factory address comes straight out of what you just deployed.
 
-Revert those four blocks before running against Arc. `expected-chain-id` is the
-backstop: with it left at `31337`, the server refuses to touch mainnet.
+Revert both before running against Arc. The chain guard is the backstop: an
+Anvil mnemonic pointed at mainnet is an unfunded aggregator, not a loss, and
+`arc-network` cannot silently disagree with the endpoint.
 
 ## Troubleshooting
 
-**`Chain ID#5042 is unsupported, provide a local_deployment_path`**
-The library does not know a factory for this chain. Either you are on a chain
-other than Arc mainnet, or a `factory_deployments` override is under the wrong
+**`Chain ID#… is unsupported, provide a local_deployment_path`**
+The library does not know a factory for this chain. Either `arc-network` points
+somewhere unexpected, or a `factory_deployments` override is under the wrong
 table — it must be `[tool.web3.swarm.factory_v1.factory_deployments.<chain id>]`.
 
-**`RPC reports chain ID …, expected 5042`**
-The endpoint is not the chain in `expected-chain-id`. Fix one or the other; do
-not "fix" it by loosening the check.
+**`unknown network '…'; expected one of: local, mainnet, testnet`**
+A typo in `arc-network`. Deliberately fatal rather than defaulting to one of
+them, since they differ by real money.
+
+**`… reports chain ID …, but arc-network='mainnet' expects 5042`**
+`$ARC_RPC_URL` points at a different chain than `arc-network` names. Fix one or
+the other; do not "fix" it by loosening the check.
 
 **`SelectorImplementationNotFound` on createSwarm**
 The selector version this config asks for is not registered on this chain. The
@@ -301,7 +308,7 @@ Arc needs the PoA middleware — see the section above.
 
 **`assert tx_receipt["status"] != 0`**
 An aggregator transaction reverted. Re-run it with
-`cast run <tx-hash> --rpc-url https://rpc.mainnet.arc.io` for a decoded trace.
+`cast run <tx-hash> --rpc-url $ARC_RPC` for a decoded trace.
 
 **Balances look 10<sup>12</sup> off**
 You mixed the native (18-decimal) and ERC-20 (6-decimal) views of USDC.

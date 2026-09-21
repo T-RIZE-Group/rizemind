@@ -1,7 +1,7 @@
 [project]
-name = "arc-mainnet"
+name = "arc"
 version = "0.1.0"
-description = "Rizemind smoke test on Arc mainnet"
+description = "Rizemind smoke test on Arc"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -34,8 +34,12 @@ fraction-fit = 1.0
 fraction-evaluate = 1.0
 verbose = false
 metrics-storage-path = 'logs'
-# The server aborts before sending anything if the RPC disagrees with this.
-expected-chain-id = 5042
+# Which Arc network to run against: "mainnet" or "testnet". This picks the chain
+# ID and the default RPC endpoint together, so they cannot drift apart. Override
+# per run without editing this file:
+#     flwr run . --run-config arc-network=testnet
+# `$ARC_RPC_URL` overrides just the endpoint, for a private or rate-limited node.
+arc-network = "mainnet"
 
 [tool.flwr.federations]
 default = "local-simulation"
@@ -47,9 +51,7 @@ options.num-supernodes = 3
 account_name = "arc-aggregator"
 passphrase = "$RZMND_PASSPHRASE"
 
-[tool.web3]
-url = "$ARC_RPC_URL"
-
+# The RPC endpoint comes from `arc-network` above, so there is no `url` here.
 [tool.web3.swarm.factory_v1]
 name = "arc_smoke_test"
 ticker = "ARCTEST"

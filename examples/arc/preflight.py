@@ -1,6 +1,7 @@
-"""Pre-flight checks for the Arc mainnet example.
+"""Pre-flight checks for the Arc example.
 
-Everything this example does on-chain costs real USDC, so run this first:
+On mainnet everything this example does on-chain costs real USDC, so run this
+first:
 
     uv run -- python preflight.py
 
@@ -9,9 +10,9 @@ sending a transaction — that the RPC is the chain you think it is, that the
 ``SwarmV1Factory`` is deployed where the library expects it, that the aggregator
 can pay, and that ``createSwarm`` would actually succeed.
 
-``--chain-id`` overrides ``expected-chain-id`` for one invocation, mirroring
-``flwr run . --run-config expected-chain-id=…``, so pointing at another Arc
-network is an argument rather than an edit.
+``--network`` overrides ``arc-network`` for one invocation, mirroring
+``flwr run . --run-config arc-network=…``, so checking the other Arc network is
+an argument rather than an edit.
 
 Nothing here prints a mnemonic, a private key, or the keystore passphrase.
 """
@@ -32,6 +33,7 @@ from rizemind.contracts.swarm.swarm_v1.swarm_v1_factory import (
 )
 from rizemind.web3 import Web3Config
 from rizemind.web3.config import poaChains
+from src.arc import NETWORKS, RPC_URL_ENV, get_network
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 
@@ -74,10 +76,10 @@ def usdc(wei: int) -> str:
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--chain-id",
-        type=int,
+        "--network",
+        choices=sorted(NETWORKS),
         default=None,
-        help="override `expected-chain-id` from pyproject.toml for this run",
+        help="override `arc-network` from pyproject.toml for this run",
     )
     return parser.parse_args(argv)
 
@@ -89,19 +91,22 @@ def main(argv: list[str] | None = None) -> int:
     section("Config")
     config = TomlConfig("./pyproject.toml")
     run_config = config.get("tool.flwr.app.config")
-    expected_chain_id = args.chain_id or int(run_config["expected-chain-id"])
-    url = config.get("tool.web3.url")
-    if isinstance(url, str) and url.startswith("$"):
-        fail(f"{url} is not set in the environment; export it and re-run")
-        return report()
-    source = "--chain-id" if args.chain_id else "pyproject.toml"
-    ok(f"expected chain id: {expected_chain_id} (from {source})")
-
+    source = "--network" if args.network else "pyproject.toml"
     try:
-        web3_config = Web3Config(**config.get("tool.web3"))
-    except Exception as exc:  # noqa: BLE001 - surfaced to the operator verbatim
-        fail(f"tool.web3 is invalid: {exc}")
+        network = get_network(args.network or str(run_config["arc-network"]))
+    except (KeyError, ValueError) as exc:
+        fail(f"arc-network is invalid: {exc}")
         return report()
+
+    expected_chain_id = network.chain_id
+    url = network.rpc_url
+    ok(f"network: Arc {network.name} (from {source})")
+    ok(f"chain id: {expected_chain_id}")
+    ok(f"gas: {network.gas_source}")
+    if url != network.default_rpc_url:
+        ok(f"RPC overridden by ${RPC_URL_ENV}")
+
+    web3_config = Web3Config(url=url)
 
     section("RPC")
     w3 = Web3(web3_config.web3_provider())
@@ -163,6 +168,9 @@ def main(argv: list[str] | None = None) -> int:
         fail(f"no contract code at {factory_address} on chain {chain_id}")
         return report()
     ok(f"SwarmV1Factory at {factory_address} ({len(code)} bytes of code)")
+    explorer = network.explorer_address_url(factory_address)
+    if explorer:
+        ok(f"explorer: {explorer}")
 
     factory = w3.eth.contract(address=factory_address, abi=factory_abi)
     implementation = factory.functions.getImplementation().call()

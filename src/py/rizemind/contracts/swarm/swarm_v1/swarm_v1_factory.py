@@ -45,7 +45,7 @@ class SwarmV1FactoryConfig(BaseModel):
         # slip: CREATE derives the address from deployer and nonce alone, so the
         # same deployer running the same script sequence from a fresh account on
         # both chains lands on the same one. Verify against the chain before
-        # "fixing" this — `examples/arc_mainnet/preflight.py --chain-id <id>`.
+        # "fixing" this — `examples/arc/preflight.py --network <name>`.
         ARC_MAINNET_CHAINID: DeployedContract(
             address=Web3.to_checksum_address(
                 "0x721a4ebA8747eF5db299E8Eec67A2FbAe7866353"

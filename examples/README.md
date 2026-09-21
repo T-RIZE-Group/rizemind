@@ -150,15 +150,22 @@ uv run -- flwr run . --run-config num-server-rounds=5,learning-rate=0.05
 
 ### Using Arc
 
-`examples/arc_mainnet` runs against **Arc**, Circle's USDC-gas L1. Deployment there
-is permissionless, so there is no whitelisting step — but gas is **real USDC**, so
-the example ships with a `preflight.py` that verifies the chain ID, the factory
-deployment, the aggregator balance and a dry-run `createSwarm` before anything is
-spent.
+`examples/arc` runs against **Arc**, Circle's USDC-gas L1. Deployment there is
+permissionless, so there is no whitelisting step — but on mainnet gas is **real
+USDC**, so the example ships with a `preflight.py` that verifies the chain, the
+factory deployment, the aggregator balance and a dry-run `createSwarm` before
+anything is spent.
 
-Read `examples/arc_mainnet/README.md` before running it. To bring up the
-contracts on a chain that does not have them yet — Arc testnet, say — see
-`forge/DEPLOYING.md`.
+One setting picks the chain — `arc-network` in `[tool.flwr.app.config]`, one of
+`mainnet`, `testnet` or `local` (Anvil) — and it selects the chain ID and the RPC
+endpoint together. Switch per run without editing anything:
+
+```bash
+uv run -- flwr run . --run-config arc-network=testnet
+```
+
+Read `examples/arc/README.md` before running it. To bring up the contracts on a
+chain that does not have them yet, see `forge/DEPLOYING.md`.
 
 ---
 
@@ -205,7 +212,7 @@ This will install all the packages for your examples. Now if you have configured
 
 The table below clarifies which chain each example is designed for:
 
-| Example                     | Local Blockchain | Rizenet | Arc mainnet |
+| Example                     | Local Blockchain | Rizenet | Arc         |
 | --------------------------- | ---------------- | ------- | ----------- |
 | Basic Signature             | ✅               | ❌      | ❌          |
 | Centralized Shapley Value   | ✅               | ❌      | ❌          |
@@ -213,4 +220,4 @@ The table below clarifies which chain each example is designed for:
 | Decentralized TabPFN        | ✅               | ❌      | ❌          |
 | RizeNet Deployment          | ❌               | ✅      | ❌          |
 | RizeNet Shapley             | ❌               | ✅      | ❌          |
-| Arc Mainnet                 | ❌               | ❌      | ✅          |
+| Arc                         | ✅               | ❌      | ✅          |

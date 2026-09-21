@@ -12,6 +12,7 @@ from rizemind.strategies.contribution.shapley.decentralized.shapley_value_client
 from rizemind.web3 import Web3Config
 from rizemind.web3.config import WEB3_CONFIG_STATE_KEY
 
+from .arc import get_network
 from .task import Net, get_weights, load_data, set_weights, test, train
 
 
@@ -70,7 +71,10 @@ def client_fn(context: Context):
     context.state.config_records[ACCOUNT_CONFIG_STATE_KEY] = (
         account_config.to_config_record()
     )
-    web3_config = Web3Config(**config.get("tool.web3"))
+    # The same `arc-network` the server used: `--run-config` reaches both, so a
+    # switched network cannot leave clients pointed at the other chain.
+    network = get_network(str(context.run_config["arc-network"]))
+    web3_config = Web3Config(url=network.rpc_url)
     context.state.config_records[WEB3_CONFIG_STATE_KEY] = web3_config.to_config_record()
     # Return Client instance
     flwr_client = FlowerClient(trainloader, valloader, local_epochs, learning_rate)

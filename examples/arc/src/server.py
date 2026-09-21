@@ -1,9 +1,11 @@
 import copy
 import statistics
+from logging import INFO
 from pathlib import Path
 from typing import Any
 
 from flwr.common import Context, Metrics, Scalar, ndarrays_to_parameters
+from flwr.common.logger import log
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
 from rizemind.authentication.config import AccountConfig
@@ -21,6 +23,7 @@ from rizemind.swarm.config import SwarmConfig
 from rizemind.web3 import Web3Config
 from web3 import Web3
 
+from .arc import ArcNetwork, get_network
 from .task import Net, get_weights
 
 
@@ -59,17 +62,18 @@ def redacted_toml(data: dict[str, Any]) -> dict[str, Any]:
     return safe
 
 
-def check_chain(w3: Web3, expected_chain_id: int) -> None:
-    """Refuse to spend anything if the RPC is not the chain we configured.
+def check_chain(w3: Web3, network: ArcNetwork) -> None:
+    """Refuse to spend anything if the RPC is not the network we configured.
 
-    Every transaction this example sends costs real USDC, so a typo'd or
-    redirected RPC URL should stop the run before `createSwarm`, not after.
+    On mainnet every transaction costs real USDC, so a typo'd or redirected RPC
+    URL should stop the run before `createSwarm`, not after.
     """
     chain_id = w3.eth.chain_id
-    if chain_id != expected_chain_id:
+    if chain_id != network.chain_id:
         raise RuntimeError(
-            f"RPC reports chain ID {chain_id}, expected {expected_chain_id}. "
-            "Check `tool.web3.url` and `expected-chain-id` before running again."
+            f"{network.rpc_url} reports chain ID {chain_id}, but arc-network="
+            f"{network.name!r} expects {network.chain_id}. Fix `arc-network` or "
+            f"${{ARC_RPC_URL}} before running again."
         )
 
 
@@ -95,11 +99,20 @@ def server_fn(context: Context):
 
     toml_config = TomlConfig("./pyproject.toml")
     auth_config = AccountConfig(**toml_config.get("tool.eth.account"))
-    web3_config = Web3Config(**toml_config.get("tool.web3"))
+
+    network = get_network(str(context.run_config["arc-network"]))
+    log(
+        INFO,
+        "Arc %s (chain %s) via %s",
+        network.name,
+        network.chain_id,
+        network.rpc_url,
+    )
+    web3_config = Web3Config(url=network.rpc_url)
 
     num_supernodes = int(context.run_config["num-supernodes"])
     w3 = web3_config.get_web3()
-    check_chain(w3, int(context.run_config["expected-chain-id"]))
+    check_chain(w3, network)
 
     # Account 0 aggregates and pays the gas; accounts 1..N are the trainers.
     account = auth_config.get_account(0)
@@ -122,7 +135,7 @@ def server_fn(context: Context):
     )
     metrics_storage = LocalDiskMetricStorage(
         Path(str(context.run_config["metrics-storage-path"])),
-        "arc-mainnet",
+        f"arc-{network.name}",
     )
     metrics_storage.write_config(context.run_config)
     metrics_storage.write_config(redacted_toml(toml_config.data))
