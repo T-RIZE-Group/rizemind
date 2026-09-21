@@ -19,6 +19,10 @@ Meet Rizemind
 
 **Rizemind** is a cooperative, privacy‑preserving framework developed by **T‑RIZE** and **T‑RIZE Labs** a Canadian industrial research chair. Built on **Federated Learning (FL)**, Rizemind uses **distributed ledgers** to strengthen coordination, robustness, and security across untrusted participants.
 
+**Deployment:** Rizemind is deployed on **Arc Mainnet**. See the
+`deployment record <https://explorer.arc.io/address/0x721a4ebA8747eF5db299E8Eec67A2FbAe7866353>`_, or the
+:doc:`quickstarts/arc-mainnet` guide.
+
 * Participants **do not share raw data**. They train **on‑premise** and share **model updates/outputs** only.
 * Local training extracts generalizable knowledge that is **aggregated** into a collective **“supermodel.”**
 * The framework provides **transparent, verifiable contribution scoring**, which powers an **incentives module** to align collaborators.

@@ -68,7 +68,8 @@ def prepare_eip712_domain(
     """Prepares the EIP-712 domain object for signing typed structured data.
 
     Args:
-        chainid: The ID of the blockchain network (e.g., 1 for Ethereum mainnet, 3 for Ropsten).
+        chainid: The EIP-155 chain ID of the EVM network where the
+            verifying contract is deployed.
         version: The current version of the domain.
         contract: The address of the verifying contract in hexadecimal format (e.g., "0xCcCCc...").
         name: The human-readable name of the domain (e.g., "MyApp").

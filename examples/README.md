@@ -13,7 +13,7 @@ uv run -- flwr run .
 
 > **Note:** Some examples may require additional prerequisites. Always check the specific README file inside each example directory for detailed instructions.
 
-There are three types of examples: some use a local blockchain, some use the Rizenet testnet, and one runs against Arc mainnet. To learn how to setup each example properly, read below.
+There are three types of examples: some use a local blockchain, some use the Rizenet testnet, and one runs against Arc. The local and Rizenet examples are intended for development and testing, and are **not** Arc Mainnet deployment instructions. For Arc Mainnet deployment and configuration, see **Rizemind on Arc Mainnet** in the Quickstarts (`sphinx/source/quickstarts/arc-mainnet.rst`). To learn how to set up each example properly, read below.
 
 ---
 
@@ -111,7 +111,7 @@ RIZENET_MNEMONIC="picture fine relief success curious avocado define divert caus
 Rizenet is a **permissioned network** for **smart contract deployment**.
 Before deploying contracts, you must **whitelist your aggregator address**.
 
-- Go to `Rizenet Deployer <https://rizenet.io/deployer>`\_.
+- Go to [Rizenet Deployer](https://rizenet.io/deployer).
 - Enter your **aggregator address** (generated earlier).
 - Click "Enable" and wait for confirmation.
 
@@ -122,7 +122,7 @@ Once approved, your aggregator will have permission to deploy smart contracts.
 Blockchain transactions require **gas** to process computations.
 On the **Rizenet Testnet**, gas is **free**, but you need to request testnet tokens. To get gas:
 
-- Visit `Rizenet Faucet <https://rizenet.io/faucets>`\_.
+- Visit [Rizenet Faucet](https://rizenet.io/faucets).
 - Enter your **aggregator address**.
 - Click drip and wait for confirmation.
 
