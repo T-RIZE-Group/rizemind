@@ -211,33 +211,6 @@ replace the factory block with its address:
 ``SwarmConfig`` accepts exactly one of ``address`` or ``factory_v1``, so remove
 the ``[tool.web3.swarm.factory_v1]`` block when you add ``address``.
 
-Cost model
-==========
-
-.. list-table::
-   :header-rows: 1
-   :widths: 40 25 35
-
-   * - Action
-     - Frequency
-     - Gas
-   * - Contract deployment
-     - once per chain, already done
-     - ≈ 15.25M (measured)
-   * - ``createSwarm``
-     - once per federation
-     - ≈ 1M
-   * - ``distribute`` + ``nextRound``
-     - per round
-     - grows with trainer count
-   * - Trainer signing
-     - per round
-     - 0 — off-chain EIP-712
-
-``distribute`` batches every trainer into one transaction, so per-round cost
-grows with the number of trainers while the transaction *count* stays at two.
-``preflight.py`` turns these into a USDC figure at the current gas price.
-
 Further reading
 ===============
 
