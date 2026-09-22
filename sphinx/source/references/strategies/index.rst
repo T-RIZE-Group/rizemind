@@ -1,6 +1,9 @@
 Strategies Module
 =================
 
+For the distinction between contribution measurement, compensation and recorded
+metadata, see :doc:`Architecture and verification <../../concepts/architecture>`.
+
 .. automodule:: rizemind.strategies
    :no-members:
 

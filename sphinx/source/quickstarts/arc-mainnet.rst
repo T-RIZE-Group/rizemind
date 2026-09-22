@@ -2,9 +2,15 @@
 Rizemind on Arc Mainnet
 ========================
 
-Rizemind is deployed on `Arc <https://www.arc.io>`_, Circle's USDC-gas L1. This
-page documents the current deployment and walks through ``examples/arc``, which
-runs a federation against it end to end.
+Rizemind's ledger-backed components are deployed on `Arc <https://www.arc.io>`_.
+This guide documents that deployment and the ``examples/arc`` simulation.
+
+Training computation occurs outside the blockchain. Arc hosts the configured
+contracts and selected coordination records. The example demonstrates the
+workflow; it does not represent a multi-institution customer deployment.
+
+For the product architecture and information boundaries, see
+:doc:`Architecture and verification <../concepts/architecture>`.
 
 .. caution::
 
@@ -25,6 +31,14 @@ Deployment record
      - Arc Mainnet, chain ID ``5042``
    * - ``SwarmV1Factory``
      - ``0x721a4ebA8747eF5db299E8Eec67A2FbAe7866353``
+
+**Inspect the deployment:**
+`SwarmV1Factory on the Arc explorer <https://explorer.arc.io/address/0x721a4ebA8747eF5db299E8Eec67A2FbAe7866353>`_.
+
+The factory is a deployment entry point, not the record for every federation. A
+run creates its own swarm proxy. Use the proxy address and transactions from
+that run when verifying participant-contribution and round events. For
+interpretation, see :ref:`model identity and records <rizemind-model-records>`.
 
 **Deployed components.** Deployed once per chain, by
 ``forge/script/deployments/``:
@@ -59,8 +73,8 @@ Foundry's wei arithmetic needs no adjustment. The *ERC-20* view (precompile
 10\ :sup:`12` apart; mixing them is the usual explanation for a balance that
 looks absurd.
 
-**Deployment is permissionless.** Unlike Rizenet, Arc has no deployer
-allowlist, so there is no address to whitelist before you begin.
+**Deployment is permissionless.** Arc has no deployer allowlist, so there is no
+address to whitelist before beginning this walkthrough.
 
 Walkthrough: ``examples/arc``
 =============================

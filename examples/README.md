@@ -13,7 +13,9 @@ uv run -- flwr run .
 
 > **Note:** Some examples may require additional prerequisites. Always check the specific README file inside each example directory for detailed instructions.
 
-There are three types of examples: some use a local blockchain, some use the Rizenet testnet, and one runs against Arc. The local and Rizenet examples are intended for development and testing, and are **not** Arc Mainnet deployment instructions. For Arc Mainnet deployment and configuration, see **Rizemind on Arc Mainnet** in the Quickstarts (`sphinx/source/quickstarts/arc-mainnet.rst`). To learn how to set up each example properly, read below.
+Examples target different environments, including a local chain, Arc, and legacy Rizenet test configurations. Follow each example's README; their addresses, configuration keys and network assumptions are not interchangeable.
+
+For the Arc-connected walkthrough, see [Rizemind on Arc Mainnet](https://docs.rizemind.ai/quickstarts/arc-mainnet.html). Rehearse on the test environment described in that guide before using mainnet.
 
 ---
 
