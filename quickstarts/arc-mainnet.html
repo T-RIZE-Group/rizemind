@@ -1,0 +1,745 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Rizemind on Arc Mainnet &#8212; RIZEMIND  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'quickstarts/arc-mainnet';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How-To" href="../how-tos/index.html" />
+    <link rel="prev" title="Examples" href="examples.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">RIZEMIND  documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Sections</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../concepts/index.html">Understand Rizemind</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../concepts/architecture.html">Architecture and verification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../concepts/use-cases.html">Illustrative use cases</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Quickstart</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Rizemind on Arc Mainnet</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../how-tos/index.html">How-To</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../how-tos/flower-integration.html">Integrating with Flower</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../how-tos/web3-auth/index.html">How To Add Web3-Based Signature Authentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../how-tos/generate-store-mnemonic.html">Generating and Storing a Mnemonic</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../references/index.html">References</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../references/authentication/index.html">Authentication Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../references/authentication/authenticated_client_manager.html">Authenticated Client Manager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/authentication/authenticated_client_properties.html">Authenticated Client Properties</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/authentication/can_train_criterion.html">Can Train Criterion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/authentication/config.html">Config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/authentication/eth_account_strategy.html">Eth Account Strategy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/authentication/mod.html">mod</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/authentication/train_auth.html">Training Authentication</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../references/authentication/notary/index.html">Notary</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../references/authentication/notary/model/index.html">Model</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../references/authentication/signatures/index.html">Signatures</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../references/authentication/signatures/auth.html">Auth</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../references/authentication/signatures/eip712.html">EIP712</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../references/authentication/signatures/signature.html">Signature</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../references/configuration/index.html">Configuration Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../references/configuration/base_config.html">Base Config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/configuration/toml_config.html">Toml Config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/configuration/transform.html">Transform utilities</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../references/configuration/validators/index.html">Validators</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../references/configuration/validators/eth_address.html">Ethereum Address</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../references/exception/index.html">Exception Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../references/exception/base_exception.html">Base Exception</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/exception/parse_exception.html">Parse Exception</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../references/logging/index.html">Logging Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../references/logging/base_metric_storage.html">Base Metric Storage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/logging/inspector_mod.html">Inspector Mod</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/logging/local_disk_metric_storage.html">Local Disk Metric Storage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/logging/metric_storage_strategy.html">Metric Storage Strategy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references/logging/train_metric_history.html">Train Metric History</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../references/logging/mlflow/index.html">MLflow</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../references/logging/mlflow/config.html">MLFlow Config</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../references/logging/mlflow/metric_storage.html">MLFlow Metric Storage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../references/logging/mlflow/mod.html">MLFlow Mod</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../references/mnemonic/index.html">Mnemonic Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../references/mnemonic/store.html">Mnemonic Store</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../references/strategies/index.html">Strategies Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../references/strategies/compensation/index.html">Compensation Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../references/strategies/compensation/simple_compensation_strategy.html">Simple Compensation Strategy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../references/strategies/compensation/typings.html">Typings</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../references/strategies/contribution/index.html">Contribution Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../references/strategies/contribution/calculators/index.html">Calculators Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../references/strategies/contribution/sampling/index.html">Sampling Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../references/strategies/contribution/shapley/index.html">Shapley Module</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../references/web3/index.html">Web3 Module</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../references/web3/config.html">Web3 Config</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../research/index.html">Research foundation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developers/index.html">Contribute to Rizemind</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/quickstarts/arc-mainnet.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Rizemind on Arc Mainnet</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#deployment-record">Deployment record</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#two-arc-properties-worth-knowing">Two Arc properties worth knowing</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#walkthrough-examples-arc">Walkthrough: <code class="docutils literal notranslate"><span class="pre">examples/arc</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-install">Step 1 — Install</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-2-choose-the-network">Step 2 — Choose the network</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-3-create-the-aggregator-account">Step 3 — Create the aggregator account</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-4-fund-the-aggregator">Step 4 — Fund the aggregator</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-5-run-the-pre-flight-checks">Step 5 — Run the pre-flight checks</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-6-run-the-federation">Step 6 — Run the federation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-7-verify-on-chain">Step 7 — Verify on-chain</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reusing-a-swarm">Reusing a swarm</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#further-reading">Further reading</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="rizemind-on-arc-mainnet">
+<h1>Rizemind on Arc Mainnet<a class="headerlink" href="#rizemind-on-arc-mainnet" title="Link to this heading">#</a></h1>
+<p>Rizemind’s ledger-backed components are deployed on <a class="reference external" href="https://www.arc.io">Arc</a>.
+This guide documents that deployment and the <code class="docutils literal notranslate"><span class="pre">examples/arc</span></code> simulation.</p>
+<p>Training computation occurs outside the blockchain. Arc hosts the configured
+contracts and selected coordination records. The example demonstrates the
+workflow; it does not represent a multi-institution customer deployment.</p>
+<p>For the product architecture and information boundaries, see
+<a class="reference internal" href="../concepts/architecture.html"><span class="doc">Architecture and verification</span></a>.</p>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
+<p>On Arc Mainnet, gas is <strong>real USDC</strong>. Every transaction in this walkthrough
+spends money. Rehearse on Arc Testnet first — the same example runs there
+with one word changed.</p>
+</div>
+<section id="deployment-record">
+<h2>Deployment record<a class="headerlink" href="#deployment-record" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Network</p></td>
+<td><p>Arc Mainnet, chain ID <code class="docutils literal notranslate"><span class="pre">5042</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SwarmV1Factory</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0x721a4ebA8747eF5db299E8Eec67A2FbAe7866353</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Inspect the deployment:</strong>
+<a class="reference external" href="https://explorer.arc.io/address/0x721a4ebA8747eF5db299E8Eec67A2FbAe7866353">SwarmV1Factory on the Arc explorer</a>.</p>
+<p>The factory is a deployment entry point, not the record for every federation. A
+run creates its own swarm proxy. Use the proxy address and transactions from
+that run when verifying participant-contribution and round events. For
+interpretation, see <a class="reference internal" href="../concepts/architecture.html#rizemind-model-records"><span class="std std-ref">model identity and records</span></a>.</p>
+<p><strong>Deployed components.</strong> Deployed once per chain, by
+<code class="docutils literal notranslate"><span class="pre">forge/script/deployments/</span></code>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">SelectorFactory</span></code> — registry and ERC-1967 proxy factory for trainer and
+evaluator selectors.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AlwaysSampled</span></code> — selector implementation, <code class="docutils literal notranslate"><span class="pre">always-sampled-v1.0.0</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">RandomSampling</span></code> — selector implementation, <code class="docutils literal notranslate"><span class="pre">random-sampling-v1.0.0</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SwarmV1</span></code> — swarm logic contract; proxies delegate to it.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SwarmV1Factory</span></code> — what the Python library calls. <code class="docutils literal notranslate"><span class="pre">createSwarm()</span></code> deploys
+a swarm proxy plus its two selector proxies in one transaction.</p></li>
+</ul>
+<p>Each <em>federation</em> then deploys its own <code class="docutils literal notranslate"><span class="pre">SwarmV1</span></code> ERC-1967 proxy through the
+factory. Only the factory address is needed to use the deployment; it is
+registered in the library, so no configuration is required to reach it.</p>
+<p><strong>Supported release.</strong> The chain registrations landed on <code class="docutils literal notranslate"><span class="pre">main</span></code> and are not
+yet in a tagged release. Use a checkout that contains
+<code class="docutils literal notranslate"><span class="pre">ARC_MAINNET_CHAINID</span></code> in <code class="docutils literal notranslate"><span class="pre">rizemind/web3/chains.py</span></code>.</p>
+<p><strong>Arc Testnet.</strong> The same components are deployed on chain ID <code class="docutils literal notranslate"><span class="pre">5042002</span></code> and
+registered alongside mainnet, so the walkthrough below runs unchanged against
+either network.</p>
+</section>
+<section id="two-arc-properties-worth-knowing">
+<h2>Two Arc properties worth knowing<a class="headerlink" href="#two-arc-properties-worth-knowing" title="Link to this heading">#</a></h2>
+<p><strong>USDC has two views.</strong> The <em>native</em> view — <code class="docutils literal notranslate"><span class="pre">eth_getBalance</span></code>, gas prices,
+<code class="docutils literal notranslate"><span class="pre">msg.value</span></code> — uses <strong>18 decimals</strong>, exactly like ether, so web3.py’s and
+Foundry’s wei arithmetic needs no adjustment. The <em>ERC-20</em> view (precompile
+<code class="docutils literal notranslate"><span class="pre">0x3600…0000</span></code>) uses <strong>6 decimals</strong>. They are the same balance a factor of
+10<sup>12</sup> apart; mixing them is the usual explanation for a balance that
+looks absurd.</p>
+<p><strong>Deployment is permissionless.</strong> Arc has no deployer allowlist, so there is no
+address to whitelist before beginning this walkthrough.</p>
+</section>
+<section id="walkthrough-examples-arc">
+<h2>Walkthrough: <code class="docutils literal notranslate"><span class="pre">examples/arc</span></code><a class="headerlink" href="#walkthrough-examples-arc" title="Link to this heading">#</a></h2>
+<p>A minimal federation: three trainers, one round, decentralized Shapley value
+contribution scoring, CPU-only simulation. It is deliberately small — the
+decentralized Shapley strategy evaluates every non-empty coalition, so three
+trainers means seven evaluations per round and ten would mean 1023.</p>
+<section id="step-1-install">
+<h3>Step 1 — Install<a class="headerlink" href="#step-1-install" title="Link to this heading">#</a></h3>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>sync
+<span class="nb">cd</span><span class="w"> </span>examples/arc
+</pre></div>
+</div>
+<p>Torch and the dataset dependencies are pulled in on first use; no extra sync
+flags are needed.</p>
+</section>
+<section id="step-2-choose-the-network">
+<h3>Step 2 — Choose the network<a class="headerlink" href="#step-2-choose-the-network" title="Link to this heading">#</a></h3>
+<p>One setting picks the chain, in <code class="docutils literal notranslate"><span class="pre">[tool.flwr.app.config]</span></code>:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">arc-network</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;mainnet&quot;</span><span class="w">   </span><span class="c1"># or &quot;testnet&quot;, or &quot;local&quot; for Anvil</span>
+</pre></div>
+</div>
+<p>It selects the chain ID and the default RPC endpoint <em>together</em>, so the chain
+guard and the endpoint cannot drift apart. Override it for a single run instead
+of editing the file:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>--<span class="w"> </span>flwr<span class="w"> </span>run<span class="w"> </span>.<span class="w"> </span>--run-config<span class="w"> </span>arc-network<span class="o">=</span>testnet
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">$ARC_RPC_URL</span></code> overrides only the endpoint, for a private or rate-limited
+node. The chain guard still holds it to the network’s chain ID.</p>
+</section>
+<section id="step-3-create-the-aggregator-account">
+<h3>Step 3 — Create the aggregator account<a class="headerlink" href="#step-3-create-the-aggregator-account" title="Link to this heading">#</a></h3>
+<p>Only the <strong>aggregator</strong> sends transactions. Trainers sign EIP-712 messages
+off-chain and never touch the chain, so their accounts need no USDC.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>--<span class="w"> </span>rzmnd<span class="w"> </span>account<span class="w"> </span>generate<span class="w"> </span>arc-aggregator<span class="w"> </span>--words<span class="w"> </span><span class="m">24</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">RZMND_PASSPHRASE</span><span class="o">=</span><span class="s1">&#39;the passphrase you just chose&#39;</span>
+</pre></div>
+</div>
+<p>This writes an encrypted keystore to <code class="docutils literal notranslate"><span class="pre">~/.rzmnd/keystore/</span></code>. Account 0 of that
+mnemonic is the aggregator; accounts 1..N are the trainers.</p>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
+<p>Do not use <code class="docutils literal notranslate"><span class="pre">rzmnd</span> <span class="pre">account</span> <span class="pre">load</span></code> to read the addresses back — it prints the
+mnemonic <em>and</em> every derived private key to your terminal, where they remain
+in scrollback and shell logs.</p>
+</div>
+</section>
+<section id="step-4-fund-the-aggregator">
+<h3>Step 4 — Fund the aggregator<a class="headerlink" href="#step-4-fund-the-aggregator" title="Link to this heading">#</a></h3>
+<p>Print the addresses. This touches no network, so it works before anything else
+is configured:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>--<span class="w"> </span>python<span class="w"> </span>addresses.py
+</pre></div>
+</div>
+<p>Send USDC to the aggregator address. Budget one <code class="docutils literal notranslate"><span class="pre">createSwarm</span></code> (roughly 1M gas)
+plus two transactions per round. On testnet, <code class="docutils literal notranslate"><span class="pre">https://faucet.circle.com</span></code>
+issues test USDC.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The aggregator is the <strong>same address</strong> on every network, because the same
+mnemonic derives the same accounts everywhere. Funding it on testnet does
+nothing on mainnet, and the address itself is no evidence of which chain you
+are on — the chain guard is.</p>
+</div>
+</section>
+<section id="step-5-run-the-pre-flight-checks">
+<h3>Step 5 — Run the pre-flight checks<a class="headerlink" href="#step-5-run-the-pre-flight-checks" title="Link to this heading">#</a></h3>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>--<span class="w"> </span>python<span class="w"> </span>preflight.py
+</pre></div>
+</div>
+<p>It reads the same <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> the run does and verifies, <strong>without
+sending a transaction</strong>, that:</p>
+<ul class="simple">
+<li><p>the RPC is reachable and reports the chain ID <code class="docutils literal notranslate"><span class="pre">arc-network</span></code> selected;</p></li>
+<li><p>web3’s Proof-of-Authority middleware is configured as this chain needs;</p></li>
+<li><p>the <code class="docutils literal notranslate"><span class="pre">SwarmV1Factory</span></code> has code at the registered address;</p></li>
+<li><p>the aggregator can pay, priced at the current gas price;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">createSwarm</span></code> would succeed — a dry <code class="docutils literal notranslate"><span class="pre">eth_call</span></code> that resolves both
+selectors through the <code class="docutils literal notranslate"><span class="pre">SelectorFactory</span></code> and reverts if either version is
+unregistered on this chain.</p></li>
+</ul>
+<p>Fix every <code class="docutils literal notranslate"><span class="pre">FAIL</span></code> before continuing. Use <code class="docutils literal notranslate"><span class="pre">--network</span> <span class="pre">testnet</span></code> to check the
+other network without editing anything. Neither the passphrase nor any key is
+printed.</p>
+</section>
+<section id="step-6-run-the-federation">
+<h3>Step 6 — Run the federation<a class="headerlink" href="#step-6-run-the-federation" title="Link to this heading">#</a></h3>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>--<span class="w"> </span>flwr<span class="w"> </span>run<span class="w"> </span>.
+</pre></div>
+</div>
+<p>What happens, in order:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Arc</span> <span class="pre">mainnet</span> <span class="pre">(chain</span> <span class="pre">5042)</span> <span class="pre">via</span> <span class="pre">https://rpc.mainnet.arc.io</span></code> — the resolved
+network. The server aborts here if the RPC disagrees.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Web3</span> <span class="pre">swarm</span> <span class="pre">contract</span> <span class="pre">address:</span> <span class="pre">0x721a…6353</span></code> — the factory.</p></li>
+<li><p>One <code class="docutils literal notranslate"><span class="pre">createSwarm</span></code> transaction; the new swarm proxy address follows.</p></li>
+<li><p>Per round: trainers sign, coalitions are evaluated, then <code class="docutils literal notranslate"><span class="pre">distribute</span></code>
+followed by <code class="docutils literal notranslate"><span class="pre">nextRound</span></code> — two aggregator transactions.</p></li>
+<li><p>Metrics are written under <code class="docutils literal notranslate"><span class="pre">logs/</span></code>.</p></li>
+</ol>
+<p>First run also downloads CIFAR-10 (roughly 170MB), the trainers’ data.</p>
+</section>
+<section id="step-7-verify-on-chain">
+<h3>Step 7 — Verify on-chain<a class="headerlink" href="#step-7-verify-on-chain" title="Link to this heading">#</a></h3>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">ARC_RPC</span><span class="o">=</span>https://rpc.mainnet.arc.io
+<span class="nb">export</span><span class="w"> </span><span class="nv">SWARM</span><span class="o">=</span>0x...<span class="w">   </span><span class="c1"># the proxy address from the run</span>
+
+cast<span class="w"> </span>call<span class="w"> </span><span class="nv">$SWARM</span><span class="w"> </span><span class="s2">&quot;currentRound()(uint256)&quot;</span><span class="w"> </span>--rpc-url<span class="w"> </span><span class="nv">$ARC_RPC</span>
+</pre></div>
+</div>
+<p>Then look the swarm up in the Arc explorer and confirm the
+<code class="docutils literal notranslate"><span class="pre">TrainerContributed</span></code> events, one per trainer per round. <code class="docutils literal notranslate"><span class="pre">preflight.py</span></code>
+prints the explorer link for the network it checked.</p>
+</section>
+<section id="reusing-a-swarm">
+<h3>Reusing a swarm<a class="headerlink" href="#reusing-a-swarm" title="Link to this heading">#</a></h3>
+<p>While <code class="docutils literal notranslate"><span class="pre">factory_v1</span></code> is set, every run deploys a <strong>new</strong> swarm — on mainnet,
+that means paying for one each time. To keep training against an existing swarm,
+replace the factory block with its address:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.web3.swarm]</span>
+<span class="n">address</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;0xYourSwarmProxyAddress&quot;</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">SwarmConfig</span></code> accepts exactly one of <code class="docutils literal notranslate"><span class="pre">address</span></code> or <code class="docutils literal notranslate"><span class="pre">factory_v1</span></code>, so remove
+the <code class="docutils literal notranslate"><span class="pre">[tool.web3.swarm.factory_v1]</span></code> block when you add <code class="docutils literal notranslate"><span class="pre">address</span></code>.</p>
+</section>
+</section>
+<section id="further-reading">
+<h2>Further reading<a class="headerlink" href="#further-reading" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">examples/arc/README.md</span></code> — the example’s own documentation, including
+rehearsing against a local Anvil chain.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">forge/DEPLOYING.md</span></code> — bringing the contracts up on a chain that does not
+have them yet.</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="examples.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Examples</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../how-tos/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">How-To</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#deployment-record">Deployment record</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#two-arc-properties-worth-knowing">Two Arc properties worth knowing</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#walkthrough-examples-arc">Walkthrough: <code class="docutils literal notranslate"><span class="pre">examples/arc</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-install">Step 1 — Install</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-2-choose-the-network">Step 2 — Choose the network</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-3-create-the-aggregator-account">Step 3 — Create the aggregator account</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-4-fund-the-aggregator">Step 4 — Fund the aggregator</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-5-run-the-pre-flight-checks">Step 5 — Run the pre-flight checks</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-6-run-the-federation">Step 6 — Run the federation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-7-verify-on-chain">Step 7 — Verify on-chain</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reusing-a-swarm">Reusing a swarm</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#further-reading">Further reading</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By T-RIZE Group
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2026, T-RIZE Group.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
