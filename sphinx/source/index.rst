@@ -11,88 +11,92 @@ Meet Rizemind
    :maxdepth: 2
    :caption: Sections
 
+   concepts/index
    install
    quickstarts/index
    how-tos/index
    references/index
+   research/index
    developers/index
 
-**Rizemind** is a cooperative, privacy‑preserving framework developed by **T‑RIZE** and **T‑RIZE Labs** a Canadian industrial research chair. Built on **Federated Learning (FL)**, Rizemind uses **distributed ledgers** to strengthen coordination, robustness, and security across untrusted participants.
+**Shared intelligence. Sovereign data.**
 
-**Deployment:** Rizemind is deployed on **Arc Mainnet**. See
-:doc:`quickstarts/arc-mainnet`.
+Rizemind is an open-source framework for **federated learning with verifiable
+multi-party coordination**.
 
-* Participants **do not share raw data**. They train **on‑premise** and share **model updates/outputs** only.
-* Local training extracts generalizable knowledge that is **aggregated** into a collective **“supermodel.”**
-* The framework provides **transparent, verifiable contribution scoring**, which powers an **incentives module** to align collaborators.
+It is designed for developers and organizations that need to train or evaluate
+models across separate data environments without transferring the underlying
+datasets into a common repository.
 
-This decentralized approach protects sensitive information while improving model accuracy via broad data diversity. By lowering data‑sharing barriers—even among competitors—Rizemind unlocks collaboration where assessments are typically siloed.
+Each participant trains locally. Raw training data remains in the participant's
+environment. Authorized model updates are exchanged through the
+federated-learning process.
 
-Flower × T‑RIZE
+Rizemind adds participant authentication, cryptographically signed model
+updates, contribution measurement and ledger-backed records of selected training
+events. The available records and controls depend on the configured workflow.
+See :ref:`model identity and records <rizemind-model-records>` for how to
+interpret the model and version associated with an activity.
+
+**Arc deployment:** Rizemind's ledger-backed components are deployed on Arc
+Mainnet. See :doc:`the deployment guide <quickstarts/arc-mainnet>` for the
+implementation, network configuration and verification steps.
+
+Start here
+==========
+
+* :doc:`Install Rizemind <install>`
+* :doc:`Run an example <quickstarts/index>`
+* :doc:`Understand the architecture <concepts/architecture>`
+* `View the source code <https://github.com/T-RIZE-Group/rizemind>`_
+
+.. _flower-trize:
+.. _flower-t-rize:
+
+Built on Flower
 ===============
 
-`Flower <https://flower.ai/>`_ is a widely adopted open‑source framework for federated AI across research and production. It offers a unified approach to federated learning, analytics, and evaluation with an excellent developer experience.
+Rizemind builds on `Flower <https://flower.ai/docs/>`_. Flower provides the
+federated-learning foundation; Rizemind adds infrastructure for coordinating
+independent participants. Developers bring their own model, training procedure
+and evaluation metrics rather than adopt a proprietary Rizemind model.
 
-**Rizemind** combines T‑RIZE’s applied expertise in distributed ledgers and AI with the research capacity of **T‑RIZE Labs (Prof. Kaiwen Zhang)** to bring Flower to the next level in **decentralized coordination**. Rizemind is designed as a **complementary Flower library**, easing the transition from centralized FL orchestration to decentralized setups with **minimal code changes**.
+See :doc:`Integrating with Flower <how-tos/flower-integration>` for the
+adoption workflow and the distinction between Flower examples and tested
+Rizemind support.
 
-Why cooperation?
+Choose your path
 ================
 
-The concept of cooperation between multiple data owners is attractive because it enables:
+**Developers:** start with an existing model and review
+:doc:`the integration workflow <how-tos/flower-integration>`.
 
-* **Collective intelligence:** co‑training models across organizations.
-* **Geographically distributed compute:** better latency/cost profiles and resilience.
-* **Heterogeneous data integration:** reduce biases via broader coverage.
-* **Breaking down silos:** unlock previously infeasible use cases.
-* **Collective model ownership:** align incentives to maintain and improve models.
-* **New data monetization:** attribute and reward valuable contributions.
+**Participating organizations:** review
+:ref:`the data and visibility boundaries <rizemind-data-boundaries>` before
+connecting a local participant to a federation.
 
-There’s an adage that fits well here: *the whole is greater than the sum of its parts*.
+**Federation coordinators:** review
+:ref:`the roles and responsibilities <rizemind-federation-roles>`, then select
+an appropriate :doc:`example <quickstarts/index>`.
 
-Design principles
-=================
+.. _why-cooperation:
+.. _design-principles:
+.. _how-it-works:
+.. _key-capabilities:
 
-To enable cooperation among partially trusted parties, Rizemind embraces the following principles:
+Further explanation
+===================
 
-**Neutrality**
+Read :doc:`the architecture <concepts/architecture>` for the workflow,
+capabilities and information boundaries. Explore
+:doc:`illustrative use cases <concepts/use-cases>` and
+:doc:`the research foundation <research/index>`.
 
-Collaboration among untrusted participants requires a **neutral coordination layer**. Rizemind leverages **blockchains** to provide a permissionless environment for training coordination with high availability, scale, and verifiability.
+.. _get-involved:
 
-**Auditability**
+Community and security
+======================
 
-A distributed ledger records **training metadata** (e.g., round progress, participants, artifacts), enabling peers to **cross‑check** the information they receive and independently verify protocol state.
-
-**Accountability**
-
-Whether deterring **model poisoning** or **rewarding productive trainers**, accountability safeguards long‑term system health. Rizemind provides attribution and traceability needed for **policy enforcement** and **incentive payouts**.
-
-**Robustness**
-
-Distributed systems must tolerate **faulty** or **Byzantine** nodes and intermittent networks. Drawing on blockchain patterns and FL research, Rizemind emphasizes **availability** and **adversarial resilience**.
-
-How it works
-==========================
-
-1. **Register & discover** participants and training jobs on a neutral ledger.
-2. **Initialize** a task (model, rounds, metrics, incentives, policies).
-3. **Train locally** at each participant; **share updates** (not raw data).
-4. **Validate & aggregate** contributions (secure aggregation and/or robust aggregation strategies).
-5. **Score contributions** with transparent metrics tied to incentives.
-6. **Settle incentives** and **publish artifacts/metadata** to the ledger for auditability.
-
-Key capabilities
-================
-
-* **Ledger‑backed coordination:** verifiable state, replayability, and accountability.
-* **Contribution accounting:** clear, transparent contribution scores for incentives.
-* **Minimal adoption friction:** Flower‑native ergonomics; plug‑in orchestration.
-* **Privacy‑preserving defaults:** on‑prem training; configurable sharing policies.
-* **Enterprise‑ready controls:** governance hooks, policy enforcement, and audit trails.
-
-
-Get involved
-============
-
-* **Source code:** `GitHub <https://github.com/t‑rize-group/rizemind>`_
-* **Community:** Join our `Slack Channel <https://join.slack.com/t/rizemind/shared_invite/zt-3dufpugzb-znhIxQcO8sCAKY6V6JrhCg>`_
-* **Security:** security\@t‑rize.io
+* `Source code <https://github.com/T-RIZE-Group/rizemind>`_
+* `Community Slack <https://join.slack.com/t/rizemind/shared_invite/zt-3dufpugzb-znhIxQcO8sCAKY6V6JrhCg>`_
+* `Report a security concern <mailto:security@t-rize.io>`_
