@@ -10,6 +10,7 @@ Meet Rizemind
 .. toctree::
    :maxdepth: 2
    :caption: Sections
+   :hidden:
 
    concepts/index
    install

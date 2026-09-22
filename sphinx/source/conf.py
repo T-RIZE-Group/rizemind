@@ -7,8 +7,8 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "RIZEMIND"
-copyright = "2025, T-RIZE"
-author = "T-RIZE"
+copyright = "2026, T-RIZE Group"
+author = "T-RIZE Group"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
